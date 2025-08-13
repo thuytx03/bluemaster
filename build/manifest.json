@@ -1,0 +1,60 @@
+{
+  "name": "Xthuy Social 🛠 Dev",
+  "description": "Bộ công cụ mạng xã hội đa năng: tải video/ảnh, gửi tin nhắn hàng loạt, lên lịch, quét UID, hỗ trợ Facebook, X, Instagram...",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "icons": {
+    "16": "logo-rounded.png",
+    "32": "logo-rounded.png",
+    "48": "logo-rounded.png",
+    "128": "logo-rounded.png"
+  },
+  "action": {
+    "default_icon": "logo-rounded.png"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/*"
+      ],
+      "js": [
+        "src/contentScript/index.ts-loader.js"
+      ]
+    }
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "permissions": [
+    "bookmarks",
+    "identity",
+    "cookies",
+    "tabs",
+    "storage",
+    "activeTab",
+    "webRequest",
+    "notifications",
+    "clipboardWrite",
+    "declarativeNetRequest"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "resources": [
+        "**/*",
+        "*"
+      ],
+      "use_dynamic_url": false
+    }
+  ]
+}
