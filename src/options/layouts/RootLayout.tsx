@@ -1,7 +1,7 @@
 
 // import { useSettings } from '@/hooks/useSettings'
 
-import { AppSidebar } from '@/components/app-sidebar'
+import { AppSidebar } from '@/options/components/app-sidebar'
 import Loader from '@/components/loader'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'

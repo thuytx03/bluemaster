@@ -1,5 +1,5 @@
-import { Header } from "@/components/layouts/header"
-import { Main } from "@/components/layouts/main"
+import { Header } from "@/options/components/layout/header"
+import { Main } from "@/options/components/layout/main"
 
 
 export default function HomePage() {

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { useTheme } from './theme-provider'
+import { useTheme } from '../hooks/use-theme'
 import { MoonStar, Sun } from 'lucide-react'
 
 export function ThemeSwitch() {
