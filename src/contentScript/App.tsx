@@ -1,9 +1,11 @@
-import '../index.css'
+// import { Button } from '@/components/ui/button';
 const App: React.FC = () => {
 
   return (
     <>
-     <div>content scrippt</div>
+      <div>
+        {/* <Button className=''>Click me</Button> */}
+      </div>
     </>
   );
 };

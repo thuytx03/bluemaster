@@ -1,9 +1,10 @@
-import useAuth from "../hooks/use-auth"
+import { Button } from "@/components/ui/button"
+import useAuth from "../../hooks/use-auth"
 import { Toaster } from 'react-hot-toast';
 import { MemoryRouter } from "react-router-dom";
-import { Routing } from "./routers";
+import { Routing } from "../options/routers";
 import { TooltipProvider } from "@/components/ui/tooltip";
-export const Options = () => {
+export const Panel = () => {
   const { isAuthenticated } = useAuth()
 
   if (!isAuthenticated) {
@@ -27,4 +28,4 @@ export const Options = () => {
   )
 }
 
-export default Options
+export default Panel

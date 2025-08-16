@@ -229,12 +229,13 @@ if (customElements && !customElements.get(overlayId)) {
 console.debug('[vite] connecting...');
 const importMetaUrl = new URL(import.meta.url);
 // use server configuration, then fallback to inference
-const serverHost = "localhost:2003/";
+const serverHost = "localhost:8386/";
 const socketProtocol = null || (importMetaUrl.protocol === 'https:' ? 'wss' : 'ws');
-const hmrPort = 2003;
+const hmrPort = 8386;
 const socketHost = `${"localhost" || importMetaUrl.hostname}:${hmrPort || importMetaUrl.port}${"/"}`;
-const directSocketHost = "localhost:2003/";
+const directSocketHost = "localhost:8386/";
 const base = "/" || '/';
+const wsToken = "W9rErIzvXwes";
 const messageBuffer = [];
 let socket;
 try {
@@ -265,7 +266,7 @@ catch (error) {
     console.error(`[vite] failed to connect to websocket (${error}). `);
 }
 function setupWebSocket(protocol, hostAndPath, onCloseWithoutOpen) {
-    const socket = new HMRPort(`${protocol}://${hostAndPath}`, 'vite-hmr');
+    const socket = new HMRPort(`${protocol}://${hostAndPath}?token=${wsToken}`, 'vite-hmr');
     let isOpened = false;
     socket.addEventListener('open', () => {
         isOpened = true;

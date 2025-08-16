@@ -7,8 +7,8 @@
 /coverage
 
 # production
-/package
-
+package
+/build
 # misc
 .DS_Store
 .env.local

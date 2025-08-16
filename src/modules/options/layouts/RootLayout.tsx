@@ -1,13 +1,11 @@
 
-// import { useSettings } from '@/hooks/useSettings'
 
-import { AppSidebar } from '@/options/components/app-sidebar'
 import Loader from '@/components/loader'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 import { Outlet } from 'react-router-dom'
+import { AppSidebar } from '../components/app-sidebar'
 
-// import Header from '../components/layout/Header'
 const RootLayout = () => {
   // const { appearance, loading, updateAppearance } = useSettings()
 

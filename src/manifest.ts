@@ -5,7 +5,7 @@ import packageData from '../package.json'
 const isDev = process.env.NODE_ENV == 'development'
 
 export default defineManifest({
-  name: `${packageData.name}${isDev ? ` 🛠 Dev` : ''}`,
+  name: `${ packageData.name}${isDev ? `` : ''}`,
   description: packageData.description,
   version: packageData.version,
   manifest_version: 3,
@@ -16,6 +16,7 @@ export default defineManifest({
     128: 'logo-rounded.png',
   },
   action: {
+    // default_popup: 'popup.html',
     default_icon: 'logo-rounded.png',
   },
   options_page: 'options.html',
@@ -25,19 +26,24 @@ export default defineManifest({
   },
   content_scripts: [
     {
-      matches: ['https://www.facebook.com/*'],
-      js: ['src/contentScript/index.ts'],
+      js: isDev
+        ? ['src/contentScript/index.dev.tsx']
+        : ['src/contentScript/index.prod.tsx'],
+      matches: ['<all_urls>'],
     },
   ],
-
-  // web_accessible_resources: [
-  //   {
-  //     resources: ['icon.png', "src/assets/data/emoji.json"],
-  //     matches: ["<all_urls>"],
-  //   },
-  // ],
+  side_panel: {
+    default_path: 'sidepanel.html',
+  },
+  web_accessible_resources: [
+    {
+      resources: ['*.js', '*.css', 'public/*'],
+      matches: ['<all_urls>'],
+    },
+  ],
   host_permissions: ["<all_urls>"],
   permissions: [
+    "sidePanel",
     "bookmarks",
     "identity",
     "cookies",

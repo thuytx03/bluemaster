@@ -1,13 +1,14 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { Options } from './Options'
+import { Panel } from './Panel'
 import { ThemeProvider } from "@/hooks/use-theme"
 
 import '@/index.css'
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+ReactDOM.createRoot(document.getElementById('app') as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <Options />
+      <Panel />
+
     </ThemeProvider>
   </React.StrictMode>,
 )

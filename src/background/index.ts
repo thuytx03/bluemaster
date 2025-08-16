@@ -1,35 +1,39 @@
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(() => {
   console.log('Cài đặt extension thành công');
 
-  chrome.action.onClicked.addListener(() => {
-    chrome.runtime.openOptionsPage()
-  })
+  (async () => {
+    await chrome.sidePanel.setOptions({
+      path: 'sidepanel.html',
+      enabled: true
+    });
+
+    await chrome.sidePanel.setPanelBehavior({
+      openPanelOnActionClick: true
+    });
+  })();
 });
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "FB_DTSG") {
-      const profileUrl = `https://www.facebook.com/profile.php?id=${message.c_user}`;
-      fetch(profileUrl)
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error("Network response was not ok");
-              }
-              return response.text();
-          })
-          .then(async pageContent => {
-              const regexPattern = /DTSGInitialData(.?)+IntlPhonologicalRules/gm;
-              const match = pageContent.match(regexPattern);
-              if (match && match.length > 0) {
-                  const token = match[0].split("\"")[4];
-                  console.log('Token:', token);
-                  sendResponse(token);
-              } else {
-                  sendResponse(null);
-              }
-          })
-          .catch(error => {
-              console.error("Có lỗi xảy ra:", error);
-              sendResponse(null);
-          });
-      return true;
+    const profileUrl = `https://www.facebook.com/profile.php?id=${message.c_user}`;
+    fetch(profileUrl)
+      .then(response => response.text())
+      .then(pageContent => {
+        const regexPattern = /DTSGInitialData(.?)+IntlPhonologicalRules/gm;
+        const match = pageContent.match(regexPattern);
+        const token = (match && match.length > 0) ? match[0].split("\"")[4] : null;
+        sendResponse(token);
+      })
+      .catch(err => {
+        console.error("Có lỗi xảy ra:", err);
+        sendResponse(null);
+      })
+      .finally(() => {
+        // đảm bảo kết thúc
+        return true;
+      });
+
+    return true; // giữ kênh mở
   }
 });
+

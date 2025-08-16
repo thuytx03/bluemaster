@@ -19,10 +19,10 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 2000,
     },
     server: {
-      port: 2003,
+      port: 8386,
       strictPort: true,
       hmr: {
-        port: 2003,
+        port: 8386,
       },
     },
     plugins: [
@@ -30,5 +30,8 @@ export default defineConfig(({ mode }) => {
       react(),
       viteTsconfigPaths(), // 👈 thêm dòng này
     ],
+    legacy: {
+      skipWebSocketTokenCheck: true,
+    },
   }
 })
