@@ -1,9 +1,7 @@
-
-export default {
-  name: "Facebook Master Tool",
-  description: "Facebook Master Tool - Giải pháp toàn diện cho quản lý Facebook.",
-  author: "Trịnh Xuân Thuỷ",
-  version: "1.0.2",
-  urlZalo: 'https://chat.zalo.me/',
-  urlFacebook: 'https://www.facebook.com/',
+import packageData from "package.json"
+export const extensionInfo = {
+  name: packageData.name,
+  description: packageData.description,
+  author: packageData.author,
+  version: packageData.version,
 };
