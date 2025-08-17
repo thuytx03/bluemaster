@@ -235,7 +235,7 @@ const hmrPort = 8386;
 const socketHost = `${"localhost" || importMetaUrl.hostname}:${hmrPort || importMetaUrl.port}${"/"}`;
 const directSocketHost = "localhost:8386/";
 const base = "/" || '/';
-const wsToken = "zms6JyW9Rj7V";
+const wsToken = "Km3Z9DEXL9HQ";
 const messageBuffer = [];
 let socket;
 try {

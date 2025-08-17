@@ -23,7 +23,7 @@
         "src/contentScript/index.dev.tsx-loader.js"
       ],
       "matches": [
-        "<all_urls>"
+        "https://www.facebook.com/*"
       ]
     }
   ],
@@ -56,7 +56,6 @@
     "<all_urls>"
   ],
   "permissions": [
-    "sidePanel",
     "bookmarks",
     "identity",
     "cookies",

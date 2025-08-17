@@ -1,5 +1,4 @@
 import { Check, CircleQuestionMark, Copy } from "lucide-react";
-import { Header } from "../../components/layout/header";
 import { Main } from "../../components/layout/main";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,7 +11,7 @@ import { copyTextToClipboard } from "@/helpers/functionHelpers";
 import { IAccessTokenPage } from "@/types/facebook";
 import { extensionInfo } from "@/configs/constants";
 
-export default function HomePage() {
+export default function AccessTokenPage() {
 
   const [token, setToken] = useState<IAccessTokenPage>({
     tokenEAAB: "",
@@ -73,9 +72,7 @@ export default function HomePage() {
 
   return (
     <>
-      <Header fixed>
-        Lấy Access Token
-      </Header>
+
       <Main >
         <div className='mb-2 flex flex-wrap items-center justify-between space-y-2 gap-x-4'>
           <div>

@@ -4,6 +4,7 @@ import RootLayout from "@/modules/options/layouts/RootLayout";
 import HomePage from "@/modules/options/pages/HomePage";
 import AccessTokenPage from "../pages/facebook/AccessTokenPage";
 import CookiePage from "../pages/facebook/CookiePage";
+import UIDPage from "../pages/facebook/UIDPage";
 
 export const Routing = () => (
     <Routes>
@@ -11,6 +12,8 @@ export const Routing = () => (
             <Route path="/" element={<HomePage />} />
             <Route path="/facebook/access-token" element={<AccessTokenPage />} />
             <Route path="/facebook/cookies" element={<CookiePage />} />
+            <Route path="/facebook/uid" element={<UIDPage />} />
+
         </Route>
     </Routes>
 )

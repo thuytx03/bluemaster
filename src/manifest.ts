@@ -29,7 +29,8 @@ export default defineManifest({
       js: isDev
         ? ['src/contentScript/index.dev.tsx']
         : ['src/contentScript/index.prod.tsx'],
-      matches: ['<all_urls>'],
+      // matches: ['<all_urls>'],
+      matches: ['https://www.facebook.com/*'],
     },
   ],
   side_panel: {
@@ -43,7 +44,6 @@ export default defineManifest({
   ],
   host_permissions: ["<all_urls>"],
   permissions: [
-    "sidePanel",
     "bookmarks",
     "identity",
     "cookies",

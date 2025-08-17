@@ -50,9 +50,10 @@ export const sidebarData = {
           url: "/facebook/cookies",
         },
         {
-          title: "Settings",
-          url: "/facebook/settings",
-        },
+          title: "Quét UID",
+          url: "/facebook/uid",
+        }
+
       ],
     },
     {

@@ -1,4 +1,4 @@
-import { createHotContext as __vite__createHotContext } from "/vendor/vite-client.js";import.meta.hot = __vite__createHotContext("/src/contentScript/App.tsx.js");import __vite__cjsImport0_react_jsxDevRuntime from "/vendor/.vite-deps-react_jsx-dev-runtime.js__v--20af0475.js"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import { createHotContext as __vite__createHotContext } from "/vendor/vite-client.js";import.meta.hot = __vite__createHotContext("/src/contentScript/App.tsx.js");import __vite__cjsImport0_react_jsxDevRuntime from "/vendor/.vite-deps-react_jsx-dev-runtime.js__v--4fd74366.js"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
 import * as RefreshRuntime from "/vendor/react-refresh.js";
 const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
 let prevRefreshReg;
@@ -14,14 +14,19 @@ if (import.meta.hot && !inWebWorker) {
   window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Thuy/Extension/Extention-For-Chrome/xthuy-social/src/contentScript/App.tsx");
   window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
 }
+import ExportUIDPage from "/src/contentScript/pages/facebook/ExportUIDPage.tsx.js";
 const App = () => {
-  return /* @__PURE__ */ jsxDEV(Fragment, { children: /* @__PURE__ */ jsxDEV("div", {}, void 0, false, {
+  return /* @__PURE__ */ jsxDEV(Fragment, { children: /* @__PURE__ */ jsxDEV("div", { children: /* @__PURE__ */ jsxDEV(ExportUIDPage, {}, void 0, false, {
     fileName: "C:/Thuy/Extension/Extention-For-Chrome/xthuy-social/src/contentScript/App.tsx",
-    lineNumber: 25,
+    lineNumber: 27,
+    columnNumber: 9
+  }, this) }, void 0, false, {
+    fileName: "C:/Thuy/Extension/Extention-For-Chrome/xthuy-social/src/contentScript/App.tsx",
+    lineNumber: 26,
     columnNumber: 7
   }, this) }, void 0, false, {
     fileName: "C:/Thuy/Extension/Extention-For-Chrome/xthuy-social/src/contentScript/App.tsx",
-    lineNumber: 24,
+    lineNumber: 25,
     columnNumber: 5
   }, this);
 };

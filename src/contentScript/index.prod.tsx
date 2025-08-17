@@ -1,5 +1,5 @@
 import createShadowRoot from '@/helpers/createShadowRoot';
-import styles from '@/assets/styles/index.css?inline';
+import styles from '@/index.css?inline';
 import App from './App';
 
 

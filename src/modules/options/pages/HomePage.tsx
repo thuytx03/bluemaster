@@ -9,13 +9,11 @@ export default function HomePage() {
 
   return (
     <>
-      <Header fixed>
-        XIn cháo
-      </Header>
+
       <Main>
         <div className='mb-2 flex flex-wrap items-center justify-between space-y-2 gap-x-4'>
           <div>
-           
+
             <h2
               className='text-2xl font-bold tracking-tight'
               id="start"

@@ -1,10 +1,11 @@
-// import { Button } from '@/components/ui/button';
+import ExportUIDPage from "./pages/facebook/ExportUIDPage";
+
 const App: React.FC = () => {
 
   return (
     <>
       <div>
-        {/* <Button className=''>Click me</Button> */}
+        <ExportUIDPage/>
       </div>
     </>
   );
