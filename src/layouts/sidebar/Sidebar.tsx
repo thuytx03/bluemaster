@@ -30,7 +30,7 @@ const Sidebar = () => {
       width={256}>
       <div className="p-4 flex items-center gap-3">
         <LogoIcon className={`size-8`} />
-        {!collapsed && <p className="font-bold text-lg">{EXTENSION_INFO.displayName}</p>}
+        {!collapsed && <p className="font-semibold text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400">{EXTENSION_INFO.displayName}</p>}
       </div>
 
       <Menu

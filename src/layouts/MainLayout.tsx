@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom"
 import InitializeApp from "src/components/InitializeApp"
 import Footer from "src/layouts/Footer"
 import Sidebar from "src/layouts/sidebar/Sidebar"
+import AppHeader from "./Header"
 
 const { Content, Footer: AntdFooter } = Layout
 
@@ -13,6 +14,7 @@ const MainLayout = () => {
       <Layout style={{ minHeight: "100vh" }}>
         <Sidebar />
         <Layout>
+          <AppHeader />
           <Content
             style={{
               padding: 24,
