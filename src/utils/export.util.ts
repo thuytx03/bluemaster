@@ -32,5 +32,10 @@ export const exportToExcel = (dataArray: any[], fileName: string, wscols: Column
 };
 export const exportToTXT = (data: string, fileName: string) => {
     const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
-    FileSaver.saveAs(blob, fileName);
-}
+    FileSaver.saveAs(blob, fileName.endsWith(".txt") ? fileName : `${fileName}.txt`)
+};
+export const exportToJson = (data: any, fileName: string) => {
+    const jsonString = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+    FileSaver.saveAs(blob, fileName.endsWith('.json') ? fileName : `${fileName}.json`);
+};

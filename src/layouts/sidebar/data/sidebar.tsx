@@ -4,6 +4,7 @@ import {
   InstagramIcon,
   SettingIcon,
   ThreadsIcon,
+  TiktokIcon,
   UserIcon,
   XIcon
 } from "src/assets/icons"
@@ -21,13 +22,8 @@ export const menuItems: MenuItem[] = [
     children: [
       {
         key: APP_ROUTES.FACEBOOK.ACCESS_TOKEN,
-        icon: <Braces  className="size-4" />,
+        icon: <Braces className="size-4" />,
         label: <Link to={APP_ROUTES.FACEBOOK.ACCESS_TOKEN}>Access Token</Link>
-      },
-      {
-        key: APP_ROUTES.FACEBOOK.COOKIE,
-        icon: <Cookie className="size-4" />,
-        label: <Link to={APP_ROUTES.FACEBOOK.COOKIE}>Cookies</Link>
       },
       {
         key: APP_ROUTES.FACEBOOK.EXTRACT_UID,
@@ -46,6 +42,19 @@ export const menuItems: MenuItem[] = [
       }
     ]
   },
+  // {
+  //   key: "tiktok",
+  //   icon: <TiktokIcon className="size-4" />,
+  //   label: "TikTok",
+  //   children: [
+  //     {
+  //       key: APP_ROUTES.TIKTOK.COOKIE,
+  //       icon: <Cookie className="size-4" />,
+  //       label: <Link to={APP_ROUTES.TIKTOK.COOKIE}>Cookies</Link>
+  //     },
+
+  //   ]
+  // },
   {
     key: "instagram",
     icon: <InstagramIcon className="size-4" />,
@@ -98,6 +107,11 @@ export const menuItems: MenuItem[] = [
       },
 
     ]
+  },
+  {
+    key: APP_ROUTES.COOKIES,
+    icon: <Cookie className="size-4" />,
+    label: <Link to={APP_ROUTES.COOKIES}>Cookies</Link>
   },
   {
     key: APP_ROUTES.ACCOUNTS, // Đặt key là pathname của trang tài khoản
