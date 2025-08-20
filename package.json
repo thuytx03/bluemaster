@@ -56,13 +56,10 @@
       "webRequest",
       "webRequestBlocking",
       "declarativeNetRequest",
-      "<all_urls>",
       "activeTab",
-      "scripting",
       "tabs",
       "storage",
-      "notifications",
-      "alarms"
+      "notifications"
     ],
     "host_permissions": [
       "<all_urls>"
