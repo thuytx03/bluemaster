@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import $ from 'jquery';
 import { ExportState } from "src/interfaces/facebook.interface";
 import { copyTextToClipboard, removeCacheStorage } from "src/utils/common.util";
 import { getUserID } from "src/utils/facebook.util";
 import IconLoading from "src/components/IconLoading";
-import { Input } from "antd";
-import ExportMemberToExcel from "./export/ExportMemberToExcel";
+import ExportMemberToExcel from "../components/export/ExportMemberToExcel";
 import { exportToTXT } from "src/utils/export.util";
 
 

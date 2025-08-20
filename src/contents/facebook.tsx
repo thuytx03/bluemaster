@@ -1,7 +1,7 @@
-import cssText2 from "data-text:~/contents/components/facebook/plasmo-overlay.css"
+import cssText2 from "data-text:~/contents/websites/facebook/facebook.css"
 import type { PlasmoCSConfig, PlasmoGetShadowHostId } from "plasmo"
-import ExportUIDPage from "./components/facebook/ExportUIDPage"
 import cssText from "data-text:~style.css"
+import ExportUIDPage from "./websites/facebook/pages/ExportUIDPage"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://www.facebook.com/*"]
