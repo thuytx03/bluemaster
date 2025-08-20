@@ -18,19 +18,24 @@ const AppHeader = () => {
             }}
             className="bg-zinc-50 dark:bg-zinc-900 shadow border-b"
         >
-            <div className="text-base font-medium ">
-                <TypeAnimation
-                    sequence={[
-                        `Chào mừng bạn đến với ${EXTENSION_INFO.displayName}`,
-                        1000,
-                        `${EXTENSION_INFO.description}`,
-                        1000,
-                    ]}
-                    wrapper="span"
-                    cursor={true}
-                    repeat={Infinity}
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text "
-                />
+            <div className='flex justify-between items-center w-full'>
+                <div className="text-sm font-medium ">
+                    <TypeAnimation
+                        sequence={[
+                            `Chào mừng bạn đến với ${EXTENSION_INFO.displayName}`,
+                            1000,
+                            `${EXTENSION_INFO.description}`,
+                            1000,
+                        ]}
+                        wrapper="span"
+                        cursor={true}
+                        repeat={Infinity}
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text "
+                    />
+                </div>
+                <div>
+                    
+                </div>
             </div>
         </Header>
     )
