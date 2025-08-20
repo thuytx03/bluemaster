@@ -33,7 +33,7 @@ const PageContainer: FC<IPageContainerProps> = ({
             </span>
           </div>
           <a
-            href="https://github.com/minhchi1509/social_downloader_extension/?tab=readme-ov-file#c%C3%A0i-%C4%91%E1%BA%B7t"
+            href="https://github.com/thuytx03/Xthuy-Social/?tab=readme-ov-file#c%C3%A0i-%C4%91%E1%BA%B7t"
             target="_blank"
             rel="noopener noreferrer"
             className="ml-4 bg-white text-blue-600 font-medium px-4 py-2 rounded-xl hover:bg-blue-100 transition flex items-center">

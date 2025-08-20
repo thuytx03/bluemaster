@@ -6,7 +6,7 @@
   "author": "Trịnh Xuân Thuỷ",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build --zip && mv build/chrome-mv3-prod.zip xthuy_social_extension.zip",
+    "build": "plasmo build --zip && if not exist package mkdir package && powershell -Command \"Move-Item build/chrome-mv3-prod.zip package/xthuy_social_extension_$(node -p \\\"require('./package.json').version\\\").zip\"",
     "package": "plasmo package",
     "type-check": "tsc --noEmit"
   },

@@ -9,15 +9,11 @@
 # testing
 /coverage
 
-<<<<<<< HEAD
 #cache
 .turbo
 
-=======
 # production
-package
 /build
->>>>>>> e9657a592b8e192164e1eb7a4992713a9a7537ce
 # misc
 .DS_Store
 *.pem

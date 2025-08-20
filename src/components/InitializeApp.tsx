@@ -26,7 +26,7 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
         EStorageKey.ACCOUNTS
       )
       const { data } = await axios.get(
-        "https://raw.githubusercontent.com/minhchi1509/social_downloader_extension/main/package.json"
+        "https://raw.githubusercontent.com/thuytx03/Xthuy-Social/main/package.json"
       )
       const extensionLatestVersion = data.version
       const { version: currentVersion } = chrome.runtime.getManifest()

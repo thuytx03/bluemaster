@@ -6,6 +6,7 @@ import { ESocialProvider, EStorageKey } from "src/constants/enum"
 import useAuth from "src/store/auth"
 import useDownloadProcesses from "src/store/download-process"
 import { chromeUtils } from "src/utils/chrome.util"
+import { EXTENSION_INFO } from "src/constants"
 
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms))
@@ -131,7 +132,7 @@ export const checkExtensionVersion = async () => {
   const notificationId = "update-notification"
   const { version: currentVersion } = chrome.runtime.getManifest()
   const { data } = await axios.get(
-    "https://raw.githubusercontent.com/minhchi1509/social_downloader_extension/main/package.json"
+    "https://raw.githubusercontent.com/thuytx03/Xthuy-Social/main/package.json"
   )
   const latestVersion = data.version
   const notifyLatestExtensionVersion = await chromeUtils.getStorage(
@@ -147,9 +148,8 @@ export const checkExtensionVersion = async () => {
     )
     chrome.notifications.create(notificationId, {
       type: "basic",
-      iconUrl:
-        "https://raw.githubusercontent.com/minhchi1509/social_downloader_extension/main/assets/icon.png",
-      title: "🎉 Social Downloader đã có phiên bản mới!",
+      iconUrl: "https://raw.githubusercontent.com/thuytx03/Xthuy-Social/main/assets/icon.png",
+      title: `🎉 ${EXTENSION_INFO.displayName} đã có phiên bản mới!`,
       message: `Vui lòng cập nhật để tận hưởng các tính năng và cải tiến mới nhất.`
     })
     await chromeUtils.setStorage(
@@ -160,7 +160,7 @@ export const checkExtensionVersion = async () => {
   chrome.notifications.onClicked.addListener((clickedId) => {
     if (clickedId === notificationId) {
       chrome.tabs.create({
-        url: "https://github.com/minhchi1509/social_downloader_extension/"
+        url: "https://github.com/thuytx03/Xthuy-Social/"
       })
     }
   })
