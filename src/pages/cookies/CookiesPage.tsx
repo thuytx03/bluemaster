@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Dropdown, Input } from 'antd'
-import React, { useEffect, useState } from 'react'
+import React, {  useState } from 'react'
 import toast from 'react-hot-toast';
 import { CopyOutlined, CheckOutlined, ExportOutlined } from "@ant-design/icons";
 import PageContainer from 'src/components/shared/PageContainer'
@@ -41,16 +41,14 @@ const CookiePage = () => {
                 });
             })(),
             {
-                loading: 'Đang lấy Cookies',
-                success: 'Lấy Cookies thành công!',
-                error: 'Không thể lấy Cookies!'
+                loading: `Đang lấy Cookies từ ${validUrl}`,
+                success: `Lấy Cookies từ ${validUrl} thành công!`,
+                error: `Không thể lấy Cookies từ ${validUrl}!`
             }
         )
 
     }
-    useEffect(() => {
-        getCookiesByUrl();
-    }, [])
+
     return (
         <PageContainer
             title="Lấy Cookie Website từ URL"
