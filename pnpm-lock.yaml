@@ -41,12 +41,21 @@ importers:
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
+      i18next:
+        specifier: ^25.4.0
+        version: 25.4.0(typescript@5.3.3)
+      i18next-browser-languagedetector:
+        specifier: ^8.2.0
+        version: 8.2.0
+      i18next-http-backend:
+        specifier: ^3.0.2
+        version: 3.0.2
       jquery:
         specifier: ^3.7.1
         version: 3.7.1
       lucide-react:
-        specifier: ^0.539.0
-        version: 0.539.0(react@18.2.0)
+        specifier: ^0.541.0
+        version: 0.541.0(react@18.2.0)
       plasmo:
         specifier: 0.90.5
         version: 0.90.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(@types/node@20.11.5)(postcss@8.4.33)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -59,6 +68,9 @@ importers:
       react-hot-toast:
         specifier: ^2.6.0
         version: 2.6.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      react-i18next:
+        specifier: ^15.7.1
+        version: 15.7.1(i18next@25.4.0(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
       react-router-dom:
         specifier: ^7.4.0
         version: 7.8.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -2028,6 +2040,9 @@ packages:
     engines: {node: '>=0.8'}
     hasBin: true
 
+  cross-fetch@4.0.0:
+    resolution: {integrity: sha512-e4a5N8lVvuLgAWgnCrLr2PP0YyDOTHa9H/Rj54dirp61qXnNq46m82bRhNqIA5VccJtWBvPTFRV3TtvHUKPB1g==}
+
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -2384,6 +2399,9 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
+  html-parse-stringify@3.0.1:
+    resolution: {integrity: sha512-KknJ50kTInJ7qIScF3jeaFRpMpE8/lfiTdzf/twXyPBLAGrLRTmkz3AdTnKeh40X8k9L2fdYwEp/42WGXIRGcg==}
+
   htmlnano@2.1.2:
     resolution: {integrity: sha512-8Fst+0bhAfU362S6oHVb4wtJj/UYEFr0qiCLAEi8zioqmp1JYBQx5crZAADlFVX0Ly/6s/IQz6G7PL9/hgoJaQ==}
     peerDependencies:
@@ -2426,6 +2444,20 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
+
+  i18next-browser-languagedetector@8.2.0:
+    resolution: {integrity: sha512-P+3zEKLnOF0qmiesW383vsLdtQVyKtCNA9cjSoKCppTKPQVfKd2W8hbVo5ZhNJKDqeM7BOcvNoKJOjpHh4Js9g==}
+
+  i18next-http-backend@3.0.2:
+    resolution: {integrity: sha512-PdlvPnvIp4E1sYi46Ik4tBYh/v/NbYfFFgTjkwFl0is8A18s7/bx9aXqsrOax9WUbeNS6mD2oix7Z0yGGf6m5g==}
+
+  i18next@25.4.0:
+    resolution: {integrity: sha512-UH5aiamXsO3cfrZFurCHiB6YSs3C+s+XY9UaJllMMSbmaoXILxFgqDEZu4NbfzJFjmUo3BNMa++Rjkr3ofjfLw==}
+    peerDependencies:
+      typescript: ^5
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
@@ -2776,8 +2808,8 @@ packages:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
 
-  lucide-react@0.539.0:
-    resolution: {integrity: sha512-VVISr+VF2krO91FeuCrm1rSOLACQUYVy7NQkzrOty52Y8TlTPcXcMdQFj9bYzBgXbWCiywlwSZ3Z8u6a+6bMlg==}
+  lucide-react@0.541.0:
+    resolution: {integrity: sha512-s0Vircsu5WaGv2KoJZ5+SoxiAJ3UXV5KqEM3eIFDHaHkcLIFdIWgXtZ412+Gh02UsdS7Was+jvEpBvPCWQISlg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -2888,6 +2920,15 @@ packages:
 
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
+
+  node-fetch@2.7.0:
+    resolution: {integrity: sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==}
+    engines: {node: 4.x || >=6.0.0}
+    peerDependencies:
+      encoding: ^0.1.0
+    peerDependenciesMeta:
+      encoding:
+        optional: true
 
   node-gyp-build-optional-packages@5.0.3:
     resolution: {integrity: sha512-k75jcVzk5wnnc/FMxsf4udAoTEUv2jY3ycfdSd3yWu6Cnd1oee6/CfZJApyscA4FJOmdoixWwiwOyf16RzD5JA==}
@@ -3345,6 +3386,22 @@ packages:
       react: '>=16'
       react-dom: '>=16'
 
+  react-i18next@15.7.1:
+    resolution: {integrity: sha512-o4VsKh30fy7p0z5ACHuyWqB6xu9WpQIQy2/ZcbCqopNnrnTVOPn/nAv9uYP4xYAWg99QMpvZ9Bu/si3eGurzGw==}
+    peerDependencies:
+      i18next: '>= 23.4.0'
+      react: '>= 16.8.0'
+      react-dom: '*'
+      react-native: '*'
+      typescript: ^5
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+      typescript:
+        optional: true
+
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -3643,6 +3700,9 @@ packages:
   toggle-selection@1.0.6:
     resolution: {integrity: sha512-BiZS+C1OS8g/q2RRbJmy59xpyghNBqrr6k5L/uKBGRsTfxmu3ffiRnd8mlGPUVayg8pvfi5urfnu8TU7DVOkLQ==}
 
+  tr46@0.0.3:
+    resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
+
   tr46@1.0.1:
     resolution: {integrity: sha512-dTpowEjclQ7Kgx5SdBkqRzVhERQXov8/l9Ft9dVM9fmg0W0KQSVaXX9T4i6twCPNtYiZM53lpSSUAwJbFPOHxA==}
 
@@ -3738,14 +3798,24 @@ packages:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
     hasBin: true
 
+  void-elements@3.1.0:
+    resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
+    engines: {node: '>=0.10.0'}
+
   vue@3.3.4:
     resolution: {integrity: sha512-VTyEYn3yvIeY1Py0WaYGZsXnz3y5UnGi62GjVEqvEGPl6nxbOrCXbVOTQWBEJUqAyTUk2uJ5JLVnYJ6ZzGbrSw==}
 
   weak-lru-cache@1.2.2:
     resolution: {integrity: sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==}
 
+  webidl-conversions@3.0.1:
+    resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
+
   webidl-conversions@4.0.2:
     resolution: {integrity: sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==}
+
+  whatwg-url@5.0.0:
+    resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
 
   whatwg-url@7.1.0:
     resolution: {integrity: sha512-WUu7Rg1DroM7oQvGWfOiAK21n74Gg+T4elXEQYkOhtyLeWiJFoOGLXPKI/9gzIie9CtwVLm8wtw6YJdKyxSjeg==}
@@ -6105,6 +6175,12 @@ snapshots:
 
   crc-32@1.2.2: {}
 
+  cross-fetch@4.0.0:
+    dependencies:
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
+
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -6481,6 +6557,10 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  html-parse-stringify@3.0.1:
+    dependencies:
+      void-elements: 3.1.0
+
   htmlnano@2.1.2(postcss@8.4.33)(svgo@2.8.0)(typescript@5.8.2):
     dependencies:
       cosmiconfig: 9.0.0(typescript@5.8.2)
@@ -6506,6 +6586,22 @@ snapshots:
       resolve-alpn: 1.2.1
 
   human-signals@2.1.0: {}
+
+  i18next-browser-languagedetector@8.2.0:
+    dependencies:
+      '@babel/runtime': 7.28.3
+
+  i18next-http-backend@3.0.2:
+    dependencies:
+      cross-fetch: 4.0.0
+    transitivePeerDependencies:
+      - encoding
+
+  i18next@25.4.0(typescript@5.3.3):
+    dependencies:
+      '@babel/runtime': 7.28.3
+    optionalDependencies:
+      typescript: 5.3.3
 
   iconv-lite@0.6.3:
     dependencies:
@@ -6802,7 +6898,7 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
-  lucide-react@0.539.0(react@18.2.0):
+  lucide-react@0.541.0(react@18.2.0):
     dependencies:
       react: 18.2.0
 
@@ -6899,6 +6995,10 @@ snapshots:
   node-addon-api@4.3.0: {}
 
   node-addon-api@7.1.1: {}
+
+  node-fetch@2.7.0:
+    dependencies:
+      whatwg-url: 5.0.0
 
   node-gyp-build-optional-packages@5.0.3: {}
 
@@ -7501,6 +7601,16 @@ snapshots:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
 
+  react-i18next@15.7.1(i18next@25.4.0(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3):
+    dependencies:
+      '@babel/runtime': 7.28.3
+      html-parse-stringify: 3.0.1
+      i18next: 25.4.0(typescript@5.3.3)
+      react: 18.2.0
+    optionalDependencies:
+      react-dom: 18.2.0(react@18.2.0)
+      typescript: 5.3.3
+
   react-is@16.13.1: {}
 
   react-is@18.3.1: {}
@@ -7813,6 +7923,8 @@ snapshots:
 
   toggle-selection@1.0.6: {}
 
+  tr46@0.0.3: {}
+
   tr46@1.0.1:
     dependencies:
       punycode: 2.3.1
@@ -7891,6 +8003,8 @@ snapshots:
 
   uuid@11.1.0: {}
 
+  void-elements@3.1.0: {}
+
   vue@3.3.4:
     dependencies:
       '@vue/compiler-dom': 3.3.4
@@ -7901,7 +8015,14 @@ snapshots:
 
   weak-lru-cache@1.2.2: {}
 
+  webidl-conversions@3.0.1: {}
+
   webidl-conversions@4.0.2: {}
+
+  whatwg-url@5.0.0:
+    dependencies:
+      tr46: 0.0.3
+      webidl-conversions: 3.0.1
 
   whatwg-url@7.1.0:
     dependencies:

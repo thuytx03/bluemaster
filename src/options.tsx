@@ -6,7 +6,7 @@ import { Toaster } from "sonner"
 import { Toaster as ToasterHot } from 'react-hot-toast'
 import AppRoutes from "src/routes/AppRoutes"
 import useExtensionState from "src/store/extension-state"
-
+import './i18n'
 const Options = () => {
   const {
     extensionState: { theme }

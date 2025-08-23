@@ -2,10 +2,13 @@ import React from 'react'
 import { Layout } from 'antd';
 import { TypeAnimation } from 'react-type-animation';
 import { EXTENSION_INFO } from 'src/constants';
+import { useTranslation } from 'react-i18next';
+import SwitchLanguage from 'src/components/SwitchLanguage';
 
 const { Header } = Layout;
 
 const AppHeader = () => {
+    const { t } = useTranslation();
     return (
         <Header
             style={{
@@ -33,8 +36,8 @@ const AppHeader = () => {
                         className="bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text "
                     />
                 </div>
-                <div>
-                    
+                <div className='flex items-center '>
+                    <SwitchLanguage/>
                 </div>
             </div>
         </Header>

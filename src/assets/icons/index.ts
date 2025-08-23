@@ -13,6 +13,8 @@ import ThreadsIcon from "react:./threads.svg"
 import UserIcon from "react:./user.svg"
 import XIcon from "react:./x.svg"
 import TiktokIcon from "react:./tiktok.svg"
+import FlagVietNam from "react:./flag_vi.svg"
+import FlagEnglish from "react:./flag_en.svg"
 export {
   ErrorIcon,
   FacebookIcon,
@@ -28,5 +30,7 @@ export {
   MoreIcon,
   ThemeModeIcon,
   SettingIcon,
-  TiktokIcon
+  TiktokIcon,
+  FlagVietNam,
+  FlagEnglish
 }
