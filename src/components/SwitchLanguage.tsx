@@ -3,6 +3,7 @@ import type { MenuProps } from 'antd';
 import { Button, Dropdown } from 'antd';
 import { FlagEnglish, FlagVietNam } from 'src/assets/icons';
 import i18n from 'src/i18n';
+import { useTranslation } from 'react-i18next';
 
 const items: MenuProps['items'] = [
     {
@@ -31,10 +32,11 @@ const handleMenuClick: MenuProps['onClick'] = (e) => {
 };
 
 const SwitchLanguage = () => {
+    const { i18n: i18next } = useTranslation();
     const currentFlag =
-        i18n.language === 'vi'
-            ? <FlagVietNam className="w-5 h-5" />
-            : <FlagEnglish className="w-5 h-5" />;
+        i18next.language === 'en'
+            ? <FlagEnglish className="w-5 h-5" />
+            : <FlagVietNam className="w-5 h-5" />;
     return (
         <Dropdown menu={{ items, onClick: handleMenuClick }} placement="bottom" arrow>
             <Button type='text'>{currentFlag}</Button>
