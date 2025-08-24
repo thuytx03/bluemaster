@@ -95,17 +95,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 captureRequestsZalo({
   onIMEI: (imei) => {
-    console.log('[ZALO] IMEI captured:', imei);
     zaloIMEI = imei;
     maybeSendZaloInfo();
   },
   onCookies: (cookies) => {
-    console.log('[ZALO] Cookies captured:', cookies);
     zaloCookies = cookies;
     maybeSendZaloInfo();
   },
   onUserAgent: (ua) => {
-    console.log('[ZALO] UserAgent captured:', ua);
     zaloUserAgent = ua;
     maybeSendZaloInfo();
   }
@@ -124,7 +121,6 @@ function maybeSendZaloInfo() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "GET_ZALO_INFO") {
-    console.log('[ZALO] Requesting Zalo info');
     if (zaloIMEI && zaloCookies && zaloUserAgent) {
       sendResponse({ imei: zaloIMEI, cookies: zaloCookies, userAgent: zaloUserAgent });
     } else {
