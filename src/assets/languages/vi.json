@@ -121,6 +121,8 @@
     "input_url_placeholder": "Nhập URL(https://facebook.com)",
     "get_cookies": "Lấy cookies",
     "extract_cookies_from": "Trích xuất cookies từ {{url}}",
+    "extract_cookies_from_json": "Trích xuất cookies từ {{url}} (JSON)",
+    "extract_cookies_from_string": "Trích xuất cookies từ {{url}} (Chuỗi)",
     "cookies_placeholder": "Cookies",
     "copied": "Đã sao chép",
     "copy": "Sao chép",

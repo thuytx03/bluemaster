@@ -121,6 +121,8 @@
     "input_url_placeholder": "Enter URL (https://facebook.com)",
     "get_cookies": "Get cookies",
     "extract_cookies_from": "Extract cookies from {{url}}",
+    "extract_cookies_from_json": "Extract cookies from {{url}} (JSON)",
+    "extract_cookies_from_string": "Extract cookies from {{url}} (String)",
     "cookies_placeholder": "Cookies",
     "copied": "Copied",
     "copy": "Copy",

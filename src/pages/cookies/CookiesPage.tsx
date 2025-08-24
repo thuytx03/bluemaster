@@ -13,6 +13,7 @@ const CookiePage = () => {
     const { t } = useTranslation();
     const [url, setUrl] = useState<string>('https://')
     const [cookies, setCookies] = useState<string>('');
+    const [cookieString, setCookieString] = useState<string>('');
     const [isCopy, setIsCopy] = useState<boolean>(false);
     const cleanUrl = url.replace(/^https?:\/\//i, '');
     const fileName = `${cleanUrl}_${new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')}`;
@@ -40,6 +41,7 @@ const CookiePage = () => {
                             cookies: cookiesArray
                         }, null, 2);
                         setCookies(cookieJson);
+                        setCookieString(cookiesArray.map(cookie => `${cookie.name}=${cookie.value}`).join('; '));
                     });
                 });
             })(),
@@ -84,7 +86,7 @@ const CookiePage = () => {
                             {t('get_cookies')}
                         </Button>
                     </div>
-                    <div>{t('extract_cookies_from', { url })}</div>
+                    <div>{t('extract_cookies_from_json', { url })}</div>
                     <Input.TextArea
                         placeholder={t('cookies_placeholder')}
                         value={cookies}
@@ -119,6 +121,53 @@ const CookiePage = () => {
                                         label: (
                                             <div
                                                 onClick={() => exportToJson(cookies, fileName)}
+                                            >
+                                                {t('download_json')}
+                                            </div>
+                                        ),
+                                    },
+                                ],
+                            }}
+                        >
+                            {t('download_file')}
+                        </Dropdown.Button>
+
+                    </div>
+                    <div>{t('extract_cookies_from_string', { url })}</div>
+                    <Input.TextArea
+                        placeholder={t('cookies_placeholder')}
+                        value={cookieString}
+                        autoSize={{ minRows: 2, maxRows: 10 }}
+                        readOnly
+                    />
+                    <div className='flex items-center gap-2'>
+                        <Button
+                            icon={isCopy ? <CheckOutlined /> : <CopyOutlined />}
+                            type={isCopy ? "primary" : "default"}
+                            onClick={() => handleCopyCookies(cookieString)}
+                        >
+                            {isCopy ? t('copied') : t('copy')}
+                        </Button>
+                        <Dropdown.Button
+                            icon={<ExportOutlined />}
+                            type={"primary"}
+                            menu={{
+                                items: [
+                                    {
+                                        key: '1',
+                                        label: (
+                                            <div
+                                                onClick={() => exportToTXT(cookieString, fileName)}
+                                            >
+                                                {t('download_txt')}
+                                            </div>
+                                        ),
+                                    },
+                                    {
+                                        key: '2',
+                                        label: (
+                                            <div
+                                                onClick={() => exportToJson(cookieString, fileName)}
                                             >
                                                 {t('download_json')}
                                             </div>
