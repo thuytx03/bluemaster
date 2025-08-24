@@ -15,6 +15,7 @@ const CookiePage = () => {
     const [cookies, setCookies] = useState<string>('');
     const [cookieString, setCookieString] = useState<string>('');
     const [isCopy, setIsCopy] = useState<boolean>(false);
+    const [zaloData, setZaloData] = useState<{ imei: string | null, cookies: any[] | null, userAgent: string | null } | null>(null);
     const cleanUrl = url.replace(/^https?:\/\//i, '');
     const fileName = `${cleanUrl}_${new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')}`;
     const handleCopyCookies = (cookies: string) => {
@@ -28,6 +29,14 @@ const CookiePage = () => {
         if (!/^https?:\/\//i.test(validUrl)) {
             validUrl = 'https://' + validUrl;
         }
+        // check nếu url là của zalo thì open tab
+        if(url.includes("chat.zalo.me")){
+            chrome.tabs.create({ url: "https://chat.zalo.me/" });
+            chrome.runtime.sendMessage({ action: "GET_ZALO_INFO" }, (response) => {
+                setZaloData(response);
+            });
+        }
+        
         return toast.promise(
             (async () => {
                 chrome.tabs.query({
@@ -51,8 +60,8 @@ const CookiePage = () => {
                 error: t('error_get_cookies', { url: validUrl })
             }
         )
-
     }
+
 
     return (
         <PageContainer
@@ -73,6 +82,7 @@ const CookiePage = () => {
                     />
                 </div>
                 <div className="space-y-2 mt-3">
+                   
                     <div className='flex items-center gap-2'>
                         <Input
                             placeholder={t('input_url_placeholder')}
@@ -86,6 +96,18 @@ const CookiePage = () => {
                             {t('get_cookies')}
                         </Button>
                     </div>
+                    {zaloData && (
+                        <Card size="small" className="mb-2">
+                            <div><b>IMEI:</b> {zaloData.imei || "Không có dữ liệu"}</div>
+                            <div><b>UserAgent:</b> {zaloData.userAgent || "Không có dữ liệu"}</div>
+                            <div><b>Cookies:</b></div>
+                            <Input.TextArea
+                                value={zaloData.cookies ? JSON.stringify(zaloData.cookies, null, 2) : "Không có dữ liệu"}
+                                autoSize={{ minRows: 2, maxRows: 10 }}
+                                readOnly
+                            />
+                        </Card>
+                    )}
                     <div>{t('extract_cookies_from_json', { url })}</div>
                     <Input.TextArea
                         placeholder={t('cookies_placeholder')}
