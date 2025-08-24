@@ -96,7 +96,7 @@ const CookiePage = () => {
                             {t('get_cookies')}
                         </Button>
                     </div>
-                    {zaloData && (
+                    {(zaloData && url.includes("chat.zalo.me"))  && (
                         <Card size="small" className="mb-2">
                             <div><b>IMEI:</b> {zaloData.imei || "Không có dữ liệu"}</div>
                             <div><b>UserAgent:</b> {zaloData.userAgent || "Không có dữ liệu"}</div>
