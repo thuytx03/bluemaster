@@ -1,13 +1,16 @@
 import { Alert, Button, Card, Dropdown, Input } from 'antd'
-import React, {  useState } from 'react'
+import React, { useState } from 'react'
 import toast from 'react-hot-toast';
 import { CopyOutlined, CheckOutlined, ExportOutlined } from "@ant-design/icons";
 import PageContainer from 'src/components/shared/PageContainer'
 import { EXTENSION_INFO } from 'src/constants';
 import { copyTextToClipboard } from 'src/utils/common.util';
 import { exportToJson, exportToTXT } from 'src/utils/export.util';
+import { useTranslation } from 'react-i18next';
+
 
 const CookiePage = () => {
+    const { t } = useTranslation();
     const [url, setUrl] = useState<string>('https://')
     const [cookies, setCookies] = useState<string>('');
     const [isCopy, setIsCopy] = useState<boolean>(false);
@@ -41,9 +44,9 @@ const CookiePage = () => {
                 });
             })(),
             {
-                loading: `Đang lấy Cookies từ ${validUrl}`,
-                success: `Lấy Cookies từ ${validUrl} thành công!`,
-                error: `Không thể lấy Cookies từ ${validUrl}!`
+                loading: t('loading_get_cookies', { url: validUrl }),
+                success: t('success_get_cookies', { url: validUrl }),
+                error: t('error_get_cookies', { url: validUrl })
             }
         )
 
@@ -51,29 +54,26 @@ const CookiePage = () => {
 
     return (
         <PageContainer
-            title="Lấy Cookie Website từ URL"
+            title={t('cookies_page_title')}
             className="flex flex-col">
             <Card className="flex-1  shadow border rounded-xl">
                 <div className="space-y-2">
-                    <Alert message="Cookies là một phần quan trọng trong việc xác thực người dùng trên Facebook." type="info" showIcon
-
-                    />
+                    <Alert message={t('cookies_info')} type="info" showIcon />
                     <Alert
                         message={
                             <div>
-                                <div>🔒 {EXTENSION_INFO.displayName} giúp bạn lấy cookie của website một cách <span className="underline">an toàn</span>.</div>
-                                <div>📌 Cookie của bạn chỉ được <span className="underline">lưu trên thiết bị</span>, không gửi đi đâu cả.</div>
-                                <div>✅ Không server, không theo dõi, không thu thập dữ liệu — <span className="underline">bảo mật tuyệt đối</span>.</div>
+                                <div>🔒 {t('cookies_safe', { ext: EXTENSION_INFO.displayName })}<span className="underline"> {t('cookies_safe_highlight')}</span>.</div>
+                                <div>📌 {t('cookies_local')}<span className="underline"> {t('cookies_local_highlight')}</span>, {t('cookies_local_extra')}.</div>
+                                <div>✅ {t('cookies_privacy')}<span className="underline"> {t('cookies_privacy_highlight')}</span>.</div>
                             </div>
                         }
                         type="success"
                     />
                 </div>
                 <div className="space-y-2 mt-3">
-                    {/* <div>Trích xuất cookies từ <strong>Facebook</strong></div> */}
                     <div className='flex items-center gap-2'>
                         <Input
-                            placeholder='Nhập URL(https://facebook.com)'
+                            placeholder={t('input_url_placeholder')}
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
                         />
@@ -81,12 +81,12 @@ const CookiePage = () => {
                             type="primary"
                             onClick={getCookiesByUrl}
                         >
-                            Lấy cookies
+                            {t('get_cookies')}
                         </Button>
                     </div>
-                    <div>Trích xuất cookies từ <strong>{url}</strong></div>
+                    <div>{t('extract_cookies_from', { url })}</div>
                     <Input.TextArea
-                        placeholder="Cookies"
+                        placeholder={t('cookies_placeholder')}
                         value={cookies}
                         autoSize={{ minRows: 2, maxRows: 10 }}
                         readOnly
@@ -97,7 +97,7 @@ const CookiePage = () => {
                             type={isCopy ? "primary" : "default"}
                             onClick={() => handleCopyCookies(cookies)}
                         >
-                            {isCopy ? "Đã sao chép" : "Sao chép"}
+                            {isCopy ? t('copied') : t('copy')}
                         </Button>
                         <Dropdown.Button
                             icon={<ExportOutlined />}
@@ -110,7 +110,7 @@ const CookiePage = () => {
                                             <div
                                                 onClick={() => exportToTXT(cookies, fileName)}
                                             >
-                                                Tải TXT
+                                                {t('download_txt')}
                                             </div>
                                         ),
                                     },
@@ -120,14 +120,14 @@ const CookiePage = () => {
                                             <div
                                                 onClick={() => exportToJson(cookies, fileName)}
                                             >
-                                                Tải JSON
+                                                {t('download_json')}
                                             </div>
                                         ),
                                     },
                                 ],
                             }}
                         >
-                            Tải File
+                            {t('download_file')}
                         </Dropdown.Button>
 
                     </div>

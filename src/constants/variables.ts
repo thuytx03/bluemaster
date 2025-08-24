@@ -1,41 +1,41 @@
 import { EDownloadSeperateType } from "src/constants/enum"
 
 export const IG_DOWNLOAD_ALL_TYPE = [
-  { label: "Ảnh/video trên bài viết", value: "POST" },
-  { label: "Reels", value: "REEL" },
-  { label: "Story nổi bật", value: "HIGHLIGHT" },
-  { label: "Story", value: "STORY" }
+  { label: 'post_label', value: "POST" },
+  { label: 'reel_label', value: "REEL" },
+  { label: 'highlight_label', value: "HIGHLIGHT" },
+  { label: 'story_label', value: "STORY" }
 ]
 
 export const THREADS_DOWNLOAD_ALL_TYPE = [
-  { label: "Ảnh/video trên bài viết", value: "POST" }
+  { label: 'threads_post_label', value: "POST" }
 ]
 
 export const X_DOWNLOAD_ALL_TYPE = [
-  { label: "Ảnh/video trên trang cá nhân", value: "MEDIA" }
+  { label: 'media_label', value: "MEDIA" }
 ]
 
 export const FB_DOWNLOAD_ALL_TYPE = {
   PROFILE: [
-    { label: "Ảnh", value: "PHOTO" },
-    { label: "Video", value: "VIDEO" },
-    { label: "Reels", value: "REEL" },
-    { label: "Story nổi bật", value: "HIGHLIGHT" },
-    { label: "Album ảnh (theo ID)", value: "ALBUM_BY_ID" }
+    { label: 'photo_label', value: "PHOTO" },
+    { label: 'video_label', value: "VIDEO" },
+    { label: 'reel_label', value: "REEL" },
+    { label: 'highlight_label', value: "HIGHLIGHT" },
+    { label: 'album_by_id_label', value: "ALBUM_BY_ID" }
   ],
   GROUP: [
-    { label: "Ảnh", value: "PHOTO" },
-    { label: "Video", value: "VIDEO" },
-    { label: "Album ảnh (theo ID)", value: "ALBUM_BY_ID" }
+    { label: 'photo_label', value: "PHOTO" },
+    { label: 'video_label', value: "VIDEO" },
+    { label: 'album_by_id_label', value: "ALBUM_BY_ID" }
   ]
 }
 
 export const DOWNLOAD_SEPARATELY_TYPE = [
-  { label: "Ảnh/video trên bài viết", value: "POST" },
-  { label: "Reels", value: "REEL" },
-  { label: "Story nổi bật", value: "HIGHLIGHT" },
-  { label: "Story", value: "STORY" },
-  { label: "Ảnh đại diện (HD)", value: "AVATAR" }
+  { label: 'post_label', value: "POST" },
+  { label: 'reel_label', value: "REEL" },
+  { label: 'highlight_label', value: "HIGHLIGHT" },
+  { label: 'story_label', value: "STORY" },
+  { label: 'avatar_label', value: "AVATAR" }
 ]
 
 export const DOWNLOAD_SEPERATE_TYPE_OPTIONS = [
@@ -43,23 +43,23 @@ export const DOWNLOAD_SEPERATE_TYPE_OPTIONS = [
     group: "Facebook",
     options: [
       {
-        label: "Ảnh/video trên bài viết (Facebook)",
+        label: 'facebook_post_label',
         value: EDownloadSeperateType.FACEBOOK_POST
       },
       {
-        label: "Reels/Watch (Facebook)",
+        label: 'facebook_reel_label',
         value: EDownloadSeperateType.FACEBOOK_REEL
       },
       {
-        label: "Video (Facebook)",
+        label: 'facebook_video_label',
         value: EDownloadSeperateType.FACEBOOK_VIDEO
       },
       {
-        label: "Story/Highlight (Facebook)",
+        label: 'facebook_story_label',
         value: EDownloadSeperateType.FACEBOOK_STORY
       },
       {
-        label: "Video ở bình luận (Facebook)",
+        label: 'facebook_comment_video_label',
         value: EDownloadSeperateType.FACEBOOK_COMMENT_VIDEO
       }
     ]
@@ -68,15 +68,15 @@ export const DOWNLOAD_SEPERATE_TYPE_OPTIONS = [
     group: "Instagram",
     options: [
       {
-        label: "Ảnh/video trên bài viết (Instagram)",
+        label: 'instagram_post_label',
         value: EDownloadSeperateType.INSTAGRAM_POST
       },
       {
-        label: "Reels (Instagram)",
+        label: 'instagram_reel_label',
         value: EDownloadSeperateType.INSTAGRAM_REEL
       },
       {
-        label: "Story nổi bật (Instagram)",
+        label: 'instagram_highlight_label',
         value: EDownloadSeperateType.INSTAGRAM_HIGHLIGHT
       }
     ]
@@ -85,7 +85,7 @@ export const DOWNLOAD_SEPERATE_TYPE_OPTIONS = [
     group: "Threads",
     options: [
       {
-        label: "Ảnh/video trên bài viết (Threads)",
+        label: 'threads_post_label',
         value: EDownloadSeperateType.THREADS_POST
       }
     ]
@@ -94,7 +94,7 @@ export const DOWNLOAD_SEPERATE_TYPE_OPTIONS = [
     group: "X",
     options: [
       {
-        label: "Ảnh/video trên bài viết (X)",
+        label: 'x_post_label',
         value: EDownloadSeperateType.X_POST
       }
     ]
@@ -119,9 +119,9 @@ export const PROCESS_STATUS_TAG_COLOR = {
 }
 
 export const PROCESS_TEXT = {
-  RUNNING: "Đang tải",
-  COMPLETED: "Hoàn thành",
-  FAILED: "Thất bại"
+  RUNNING: 'running_text',
+  COMPLETED: 'completed_text',
+  FAILED: 'failed_text'
 }
 
 export const DOWNLOAD_STORIES_IN_HIGHLIGHT_BATCH_SIZE = 15

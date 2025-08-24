@@ -9,15 +9,18 @@ import { EXTENSION_INFO } from "src/constants";
 import { IAccessTokenPage } from "src/interfaces/facebook.interface";
 import { copyTextToClipboard } from "src/utils/common.util";
 import { fetchTokenEAAB, fetchTokenEAAGNO } from "src/utils/facebook.util";
+import { useTranslation } from "react-i18next";
+
 
 
 export default function AccessTokenPage() {
-
+  const { t } = useTranslation();
   const [token, setToken] = useState<IAccessTokenPage>({
     tokenEAAB: "",
     tokenEAAGNO: "",
   });
   const [isCopy, setIsCopy] = useState<{ [key: string]: boolean }>({});
+
   const handleGetTokenEEAB = async () => {
     if (!token.tokenEAAB) {
       return toast.promise(
@@ -27,13 +30,13 @@ export default function AccessTokenPage() {
             setToken((prev) => ({ ...prev, tokenEAAB: result as string }));
             return result;
           } else {
-            throw new Error('Không thể lấy token EAAB!');
+            throw new Error(t('error_get_eaab'));
           }
         })(),
         {
-          loading: 'Đang lấy Token EAAB...',
-          success: 'Lấy Token EAAB thành công!',
-          error: 'Không thể lấy Token EAAB!'
+          loading: t('loading_get_eaab'),
+          success: t('success_get_eaab'),
+          error: t('error_get_eaab')
         }
       );
     }
@@ -48,24 +51,23 @@ export default function AccessTokenPage() {
             setToken((prev) => ({ ...prev, tokenEAAGNO: result as string }));
             return result;
           } else {
-            throw new Error('Không thể lấy token EAAGNO!');
+            throw new Error(t('error_get_eaagno'));
           }
         })(),
         {
-          loading: 'Đang lấy Token EAAGNO...',
-          success: 'Lấy Token EAAGNO thành công!',
-          error: 'Không thể lấy Token EAAGNO!'
+          loading: t('loading_get_eaagno'),
+          success: t('success_get_eaagno'),
+          error: t('error_get_eaagno')
         }
       );
     }
   };
 
-  const handleCopyToken = (type: string, token: string) => {
-    copyTextToClipboard(token);
+  const handleCopyToken = (type: string, tokenValue: string) => {
+    copyTextToClipboard(tokenValue);
     setIsCopy(prev => ({ ...prev, [type]: true }));
     setTimeout(() => setIsCopy(prev => ({ ...prev, [type]: false })), 2000);
   };
-
 
   useEffect(() => {
     handleGetTokenEEAB();
@@ -74,21 +76,24 @@ export default function AccessTokenPage() {
   return (
     <>
       <PageContainer
-        title="Lấy Access Token Facebook"
+        title={t('access_token_page_title')}
         className="flex flex-col">
-        <Card className="flex-1  shadow border rounded-xl">
+        <Card className="flex-1 shadow border rounded-xl">
           <div className="space-y-2">
-            <Alert message="Access token là một khóa bí mật, cho phép bạn truy cập vào các API của Facebook." type="info" showIcon
+            <Alert
+              message={t('access_token_info')}
+              type="info"
+              showIcon
               action={
-                <a className="text-blue-600" target="_blank" href="https://developers.facebook.com/docs/facebook-login/guides/access-tokens"> Tìm hiểu thêm</a>
+                <a className="text-blue-600" target="_blank" href="https://developers.facebook.com/docs/facebook-login/guides/access-tokens">{t('access_token_learn_more')}</a>
               }
             />
             <Alert
               message={
                 <div>
-                  <div>🔒 {EXTENSION_INFO.displayName} giúp bạn lấy token Facebook một cách <span className="underline">an toàn</span>.</div>
-                  <div>📌 Token của bạn chỉ được <span className="underline">lưu trên thiết bị</span>, không gửi đi đâu cả.</div>
-                  <div>✅ Không server, không theo dõi, không thu thập dữ liệu — <span className="underline">bảo mật tuyệt đối</span>.</div>
+                  <div>🔒 {EXTENSION_INFO.displayName} {t('access_token_safe', { ext: EXTENSION_INFO.displayName })}</div>
+                  <div>📌 {t('access_token_local')}</div>
+                  <div>✅ {t('access_token_privacy')}</div>
                 </div>
               }
               type="success"
@@ -100,13 +105,13 @@ export default function AccessTokenPage() {
             defaultActiveKey="EAAB"
             items={[
               {
-                label: "EAAB (Ads Campaigns)",
+                label: t('eaab_tab_label'),
                 key: "EAAB",
                 children: (
                   <div className="space-y-2">
-                    <div>Trích xuất token từ <strong>Ads Campaigns</strong></div>
+                    <div>{t('eaab_extract_desc')}</div>
                     <Input.TextArea
-                      placeholder="Token EAAB"
+                      placeholder={t('eaab_placeholder')}
                       value={token.tokenEAAB}
                       autoSize={{ minRows: 2 }}
                       readOnly
@@ -116,19 +121,19 @@ export default function AccessTokenPage() {
                       type={isCopy["EAAB"] ? "primary" : "default"}
                       onClick={() => handleCopyToken("EAAB", token.tokenEAAB)}
                     >
-                      {isCopy["EAAB"] ? "Đã sao chép" : "Sao chép"}
+                      {isCopy["EAAB"] ? t('copied') : t('copy')}
                     </Button>
                   </div>
                 ),
               },
               {
-                label: "EAAGNO (Business Manager)",
+                label: t('eaagno_tab_label'),
                 key: "EAAGNO",
                 children: (
                   <div className="space-y-2">
-                    <div>Trích xuất token từ <strong>Business Manager</strong></div>
+                    <div>{t('eaagno_extract_desc')}</div>
                     <Input.TextArea
-                      placeholder="Token EAAGNO"
+                      placeholder={t('eaagno_placeholder')}
                       value={token.tokenEAAGNO}
                       autoSize={{ minRows: 2 }}
                       readOnly
@@ -138,7 +143,7 @@ export default function AccessTokenPage() {
                       type={isCopy["EAAGNO"] ? "primary" : "default"}
                       onClick={() => handleCopyToken("EAAGNO", token.tokenEAAGNO)}
                     >
-                      {isCopy["EAAGNO"] ? "Đã sao chép" : "Sao chép"}
+                      {isCopy["EAAGNO"] ? t('copied') : t('copy')}
                     </Button>
                   </div>
                 ),
@@ -148,8 +153,6 @@ export default function AccessTokenPage() {
           />
         </Card>
       </PageContainer>
-    
-
     </>
-  )
+  );
 }

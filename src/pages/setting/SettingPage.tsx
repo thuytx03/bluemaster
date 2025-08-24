@@ -1,9 +1,11 @@
+import { useTranslation } from "react-i18next"
 import PageContainer from "src/components/shared/PageContainer"
 import ThemeSwitcher from "src/components/shared/ThemeSwitcher"
 
 const SettingPage = () => {
+  const { t } = useTranslation()
   return (
-    <PageContainer title="Cài đặt" className="flex flex-col">
+    <PageContainer title={t("settings")} className="flex flex-col">
       <ThemeSwitcher />
     </PageContainer>
   )

@@ -1,5 +1,5 @@
 import { FC, PropsWithChildren } from "react"
-
+import { useTranslation } from "react-i18next"
 import useExtensionState from "src/store/extension-state"
 import { cn } from "src/utils/common.util"
 
@@ -13,6 +13,7 @@ const PageContainer: FC<IPageContainerProps> = ({
   title,
   className
 }) => {
+  const { t } = useTranslation()
   const { extensionState } = useExtensionState()
 
   return (
@@ -25,11 +26,10 @@ const PageContainer: FC<IPageContainerProps> = ({
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-fade-in-up mb-5">
           <div className="flex flex-col">
             <span className="font-semibold text-lg">
-              🚀 Đã có phiên bản mới của Social Downloader!
+              {t("update_available_title") || "🚀 Đã có phiên bản mới của Social Downloader!"}
             </span>
             <span className="text-sm text-white/90">
-              Bạn hãy vui lòng tải phiên bản mới nhất về để có những trải nghiệm
-              tốt nhất.
+              {t("update_available_desc") || "Bạn hãy vui lòng tải phiên bản mới nhất về để có những trải nghiệm tốt nhất."}
             </span>
           </div>
           <a
@@ -37,7 +37,7 @@ const PageContainer: FC<IPageContainerProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             className="ml-4 bg-white text-blue-600 font-medium px-4 py-2 rounded-xl hover:bg-blue-100 transition flex items-center">
-            Cập nhật
+            {t("update_button") || "Cập nhật"}
           </a>
         </div>
       ) : null}

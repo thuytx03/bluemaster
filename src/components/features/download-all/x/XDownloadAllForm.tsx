@@ -13,6 +13,7 @@ import { useMemo } from "react"
 import { Link } from "react-router-dom"
 import { v4 as uuidv4 } from "uuid"
 
+import { useTranslation } from "react-i18next"
 import { ESocialProvider } from "src/constants/enum"
 import { APP_ROUTES } from "src/constants/route"
 import {
@@ -32,9 +33,10 @@ import useDownloadProcesses from "src/store/download-process"
 import { isVerifyAccount } from "src/utils/common.util"
 import { showErrorToast } from "src/utils/toast.util"
 
+
 const XDownloadAllForm = () => {
-  const { removeProcess, addProcess, getDownloadProcessBySocial } =
-    useDownloadProcesses()
+  const { t } = useTranslation()
+  const { removeProcess, addProcess, getDownloadProcessBySocial } = useDownloadProcesses()
   const [form] = Form.useForm<IXDownloadAllForm>()
   const { startDownloadAllMedia } = useDownloadXMedia()
 
@@ -44,7 +46,7 @@ const XDownloadAllForm = () => {
   const handleSubmit = async (values: IXDownloadAllForm) => {
     try {
       if (!isVerifyAccount(ESocialProvider.X)) {
-        throw new Error("Vui lòng xác thực tài khoản X trước khi tải xuống!")
+        throw new Error(t("please_verify_x_before_download") || "Vui lòng xác thực tài khoản X trước khi tải xuống!")
       }
       const processId = uuidv4()
       addProcess(ESocialProvider.X, {
@@ -62,19 +64,17 @@ const XDownloadAllForm = () => {
     }
   }
 
-  const tableColumns: TableColumnsType<
-    IDownloadProcessDetail<TXDownloadAllType>
-  > = useMemo(
+  const tableColumns: TableColumnsType<IDownloadProcessDetail<TXDownloadAllType>> = useMemo(
     () => [
       {
-        title: "STT",
+        title: t("ordinal_number") || "STT",
         dataIndex: "ordinalNumber",
         key: "ordinalNumber",
         width: 70,
         render: (_, __, index) => index + 1
       },
       {
-        title: "Loại tải",
+        title: t("download_type") || "Loại tải",
         dataIndex: "downloadType",
         key: "downloadType",
         render: (downloadType: TXDownloadAllType) => (
@@ -84,7 +84,7 @@ const XDownloadAllForm = () => {
         )
       },
       {
-        title: "Username",
+        title: t("username_label") || "Username:",
         dataIndex: "username",
         key: "username",
         render: (username: string) => (
@@ -92,12 +92,12 @@ const XDownloadAllForm = () => {
         )
       },
       {
-        title: "Số lượng đã tải",
+        title: t("downloaded_count") || "Số lượng đã tải",
         dataIndex: "totalDownloadedItems",
         key: "totalDownloadedItems"
       },
       {
-        title: "Trạng thái",
+        title: t("status") || "Trạng thái",
         dataIndex: "status",
         key: "status",
         render: (status: TProcessStatus) => (
@@ -107,7 +107,7 @@ const XDownloadAllForm = () => {
         )
       },
       {
-        title: "Hành động",
+        title: t("action") || "Hành động",
         key: "action",
         render: (record: IDownloadProcessDetail<TXDownloadAllType>) =>
           record.status === "RUNNING" ? (
@@ -115,12 +115,12 @@ const XDownloadAllForm = () => {
               type="primary"
               danger
               onClick={() => removeProcess(ESocialProvider.X, record.id)}>
-              Hủy
+              {t("cancel") || "Hủy"}
             </Button>
           ) : null
       }
     ],
-    []
+    [t]
   )
 
   return (
@@ -129,11 +129,11 @@ const XDownloadAllForm = () => {
         className="mb-3"
         message={
           <div>
-            Hãy đảm bảo rằng bạn đã xác thực tài khoản X (
+            {t("ensure_x_verified") || "Hãy đảm bảo rằng bạn đã xác thực tài khoản X"} (
             <span>
-              <Link to={APP_ROUTES.ACCOUNTS}>tại đây</Link>
+              <Link to={APP_ROUTES.ACCOUNTS}>{t("here") || "tại đây"}</Link>
             </span>
-            ) trước khi sử dụng các tính năng dưới đây!
+            ) {t("before_using_features") || "trước khi sử dụng các tính năng dưới đây!"}
           </div>
         }
         type="warning"
@@ -149,59 +149,50 @@ const XDownloadAllForm = () => {
         labelAlign="left">
         <div className="flex gap-3 items-center">
           <Form.Item<IXDownloadAllForm>
-            label="Loại tải:"
+            label={t("x_download_type_label") || t("download_type_label") || "Loại tải:"}
             name="type"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng chọn loại tải!"
-              }
-            ]}
+            rules={[{ required: true, message: t("please_select_x_download_type") || t("please_select_download_type") || "Vui lòng chọn loại tải!" }]}
             initialValue="MEDIA"
             style={{ flex: 4 }}>
             <Select>
               {X_DOWNLOAD_ALL_TYPE.map((v) => (
                 <Select.Option key={v.value} value={v.value}>
-                  {v.label}
+                  {t(v.label)}
                 </Select.Option>
               ))}
             </Select>
           </Form.Item>
           <Form.Item<IXDownloadAllForm>
-            label="Username:"
+            label={t("x_username_label") || t("username_label") || "Username:"}
             name="username"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên người dùng!" }
-            ]}
+            rules={[{ required: true, message: t("please_enter_x_username") || t("please_enter_username") || "Vui lòng nhập username!" }]}
             style={{ flex: 8 }}>
             <Input addonBefore="https://x.com/" />
           </Form.Item>
           <Form.Item<IXDownloadAllForm>
-            label="Tùy chọn cho tiến trình tải:"
+            label={t("x_download_process_option") || t("download_process_option") || "Tùy chọn cho tiến trình tải:"}
             name="waitUntilCompleted"
             initialValue={true}
             style={{ flex: 8 }}>
             <Select>
               <Select.Option value={true}>
-                Chờ đợi cho đến khi lượt tải xuống trước đó hoàn thành
+                {t("wait_until_previous_complete") || "Chờ đợi cho đến khi lượt tải xuống trước đó hoàn thành"}
               </Select.Option>
               <Select.Option value={false}>
-                Thiết lập thời gian delay giữa các lần tải
+                {t("set_delay_between_downloads") || "Thiết lập thời gian delay giữa các lần tải"}
               </Select.Option>
             </Select>
           </Form.Item>
           {!isWaitUntilCompleted ? (
             <Form.Item<IXDownloadAllForm>
-              label="Thời gian delay:"
+              label={t("delay_time_label") || "Thời gian delay:"}
               name="delayTimeInSecond"
               initialValue={0}
               style={{ flex: 3 }}>
               <InputNumber
                 min={0}
-                addonAfter="giây"
-                style={{
-                  width: "100%"
-                }}
+                addonAfter={t("seconds") || "giây"}
+                style={{ width: "100%" }}
               />
             </Form.Item>
           ) : null}
@@ -209,16 +200,14 @@ const XDownloadAllForm = () => {
 
         <Form.Item wrapperCol={{ span: 24 }}>
           <Button type="primary" htmlType="submit">
-            Tải
+            {t("download") || "Tải"}
           </Button>
         </Form.Item>
       </Form>
       <Table
         columns={tableColumns}
         dataSource={xDownloadProcesses}
-        pagination={{
-          pageSize: 5
-        }}
+        pagination={{ pageSize: 5 }}
       />
     </div>
   )

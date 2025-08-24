@@ -4,12 +4,13 @@ import { useLocation } from "react-router-dom"
 import "./Sidebar.scss"
 import { LogoIcon } from "src/assets/icons"
 import { EXTENSION_INFO } from "src/constants"
-import { menuItems } from "./data/sidebar"
+import { useMenuItems } from "./data/sidebar"
 
 const { Sider } = Layout
 
 
 const Sidebar = () => {
+  const menuItems = useMenuItems()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
 

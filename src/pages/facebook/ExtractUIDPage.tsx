@@ -5,8 +5,11 @@ import PageContainer from 'src/components/shared/PageContainer';
 import { EXTENSION_INFO } from 'src/constants';
 import { copyTextToClipboard, onStartExtension } from 'src/utils/common.util';
 import { getUserID } from 'src/utils/facebook.util';
+import { useTranslation } from 'react-i18next';
+
 
 const ExtractUIDPage = () => {
+    const { t } = useTranslation();
     const [linkGroup, setLinkGroup] = useState<string>("");
     const [linkPost, setLinkPost] = useState<string>("");
     const [linkProfile, setLinkProfile] = useState<string>("");
@@ -18,18 +21,18 @@ const ExtractUIDPage = () => {
     });
 
     const handExportUIDGroup = async () => {
-        if (!linkGroup) return toast.error("Vui lòng nhập link nhóm");
+        if (!linkGroup) return toast.error(t('error_enter_group_link'));
         try {
             chrome.tabs.create({ url: linkGroup });
             onStartExtension({ type: "group" });
         } catch (error) {
             console.log("error", error);
-            toast.error("Có lỗi xảy ra, vui lòng thử lại");
+            toast.error(t('error_occurred'));
         }
     };
 
     const handExportUIDPost = async () => {
-        if (!linkPost) return toast.error('Vui lòng nhập link bài viết!');
+        if (!linkPost) return toast.error(t('error_enter_post_link'));
         try {
             chrome.tabs.create({ url: linkPost });
             const options = [];
@@ -41,50 +44,50 @@ const ExtractUIDPage = () => {
                 options: options
             });
         } catch (error) {
-            toast.error('Có lỗi xảy ra, vui lòng thử lại');
+            toast.error(t('error_occurred'));
         }
     };
 
     const handExportUIDProfile = async () => {
-        if (!linkProfile) return toast.error('Vui lòng nhập link người dùng');
+        if (!linkProfile) return toast.error(t('error_enter_user_link'));
         try {
             await getUserID(linkProfile).then((res) => {
-                toast.custom((t) => (
+                toast.custom((tToast) => (
                     <div
-                        className={`${t.visible ? 'animate-custom-enter' : 'animate-custom-leave'
+                        className={`${tToast.visible ? 'animate-custom-enter' : 'animate-custom-leave'
                             } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
                     >
                         <div className="flex-1 w-0 p-4">
                             <div className="flex items-start">
-                                UID: {res.data}
+                                {t('uid')} {res.data}
                             </div>
                         </div>
                         <div className="flex border-l border-gray-200">
                             <button
                                 onClick={() => {
                                     copyTextToClipboard(res.data)
-                                    toast.success('Copy UID thành công!')
+                                    toast.success(t('copy_uid_success'))
                                 }}
                                 className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             >
-                                Copy
+                                {t('copy')}
                             </button>
                         </div>
                     </div>
                 ))
             });
         } catch (error) {
-            toast.error('Có lỗi xảy ra, vui lòng thử lại');
+            toast.error(t('error_occurred'));
         }
     };
 
     return (
         <PageContainer
-            title="Lấy UID Facebook"
+            title={t('extract_uid_title')}
             className="flex flex-col">
             <Card className="flex-1 shadow border rounded-xl">
                 <div className="space-y-2">
-                    <Alert message="UID là mã định danh duy nhất dùng để nhận diện tài khoản, trang hoặc nhóm trên Facebook." type="info" showIcon />
+                    <Alert message={t('extract_uid_info')} type="info" showIcon />
                 </div>
                 <div className="mt-6 flex justify-center flex-col">
                     <Tabs
@@ -92,24 +95,24 @@ const ExtractUIDPage = () => {
                         type="card"
                         items={[
                             {
-                                label: "Nhóm",
+                                label: t('extract_uid_tab_group'),
                                 key: "group",
                                 children: (
                                     <Card>
                                         <div className="p-3">
-                                            <div className="text-base font-semibold mb-1">Trích xuất UID từ nhóm</div>
-                                            <div className="mb-2 text-gray-500">Nhập link nhóm Facebook để bắt đầu quét UID thành viên.</div>
+                                            <div className="text-base font-semibold mb-1">{t('extract_uid_group_title')}</div>
+                                            <div className="mb-2 text-gray-500">{t('extract_uid_group_desc')}</div>
                                             <div className="space-y-2 max-w-md">
                                                 <Input
                                                     type="text"
                                                     value={linkGroup}
                                                     onChange={(e) => setLinkGroup(e.target.value)}
                                                     id="linkGroup"
-                                                    placeholder="Nhập link group"
+                                                    placeholder={t('extract_uid_group_placeholder')}
                                                     required
                                                 />
                                                 <Button type="primary" onClick={handExportUIDGroup}>
-                                                    Quét ngay
+                                                    {t('scan_now')}
                                                 </Button>
                                             </div>
                                         </div>
@@ -117,20 +120,20 @@ const ExtractUIDPage = () => {
                                 ),
                             },
                             {
-                                label: "Bài viết",
+                                label: t('extract_uid_tab_post'),
                                 key: "post",
                                 children: (
                                     <Card>
                                         <div className="p-3">
-                                            <div className="text-base font-semibold mb-1">Trích xuất UID từ bài viết</div>
-                                            <div className="mb-2 text-gray-500">Nhập link bài viết Facebook để bắt đầu quét UID thành viên.</div>
+                                            <div className="text-base font-semibold mb-1">{t('extract_uid_post_title')}</div>
+                                            <div className="mb-2 text-gray-500">{t('extract_uid_post_desc')}</div>
                                             <div className="space-y-2 max-w-md">
                                                 <Input
                                                     type="text"
                                                     value={linkPost}
                                                     onChange={(e) => setLinkPost(e.target.value)}
                                                     id="linkPost"
-                                                    placeholder="Nhập link bài viết"
+                                                    placeholder={t('extract_uid_post_placeholder')}
                                                     required
                                                 />
                                                 <div className="flex items-center gap-4 mb-4">
@@ -138,23 +141,23 @@ const ExtractUIDPage = () => {
                                                         checked={postOptions.comment}
                                                         onChange={e => setPostOptions(prev => ({ ...prev, comment: e.target.checked }))}
                                                     >
-                                                        Comment
+                                                        {t('comment')}
                                                     </Checkbox>
                                                     <Checkbox
                                                         checked={postOptions.like}
                                                         onChange={e => setPostOptions(prev => ({ ...prev, like: e.target.checked }))}
                                                     >
-                                                        Like
+                                                        {t('like')}
                                                     </Checkbox>
                                                     <Checkbox
                                                         checked={postOptions.share}
                                                         onChange={e => setPostOptions(prev => ({ ...prev, share: e.target.checked }))}
                                                     >
-                                                        Share
+                                                        {t('share')}
                                                     </Checkbox>
                                                 </div>
                                                 <Button type="primary" onClick={handExportUIDPost}>
-                                                    Quét ngay
+                                                    {t('scan_now')}
                                                 </Button>
                                             </div>
                                         </div>
@@ -162,24 +165,24 @@ const ExtractUIDPage = () => {
                                 ),
                             },
                             {
-                                label: "Người dùng",
+                                label: t('extract_uid_tab_profile'),
                                 key: "profile",
                                 children: (
                                     <Card>
                                         <div className="p-3">
-                                            <div className="text-base font-semibold mb-1">Trích xuất UID từ người dùng</div>
-                                            <div className="mb-2 text-gray-500">Nhập link người dùng Facebook để bắt đầu quét UID.</div>
+                                            <div className="text-base font-semibold mb-1">{t('extract_uid_profile_title')}</div>
+                                            <div className="mb-2 text-gray-500">{t('extract_uid_profile_desc')}</div>
                                             <div className="space-y-2 max-w-md">
                                                 <Input
                                                     type="text"
                                                     value={linkProfile}
                                                     onChange={(e) => setLinkProfile(e.target.value)}
                                                     id="linkProfile"
-                                                    placeholder="Nhập link người dùng"
+                                                    placeholder={t('extract_uid_profile_placeholder')}
                                                     required
                                                 />
                                                 <Button type="primary" onClick={handExportUIDProfile}>
-                                                    Quét ngay
+                                                    {t('scan_now')}
                                                 </Button>
                                             </div>
                                         </div>
