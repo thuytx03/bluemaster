@@ -1,4 +1,4 @@
-import packageData from 'package.json'
+import packageData from "../../package.json"
 export const EXTENSION_INFO = {
     name: packageData.name,
     displayName: packageData.displayName,
