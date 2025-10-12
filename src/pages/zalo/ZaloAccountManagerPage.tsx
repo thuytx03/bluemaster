@@ -1,19 +1,21 @@
-
 import { API_BASE_URL } from "src/constants/api";
-import { Card, Flex } from "antd";
+import { Card, Flex, Badge } from "antd";
 import PageContainer from "src/components/shared/PageContainer";
 import { useTranslation } from "react-i18next";
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { Alert, Button, Form, Input, Select, Table, TableColumnsType, TableProps } from "antd"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LoginQrCodeModal from "./components/modal/LoginQrCodeModal";
 import toast from "react-hot-toast";
 import { getCookie } from "src/utils/chrome.util";
 import { COOKIE_DOMAIN_FCHAT } from "src/constants";
+import { IPage } from "src/interfaces/page.interface";
+import { getPages } from "src/services/page.service";
+import { HTTPSTATUS } from "src/constants/http";
 
 type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'];
 interface IDataMessage {
-    event: "QRCodeGenerated" | "Error" | "QRCodeExpired" | "QRCodeScanned" | "QRCodeDeclined" | "GotLoginInfo" | "ProfileError" | "ExitPageConnect" | "LoginError" | "LoginSuccess";
+    event: "QRCodeGenerated" | "Error" | "QRCodeExpired" | "QRCodeScanned" | "QRCodeDeclined" | "GotLoginInfo" | "ProfileError" | "ExitPageConnect" | "LoginError" | "LoginSuccess" | "ProfileExists";
     msg: string
     data: {
         url: string
@@ -22,28 +24,58 @@ interface IDataMessage {
 interface DataType {
     key: React.Key;
     name: string;
-    age: number;
-    address: string;
+    avatar: string;
+    phone: string;
+    status: number;
 }
 
 const columns: TableColumnsType<DataType> = [
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Age', dataIndex: 'age' },
-    { title: 'Address', dataIndex: 'address' },
+    {
+        title: 'Ảnh',
+        dataIndex: 'avatar',
+        render: (avatar: string) =>
+            avatar ? (
+                <img
+                    src={avatar}
+                    alt="avatar"
+                    className="w-10 h-10 rounded-full object-cover border"
+                />
+            ) : (
+                <span>-</span>
+            ),
+    },
+    { title: 'Tên', dataIndex: 'name' },
+    { title: 'Số điện thoại', dataIndex: 'phone' },
+    {
+        title: 'Trạng thái',
+        dataIndex: 'status',
+        render: (status: number) => {
+            let color = 'default';
+            let text = '';
+            if (status === 1) {
+                color = 'green';
+                text = 'Hoạt động';
+            } else if (status === 2) {
+                color = 'red';
+                text = 'Mất kết nối';
+            } else if (status === 3) {
+                color = 'orange';
+                text = 'Tạm dừng';
+            } else {
+                text = 'Không xác định';
+            }
+            return <Badge color={color} text={text} />;
+        }
+    },
 ];
 
-const dataSource = Array.from<DataType>({ length: 46 }).map<DataType>((_, i) => ({
-    key: i,
-    name: `Edward King ${i}`,
-    age: 32,
-    address: `London, Park Lane no. ${i}`,
-}));
-const LoginQrCodePage = () => {
+
+const ZaloAccountManagerPage = () => {
     const { t } = useTranslation();
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [isOpenLoginQrCodeModal, setIsOpenLoginQrCodeModal] = useState(false);
     const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
-
+    const [pages, setPages] = useState<IPage[]>([]);
 
     const handleGenerateQR = async (proxy: string) => {
         try {
@@ -104,6 +136,12 @@ const LoginQrCodePage = () => {
                                     setIsOpenLoginQrCodeModal(false);
                                     toast.error(data.msg || 'Người dùng đã thoát trang đăng nhập Zalo!');
                                     break;
+                                case "ProfileExists":
+                                    setQrCodeImage('');
+                                    setIsOpenLoginQrCodeModal(false);
+                                    toast.error(data.msg || 'Người dùng đã tồn tại trên Zalo!');
+                                    break;
+
                                 case "LoginSuccess":
                                     setQrCodeImage('');
                                     setIsOpenLoginQrCodeModal(false);
@@ -124,6 +162,16 @@ const LoginQrCodePage = () => {
         }
     };
 
+    const getPagesZalo = async () => {
+        try {
+            const result = await getPages('zalo_personal');
+            if (result.status === HTTPSTATUS.OK) {
+                setPages(result.data as IPage[]);
+            }
+        } catch (error) {
+            console.log('Lỗi lấy danh sách!')
+        }
+    }
 
     const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
         console.log('selectedRowKeys changed: ', newSelectedRowKeys);
@@ -137,8 +185,19 @@ const LoginQrCodePage = () => {
 
     const hasSelected = selectedRowKeys.length > 0;
 
+    useEffect(() => {
+        getPagesZalo();
+    }, []);
+
+    const dataSource = pages.map<DataType>((page, i) => ({
+        key: i,
+        name: page.name,
+        avatar: page.avatar,
+        phone: page.phone,
+        status: page.status,
+    }));
     return (
-        <PageContainer title={t("login_qr_code_with_zalo")}
+        <PageContainer title={t("accounts_zalo_management")}
             className="flex flex-col">
             <Card className="flex-1 shadow border rounded-xl">
                 <Alert
@@ -187,7 +246,7 @@ const LoginQrCodePage = () => {
 
                         <Form.Item label=" " colon={false} style={{ marginBottom: 0 }}>
                             <Button type="primary" htmlType="submit">
-                                {t("download") || "Tải"}
+                                {t("search") || "Tìm kiếm"}
                             </Button>
                         </Form.Item>
                     </Form>
@@ -221,4 +280,4 @@ const LoginQrCodePage = () => {
         </PageContainer>
     );
 }
-export default LoginQrCodePage;
+export default ZaloAccountManagerPage;

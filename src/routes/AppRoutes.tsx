@@ -14,7 +14,7 @@ import NotFound from "src/pages/errors/NotFound"
 import AccessTokenPage from "src/pages/facebook/AccessTokenPage"
 import ExtractUIDPage from "src/pages/facebook/ExtractUIDPage"
 import SettingPage from "src/pages/setting/SettingPage"
-import LoginQrCodePage from "src/pages/zalo/LoginQrCodePage"
+import LoginQrCodePage from "src/pages/zalo/ZaloAccountManagerPage"
 
 const AppRoutes = () => {
   return (

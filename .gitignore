@@ -39,3 +39,5 @@ keys.json
 
 # typescript
 .tsbuildinfo
+được nhé, cứ getGroupInfo là có danh sách id member định dạng id_0, bỏ _0 là có id user
+

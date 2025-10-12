@@ -33,3 +33,9 @@ export enum EDownloadSeperateType {
 export enum ERemoteMessageType {
   RETRIEVE_X_ACCOUNT_CREDENTIALS = "RETRIEVE_X_ACCOUNT_CREDENTIALS"
 }
+
+export enum PLATFORM {
+  ZALO_PERSONAL = "zalo_personal",
+  FANPAGE = "fanpage",
+}
+
