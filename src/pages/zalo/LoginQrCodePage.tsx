@@ -8,6 +8,8 @@ import { Alert, Button, Form, Input, Select, Table, TableColumnsType, TableProps
 import { useState } from "react";
 import LoginQrCodeModal from "./components/modal/LoginQrCodeModal";
 import toast from "react-hot-toast";
+import { getCookie } from "src/utils/chrome.util";
+import { COOKIE_DOMAIN_FCHAT } from "src/constants";
 
 type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'];
 interface IDataMessage {
@@ -44,7 +46,8 @@ const LoginQrCodePage = () => {
 
 
     const handleGenerateQR = async (proxy: string) => {
-         try {
+        try {
+            const accessToken = await getCookie(COOKIE_DOMAIN_FCHAT, 'accessToken');
             const linkEndpoint = `${API_BASE_URL}/api/v1/zalo/login-qr`;
             const payload = {
                 proxy: proxy,
@@ -53,6 +56,7 @@ const LoginQrCodePage = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken || ''}`,
                 },
                 body: JSON.stringify(payload),
             });
@@ -119,7 +123,7 @@ const LoginQrCodePage = () => {
             toast.error('Đăng nhập Zalo không thành công!');
         }
     };
-   
+
 
     const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
         console.log('selectedRowKeys changed: ', newSelectedRowKeys);

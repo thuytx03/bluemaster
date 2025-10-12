@@ -67,9 +67,9 @@ const LoginQrCodeModal: React.FC<LoginQrCodeModalProps> = ({ isOpenModal, linkQr
 
                 </Form>
                 {(isOpenModal && linkQr) && (
-                    <div className="flex items-center justify-between bg-white dark:bg-gray-900">
+                    <div className="flex items-center justify-between ">
                         <img src={linkQr} alt="QR Code" className="w-64 h-64 mb-4" />
-                        <div className="text-left justify-center mr-5 h-full">
+                        <div className="text-left justify-center h-full ">
                             <h2 className="text-[22px] mb-2 text-gray-900 dark:text-gray-100">{t('scan_qr_to_connect_zalo_with_xthuy_social')}</h2>
                             <div className="text-left mb-4 border-b border-gray-200">
                                 <div className="flex text-[16px] text-gray-500 mb-2">
