@@ -1,7 +1,7 @@
 import "./style.css"
 import { StyleProvider } from "@ant-design/cssinjs"
 import { theme as AntdTheme, ConfigProvider } from "antd"
-import { MemoryRouter } from "react-router-dom"
+import { HashRouter } from "react-router-dom"
 import { Toaster } from "sonner"
 import { Toaster as ToasterHot } from 'react-hot-toast'
 import AppRoutes from "src/routes/AppRoutes"
@@ -12,7 +12,7 @@ const Options = () => {
     extensionState: { theme }
   } = useExtensionState()
   return (
-    <MemoryRouter>
+    <HashRouter>
       <ConfigProvider
         theme={{
           algorithm:
@@ -26,7 +26,7 @@ const Options = () => {
           <ToasterHot />
         </StyleProvider>
       </ConfigProvider>
-    </MemoryRouter>
+    </HashRouter>
   )
 }
 
