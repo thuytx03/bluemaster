@@ -8,9 +8,8 @@ import AppRoutes from "src/routes/AppRoutes"
 import useExtensionState from "src/store/extension-state"
 import './i18n'
 const Options = () => {
-  const {
-    extensionState: { theme }
-  } = useExtensionState()
+  const { extensionState: { theme } } = useExtensionState()
+  
   return (
     <HashRouter>
       <ConfigProvider

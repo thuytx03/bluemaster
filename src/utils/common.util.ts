@@ -3,7 +3,7 @@ import axios from "axios"
 import clsx, { ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ESocialProvider, EStorageKey } from "src/constants/enum"
-import useAuth from "src/store/auth"
+import useAuthStore from "src/store/auth"
 import useDownloadProcesses from "src/store/download-process"
 import { chromeUtils } from "src/utils/chrome.util"
 import { EXTENSION_INFO } from "src/constants"
@@ -88,7 +88,7 @@ export const isDownloadProcessExist = (
 }
 
 export const isVerifyAccount = (socialName: ESocialProvider) => {
-  const { accounts } = useAuth.getState()
+  const { accounts } = useAuthStore.getState()
   if (!accounts[socialName]) {
     return false
   }
@@ -229,3 +229,16 @@ export const fetchDataXHR = (options: any) => {
   });
 }
 
+/**
+ * Hàm này dùng để lấy endpoint khi truyền vào
+ * VD: getApiEndPoint(['api','v1','example']) => /api/v1/exmple
+ * VD với endpoint có query: getApiEndPoint(['api','v1','example'], {page: 1}) => /api/v1/exmple/?page=1
+ */
+export function getApiEndpoint(path: string[], query?: Record<string, any>): string {
+    const fullPath = path.join('/');
+    if (query) {
+        const queryString = new URLSearchParams(query).toString();
+        return `/${fullPath}?${queryString}`;
+    }
+    return `/${fullPath}`;
+}

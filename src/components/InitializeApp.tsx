@@ -1,15 +1,16 @@
 import { Spin } from "antd"
 import axios from "axios"
 import { FC, PropsWithChildren, useEffect, useState } from "react"
+import { EXTENSION_INFO } from "src/constants"
 import { ESocialProvider, EStorageKey } from "src/constants/enum"
 import { IAccounts } from "src/interfaces/account.interface"
 import { TTheme } from "src/interfaces/common.interface"
-import useAuth from "src/store/auth"
+import useAuthStore from "src/store/auth"
 import useExtensionState from "src/store/extension-state"
 import { chromeUtils } from "src/utils/chrome.util"
 
 const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
-  const { updateAccountData } = useAuth()
+  const { updateAccountData } = useAuthStore()
   const { setExtensionState } = useExtensionState()
   const [isInitialized, setIsInitialized] = useState(true)
 
@@ -25,14 +26,13 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
       const accountsInStorage = await chromeUtils.getStorage<IAccounts>(
         EStorageKey.ACCOUNTS
       )
-      const { data } = await axios.get(
-        "https://raw.githubusercontent.com/thuytx03/Xthuy-Social/main/package.json"
-      )
-      const extensionLatestVersion = data.version
+      // const { data } = await axios.get(
+      //   "https://raw.githubusercontent.com/thuytx03/Xthuy-Social/main/package.json"
+      // )
+      const extensionLatestVersion = EXTENSION_INFO.version
       const { version: currentVersion } = chrome.runtime.getManifest()
       const isUpdateAvailable = currentVersion !== extensionLatestVersion
       const theme = await chromeUtils.getStorage<TTheme>(EStorageKey.THEME)
-
       if (accountsInStorage) {
         const updatedAccounts = { ...accountsInStorage }
         const providers = Object.keys(accountsInStorage) as ESocialProvider[]

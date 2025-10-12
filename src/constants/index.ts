@@ -6,3 +6,4 @@ export const EXTENSION_INFO = {
     author: packageData.author,
     version: packageData.version
 }
+export const COOKIE_DOMAIN_FCHAT = 'https://fchat.ai'

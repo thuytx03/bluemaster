@@ -1,6 +1,5 @@
 import axios from "axios"
 import { create } from "zustand"
-
 import { ESocialProvider, EStorageKey } from "src/constants/enum"
 import { IAccounts } from "src/interfaces/account.interface"
 import facebookService from "src/services/facebook.service"
@@ -8,15 +7,28 @@ import instagramService from "src/services/instagram.service"
 import threadsService from "src/services/threads.service"
 import xService from "src/services/x.service"
 import { chromeUtils } from "src/utils/chrome.util"
+import { IUser } from "src/interfaces/user.interface"
+
+export interface IAuth {
+  user?: IUser
+  isAuthenticated: boolean
+}
 
 interface IAuthStore {
   accounts: IAccounts
+  auth: IAuth
+  setAuth: (auth: IAuth) => void
   authenticate: (socialProvider: ESocialProvider) => Promise<void>
   logout: (socialProvider: ESocialProvider) => Promise<void>
   updateAccountData: (accountData: any) => void
 }
 
-const useAuth = create<IAuthStore>((setState, getState) => ({
+const useAuthStore = create<IAuthStore>((setState, getState) => ({
+  auth: {
+    user: undefined,
+    isAuthenticated: false
+  },
+  setAuth: (auth: IAuth) => setState({ auth }),
   accounts: {
     [ESocialProvider.FACEBOOK]: null,
     [ESocialProvider.INSTAGRAM]: null,
@@ -75,4 +87,4 @@ const useAuth = create<IAuthStore>((setState, getState) => ({
   }
 }))
 
-export default useAuth
+export default useAuthStore

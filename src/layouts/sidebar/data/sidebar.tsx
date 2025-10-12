@@ -11,9 +11,9 @@ import {
   InstagramIcon,
   SettingIcon,
   ThreadsIcon,
-  TiktokIcon,
   UserIcon,
-  XIcon
+  XIcon,
+  ZaloIcon
 } from "src/assets/icons"
 import { Braces, Cookie, Pickaxe } from "lucide-react"
 
@@ -56,6 +56,23 @@ export const useMenuItems = (): MenuItem[] => {
             </Link>
           )
         }
+      ]
+    },
+    {
+      key: "zalo",
+      icon: <ZaloIcon className="size-4" />,
+      label: "Zalo",
+      children: [
+        {
+          key: APP_ROUTES.ZALO.LOGIN_QR,
+          icon: <UserIcon className="size-4" />,
+          label: (
+            <Link to={APP_ROUTES.ZALO.LOGIN_QR}>
+              {t("account")}
+            </Link>
+          )
+        },
+       
       ]
     },
     {

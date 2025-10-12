@@ -1,9 +1,11 @@
 import React from 'react'
-import { Layout } from 'antd';
+import { Avatar, Layout } from 'antd';
 import { TypeAnimation } from 'react-type-animation';
 import { EXTENSION_INFO } from 'src/constants';
 import { useTranslation } from 'react-i18next';
 import SwitchLanguage from 'src/components/SwitchLanguage';
+import { UserOutlined } from '@ant-design/icons';
+import ProfileDropdown from 'src/components/shared/ProfileDropdown';
 
 const { Header } = Layout;
 
@@ -37,7 +39,8 @@ const AppHeader = () => {
                     />
                 </div>
                 <div className='flex items-center '>
-                    <SwitchLanguage/>
+                    <SwitchLanguage />
+<ProfileDropdown/>
                 </div>
             </div>
         </Header>

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 
 import { CheckCircleIcon } from "src/assets/icons"
 import { ESocialProvider } from "src/constants/enum"
-import useAuth from "src/store/auth"
+import useAuthStore from "src/store/auth"
 import { showErrorToast } from "src/utils/toast.util"
 
 interface ICardAccountProps {
@@ -17,7 +17,7 @@ const CardAccount: FC<ICardAccountProps> = ({
   icon: SocialIcon
 }) => {
   const {t}=useTranslation()
-  const { logout, authenticate, accounts } = useAuth()
+  const { logout, authenticate, accounts } = useAuthStore()
   const accountDataBySocialName = accounts[socialName]
   const [isAuthenticating, setIsAuthenticating] = useState(false)
 

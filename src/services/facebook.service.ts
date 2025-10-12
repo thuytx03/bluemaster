@@ -9,12 +9,12 @@ import {
   IFacebookPost,
   IFacebookStory
 } from "src/interfaces/facebook.interface"
-import useAuth from "src/store/auth"
+import useAuthStore from "src/store/auth"
 import { chromeUtils } from "src/utils/chrome.util"
 
 const makeRequestToFb = async (docID: string, query: any) => {
   try {
-    const fbAccountData = useAuth.getState().accounts[ESocialProvider.FACEBOOK]
+    const fbAccountData = useAuthStore.getState().accounts[ESocialProvider.FACEBOOK]
     if (!fbAccountData) {
       throw new Error("Vui lòng xác thực tài khoản Facebook trước")
     }

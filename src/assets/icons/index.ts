@@ -15,6 +15,7 @@ import XIcon from "react:./x.svg"
 import TiktokIcon from "react:./tiktok.svg"
 import FlagVietNam from "react:./flag_vi.svg"
 import FlagEnglish from "react:./flag_en.svg"
+import ZaloIcon from "react:./zalo.svg"
 export {
   ErrorIcon,
   FacebookIcon,
@@ -32,5 +33,6 @@ export {
   SettingIcon,
   TiktokIcon,
   FlagVietNam,
-  FlagEnglish
+  FlagEnglish,
+  ZaloIcon
 }
