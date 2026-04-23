@@ -1,6 +1,6 @@
 import { ERemoteMessageType } from "src/constants/enum"
 import { checkExtensionVersion } from "./utils/common.util"
-import { captureRequestsZalo } from "./utils/zalo.util";
+import { captureRequestsZalo } from "./services/zalo.service"
 
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage()
