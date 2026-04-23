@@ -1,3 +1,3 @@
 import AlbumIdExampleImage from "data-base64:./album-id-example.png"
-
-export { AlbumIdExampleImage }
+import PlaceHolderImage from "data-base64:./placeholder-image.jpg"
+export { AlbumIdExampleImage, PlaceHolderImage }

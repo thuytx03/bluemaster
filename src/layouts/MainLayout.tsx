@@ -18,7 +18,6 @@ const MainLayout = () => {
           <Content
             style={{
               padding: 24,
-              paddingBottom: 24
             }}
             className="bg-zinc-50 dark:bg-zinc-900">
             <Outlet />

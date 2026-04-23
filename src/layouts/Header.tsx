@@ -1,11 +1,10 @@
 import React from 'react'
-import { Avatar, Layout } from 'antd';
+import { Layout } from 'antd';
 import { TypeAnimation } from 'react-type-animation';
 import { EXTENSION_INFO } from 'src/constants';
 import { useTranslation } from 'react-i18next';
 import SwitchLanguage from 'src/components/SwitchLanguage';
-import { UserOutlined } from '@ant-design/icons';
-import ProfileDropdown from 'src/components/shared/ProfileDropdown';
+import ToggerTheme from 'src/components/shared/ToggerTheme';
 
 const { Header } = Layout;
 
@@ -27,9 +26,9 @@ const AppHeader = () => {
                 <div className="text-sm font-medium ">
                     <TypeAnimation
                         sequence={[
-                            `Chào mừng bạn đến với ${EXTENSION_INFO.displayName}`,
+                            `${t('homepage_hero_title1')} ${t('homepage_hero_title2')} ${t('with')} ${EXTENSION_INFO.displayName}`,
                             1000,
-                            `${EXTENSION_INFO.description}`,
+                            `${t('homepage_hero_title1')} ${t('homepage_hero_title2')} ${t('with')} ${EXTENSION_INFO.displayName}`,
                             1000,
                         ]}
                         wrapper="span"
@@ -39,8 +38,8 @@ const AppHeader = () => {
                     />
                 </div>
                 <div className='flex items-center '>
+                    <ToggerTheme />
                     <SwitchLanguage />
-<ProfileDropdown/>
                 </div>
             </div>
         </Header>

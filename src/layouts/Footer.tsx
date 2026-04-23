@@ -9,11 +9,11 @@ const Footer = () => {
   return (
     <div className="flex gap-2 mx-auto items-center justify-center">
       <Typography>
-        <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
+        <div className=" pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
           <div className="text-gray-500 text-sm">
-            {t("footer_copyright", { year, author: EXTENSION_INFO.author })}
+            {t("footer_copyright", { year, author: EXTENSION_INFO.author })} - v{EXTENSION_INFO.version}
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 ">
+          {/* <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 ">
             <Trans i18nKey="footer_thank"
               components={{
                 chatgpt: <Link to="https://chatgpt.com/" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors" />,
@@ -23,7 +23,7 @@ const Footer = () => {
                 tailwindcss: <Link to="https://tailwindcss.com/" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors" />
               }}
             />
-          </div>
+          </div> */}
         </div>
       </Typography>
     </div>

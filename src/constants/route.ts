@@ -1,4 +1,5 @@
 export const APP_ROUTES = {
+  HOME: "/",
   AUTH:{
     LOGIN: "/login",
     REGISTER: "/register",
@@ -10,9 +11,6 @@ export const APP_ROUTES = {
     DOWNLOAD_SEPERATE: "/facebook/download-seperate",
     DOWNLOAD_ALL: "/facebook/download-all",
     EXTRACT_UID: "/facebook/extract-uid"
-  },
-  ZALO:{
-    LOGIN_QR: "/zalo/login-qr",
   },
   TIKTOK: {
     

@@ -235,10 +235,21 @@ export const fetchDataXHR = (options: any) => {
  * VD với endpoint có query: getApiEndPoint(['api','v1','example'], {page: 1}) => /api/v1/exmple/?page=1
  */
 export function getApiEndpoint(path: string[], query?: Record<string, any>): string {
-    const fullPath = path.join('/');
-    if (query) {
-        const queryString = new URLSearchParams(query).toString();
-        return `/${fullPath}?${queryString}`;
-    }
-    return `/${fullPath}`;
+  const fullPath = path.join('/');
+  if (query) {
+    const queryString = new URLSearchParams(query).toString();
+    return `/${fullPath}?${queryString}`;
+  }
+  return `/${fullPath}`;
+}
+
+export const removeTrailingUnderscoreZero = (members: string[]) => {
+  return members.map(member => member.replace(/_0$/, ''))
+}
+// Hàm kiểm tra số điện thoại Việt Nam (hỗ trợ cả 0 và +84)
+export const isValidVietnamPhone = (phone: string) => {
+  // Chuẩn hóa về dạng 0xxxxxxxxx nếu là +84xxxxxxxxx
+  let normalized = phone.replace(/^\+84/, '0')
+  // Bắt đầu bằng 0, tiếp theo là 3|5|7|8|9, tổng 10 số
+  return /^0[35789]\d{8}$/.test(normalized)
 }

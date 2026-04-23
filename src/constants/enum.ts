@@ -39,3 +39,7 @@ export enum PLATFORM {
   FANPAGE = "fanpage",
 }
 
+export enum GroupType {
+  Group = 1,
+  Community = 2
+}

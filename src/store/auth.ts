@@ -7,17 +7,13 @@ import instagramService from "src/services/instagram.service"
 import threadsService from "src/services/threads.service"
 import xService from "src/services/x.service"
 import { chromeUtils } from "src/utils/chrome.util"
-import { IUser } from "src/interfaces/user.interface"
 
 export interface IAuth {
-  user?: IUser
   isAuthenticated: boolean
 }
 
 interface IAuthStore {
   accounts: IAccounts
-  auth: IAuth
-  setAuth: (auth: IAuth) => void
   authenticate: (socialProvider: ESocialProvider) => Promise<void>
   logout: (socialProvider: ESocialProvider) => Promise<void>
   updateAccountData: (accountData: any) => void
@@ -25,10 +21,8 @@ interface IAuthStore {
 
 const useAuthStore = create<IAuthStore>((setState, getState) => ({
   auth: {
-    user: undefined,
     isAuthenticated: false
   },
-  setAuth: (auth: IAuth) => setState({ auth }),
   accounts: {
     [ESocialProvider.FACEBOOK]: null,
     [ESocialProvider.INSTAGRAM]: null,

@@ -3,18 +3,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import type { MenuProps } from "antd"
 import { APP_ROUTES } from "src/constants/route"
-
-// icons
-import {
-  DownloadIcon,
-  FacebookIcon,
-  InstagramIcon,
-  SettingIcon,
-  ThreadsIcon,
-  UserIcon,
-  XIcon,
-  ZaloIcon
-} from "src/assets/icons"
+import { DownloadIcon, FacebookIcon, InstagramIcon, SettingIcon, ThreadsIcon, UserIcon, XIcon, ZaloIcon } from "src/assets/icons"
 import { Braces, Cookie, Pickaxe } from "lucide-react"
 
 type MenuItem = Required<MenuProps>["items"][number]
@@ -39,15 +28,6 @@ export const useMenuItems = (): MenuItem[] => {
           label: <Link to={APP_ROUTES.FACEBOOK.EXTRACT_UID}>{t("scan_uid")}</Link>
         },
         {
-          key: APP_ROUTES.DOWNLOAD_SEPERATE,
-          icon: <DownloadIcon className="size-4" />,
-          label: (
-            <Link to={APP_ROUTES.DOWNLOAD_SEPERATE}>
-              {t("download_individually")}
-            </Link>
-          )
-        },
-        {
           key: APP_ROUTES.DOWNLOAD_ALL.FACEBOOK,
           icon: <DownloadIcon className="size-4" />,
           label: (
@@ -58,37 +38,12 @@ export const useMenuItems = (): MenuItem[] => {
         }
       ]
     },
-    {
-      key: "zalo",
-      icon: <ZaloIcon className="size-4" />,
-      label: "Zalo",
-      children: [
-        {
-          key: APP_ROUTES.ZALO.LOGIN_QR,
-          icon: <UserIcon className="size-4" />,
-          label: (
-            <Link to={APP_ROUTES.ZALO.LOGIN_QR}>
-              {t("account")}
-            </Link>
-          )
-        },
-       
-      ]
-    },
+    
     {
       key: "instagram",
       icon: <InstagramIcon className="size-4" />,
       label: "Instagram",
       children: [
-        {
-          key: APP_ROUTES.DOWNLOAD_SEPERATE,
-          icon: <DownloadIcon className="size-4" />,
-          label: (
-            <Link to={APP_ROUTES.DOWNLOAD_SEPERATE}>
-              {t("download_individually")}
-            </Link>
-          )
-        },
         {
           key: APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM,
           icon: <DownloadIcon className="size-4" />,
@@ -105,15 +60,7 @@ export const useMenuItems = (): MenuItem[] => {
       icon: <ThreadsIcon className="size-4" />,
       label: "Threads",
       children: [
-        {
-          key: APP_ROUTES.DOWNLOAD_SEPERATE,
-          icon: <DownloadIcon className="size-4" />,
-          label: (
-            <Link to={APP_ROUTES.DOWNLOAD_SEPERATE}>
-              {t("download_individually")}
-            </Link>
-          )
-        },
+
         {
           key: APP_ROUTES.DOWNLOAD_ALL.THREADS,
           icon: <DownloadIcon className="size-4" />,
@@ -130,15 +77,7 @@ export const useMenuItems = (): MenuItem[] => {
       icon: <XIcon className="size-4" />,
       label: "X",
       children: [
-        {
-          key: APP_ROUTES.DOWNLOAD_SEPERATE,
-          icon: <DownloadIcon className="size-4" />,
-          label: (
-            <Link to={APP_ROUTES.DOWNLOAD_SEPERATE}>
-              {t("download_individually")}
-            </Link>
-          )
-        },
+
         {
           key: APP_ROUTES.DOWNLOAD_ALL.X,
           icon: <DownloadIcon className="size-4" />,
@@ -149,6 +88,15 @@ export const useMenuItems = (): MenuItem[] => {
           )
         }
       ]
+    },
+    {
+      key: APP_ROUTES.DOWNLOAD_SEPERATE,
+      icon: <DownloadIcon className="size-4" />,
+      label: (
+        <Link to={APP_ROUTES.DOWNLOAD_SEPERATE}>
+          {t("download_individually")}
+        </Link>
+      )
     },
     {
       key: APP_ROUTES.COOKIES,

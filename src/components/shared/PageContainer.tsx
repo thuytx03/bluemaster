@@ -1,5 +1,6 @@
 import { FC, PropsWithChildren } from "react"
 import { useTranslation } from "react-i18next"
+import { EXTENSION_INFO } from "src/constants"
 import useExtensionState from "src/store/extension-state"
 import { cn } from "src/utils/common.util"
 
@@ -26,14 +27,14 @@ const PageContainer: FC<IPageContainerProps> = ({
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-fade-in-up mb-5">
           <div className="flex flex-col">
             <span className="font-semibold text-lg">
-              {t("update_available_title") || "🚀 Đã có phiên bản mới của Social Downloader!"}
+              {t("update_available_title") || "🚀 Đã có phiên bản mới của Xthuy Downloader!"}
             </span>
             <span className="text-sm text-white/90">
               {t("update_available_desc") || "Bạn hãy vui lòng tải phiên bản mới nhất về để có những trải nghiệm tốt nhất."}
             </span>
           </div>
           <a
-            href="https://github.com/thuytx03/Xthuy-Social/?tab=readme-ov-file#c%C3%A0i-%C4%91%E1%BA%B7t"
+            href={EXTENSION_INFO.link_download}
             target="_blank"
             rel="noopener noreferrer"
             className="ml-4 bg-white text-blue-600 font-medium px-4 py-2 rounded-xl hover:bg-blue-100 transition flex items-center">

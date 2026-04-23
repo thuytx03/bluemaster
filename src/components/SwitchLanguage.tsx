@@ -38,8 +38,8 @@ const SwitchLanguage = () => {
             ? <FlagEnglish className="w-5 h-5" />
             : <FlagVietNam className="w-5 h-5" />;
     return (
-        <Dropdown menu={{ items, onClick: handleMenuClick }} placement="bottom" arrow>
-            <Button type='text'>{currentFlag}</Button>
+        <Dropdown menu={{ items, onClick: handleMenuClick }} placement="bottom" arrow >
+            <Button type='text' className='w-auto'>{currentFlag}</Button>
         </Dropdown>
     )
 }

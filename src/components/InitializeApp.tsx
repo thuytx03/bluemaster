@@ -26,10 +26,10 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
       const accountsInStorage = await chromeUtils.getStorage<IAccounts>(
         EStorageKey.ACCOUNTS
       )
-      // const { data } = await axios.get(
-      //   "https://raw.githubusercontent.com/thuytx03/Xthuy-Social/main/package.json"
-      // )
-      const extensionLatestVersion = EXTENSION_INFO.version
+      const { data } = await axios.get(
+        `${EXTENSION_INFO.link_info}?t=${new Date().getTime()}`
+      )
+      const extensionLatestVersion = data.version
       const { version: currentVersion } = chrome.runtime.getManifest()
       const isUpdateAvailable = currentVersion !== extensionLatestVersion
       const theme = await chromeUtils.getStorage<TTheme>(EStorageKey.THEME)
