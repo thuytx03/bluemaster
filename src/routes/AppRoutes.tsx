@@ -3,7 +3,8 @@ import PrivateRoute from "src/routes/PrivateRoute"
 import { APP_ROUTES } from "src/constants/route"
 import MainLayout from "src/layouts/MainLayout"
 import AccountsPage from "src/pages/accounts/AccountsPage"
-import CookiePage from "src/pages/cookies/CookiesPage"
+import ExportCookiesPage from "src/pages/cookies/ExportCookiesPage"
+import ImportCookiesPage from "src/pages/cookies/ImportCookiesPage"
 import FacebookDownloadAllPage from "src/pages/download-all/FacebookDownloadAllPage"
 import InstagramDownloadAllPage from "src/pages/download-all/InstagramDownloadAllPage"
 import ThreadsDownloadAllPage from "src/pages/download-all/ThreadsDownloadAllPage"
@@ -33,7 +34,9 @@ const AppRoutes = () => {
         <Route path={APP_ROUTES.DOWNLOAD_ALL.X} element={<XDownloadAllPage />} />
         <Route path={APP_ROUTES.ACCOUNTS} element={<AccountsPage />} />
         <Route path={APP_ROUTES.DOWNLOAD_SEPERATE} element={<DownloadSeperatePage />} />
-        <Route element={<CookiePage />} path={APP_ROUTES.COOKIES} />
+        <Route element={<ExportCookiesPage />} path={APP_ROUTES.COOKIES.INDEX} />
+        <Route element={<ImportCookiesPage />} path={APP_ROUTES.COOKIES.IMPORT} />
+        <Route element={<ExportCookiesPage />} path={APP_ROUTES.COOKIES.EXPORT} />
         <Route path={APP_ROUTES.SETTINGS} element={<SettingPage />} />
 
         {/* 404 Not Found */}

@@ -21,7 +21,11 @@ export const APP_ROUTES = {
     THREADS: "/download-all/threads",
     X: "/download-all/x"
   },
-  COOKIES: '/cookies',
+  COOKIES: {
+    INDEX: '/cookies',
+    IMPORT: '/cookies/import',
+    EXPORT: '/cookies/export'
+  },
   DOWNLOAD_SEPERATE: "/download-seperate",
   SETTINGS: "/settings"
 }

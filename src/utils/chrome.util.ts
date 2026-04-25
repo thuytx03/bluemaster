@@ -63,6 +63,24 @@ export function getCookie(
     )
   })
 }
+const removeCookie = async (domain: string, name: string) => {
+  return new Promise((resolve, reject) => {
+    chrome.cookies.remove(
+      {
+        url: domain,
+        name: name
+      },
+      (cookie) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error removing cookie:", chrome.runtime.lastError)
+          resolve(false)
+        } else {
+          resolve(true)
+        }
+      }
+    )
+  })
+}
 const openNewTab = async (options: chrome.tabs.CreateProperties) => {
   const tab = await chrome.tabs.create(options)
   return tab
@@ -76,7 +94,12 @@ const getStorage = async <T>(key: string): Promise<T | null> => {
   return new Promise((resolve) => {
     chrome.storage.local.get(key, function (result) {
       const item = result[key]
-      if (item && typeof item === 'object' && '__expireAt' in item && '__value' in item) {
+      if (
+        item &&
+        typeof item === "object" &&
+        "__expireAt" in item &&
+        "__value" in item
+      ) {
         if (Date.now() > item.__expireAt) {
           chrome.storage.local.remove(key)
           resolve(null)
@@ -90,9 +113,13 @@ const getStorage = async <T>(key: string): Promise<T | null> => {
   })
 }
 
-const setStorage = async <T>(key: string, value: T, options?: { expireInDays?: number }): Promise<void> => {
+const setStorage = async <T>(
+  key: string,
+  value: T,
+  options?: { expireInDays?: number }
+): Promise<void> => {
   return new Promise((resolve) => {
-    let storageValue = value as any;
+    let storageValue = value as any
     if (options?.expireInDays !== undefined) {
       storageValue = {
         __value: value,
@@ -114,9 +141,13 @@ const removeStorage = async (key: string): Promise<void> => {
   })
 }
 
-const setSessionStorage = async <T>(key: string, value: T, options?: { expireInDays?: number }): Promise<void> => {
+const setSessionStorage = async <T>(
+  key: string,
+  value: T,
+  options?: { expireInDays?: number }
+): Promise<void> => {
   return new Promise((resolve) => {
-    let storageValue = value as any;
+    let storageValue = value as any
     if (options?.expireInDays !== undefined) {
       storageValue = {
         __value: value,
@@ -134,7 +165,12 @@ const getSessionStorage = async <T>(key: string): Promise<T | null> => {
   return new Promise((resolve) => {
     chrome.storage.session.get(key, function (result) {
       const item = result[key]
-      if (item && typeof item === 'object' && '__expireAt' in item && '__value' in item) {
+      if (
+        item &&
+        typeof item === "object" &&
+        "__expireAt" in item &&
+        "__value" in item
+      ) {
         if (Date.now() > item.__expireAt) {
           chrome.storage.session.remove(key)
           resolve(null)
@@ -187,6 +223,9 @@ const downloadFile = async (
 }
 
 export const chromeUtils = {
+  setCookie,
+  getCookie,
+  removeCookie,
   getChromeCookies,
   getStorage,
   setStorage,

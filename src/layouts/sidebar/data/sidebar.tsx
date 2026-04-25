@@ -5,6 +5,7 @@ import type { MenuProps } from "antd"
 import { APP_ROUTES } from "src/constants/route"
 import { DownloadIcon, FacebookIcon, InstagramIcon, SettingIcon, ThreadsIcon, UserIcon, XIcon, ZaloIcon } from "src/assets/icons"
 import { Braces, Cookie, Pickaxe } from "lucide-react"
+import { ExportOutlined, ImportOutlined } from "@ant-design/icons"
 
 type MenuItem = Required<MenuProps>["items"][number]
 
@@ -99,9 +100,21 @@ export const useMenuItems = (): MenuItem[] => {
       )
     },
     {
-      key: APP_ROUTES.COOKIES,
+      key: "cookies",
       icon: <Cookie className="size-4" />,
-      label: <Link to={APP_ROUTES.COOKIES}>Cookies</Link>
+      label: "Cookies",
+      children: [
+        {
+          key: APP_ROUTES.COOKIES.EXPORT,
+          icon: <ExportOutlined className="size-4" />,
+          label: <Link to={APP_ROUTES.COOKIES.EXPORT}>{t("export_cookies")}</Link>
+        },
+        {
+          key: APP_ROUTES.COOKIES.IMPORT,
+          icon: <ImportOutlined className="size-4" />,
+          label: <Link to={APP_ROUTES.COOKIES.IMPORT}>{t("import_cookies")}</Link>
+        }
+      ]
     },
     {
       key: APP_ROUTES.ACCOUNTS,
