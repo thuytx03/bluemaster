@@ -4,7 +4,8 @@ export enum EStorageKey {
   INSTAGRAM_PROFILE = "INSTAGRAM_PROFILE",
   FACEBOOK_PROFILE = "FACEBOOK_PROFILE",
   NOTIFY_LATEST_EXTENSION_VERSION = "NOTIFY_LATEST_EXTENSION_VERSION",
-  THEME = "THEME"
+  THEME = "THEME",
+  FB_SCRAPER_PROGRESS = "FB_SCRAPER_PROGRESS"
 }
 
 export enum ESocialProvider {
@@ -31,12 +32,13 @@ export enum EDownloadSeperateType {
 }
 
 export enum ERemoteMessageType {
-  RETRIEVE_X_ACCOUNT_CREDENTIALS = "RETRIEVE_X_ACCOUNT_CREDENTIALS"
+  RETRIEVE_X_ACCOUNT_CREDENTIALS = "RETRIEVE_X_ACCOUNT_CREDENTIALS",
+  GET_USER_ID = "GET_USER_ID"
 }
 
 export enum PLATFORM {
   ZALO_PERSONAL = "zalo_personal",
-  FANPAGE = "fanpage",
+  FANPAGE = "fanpage"
 }
 
 export enum GroupType {

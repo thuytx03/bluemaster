@@ -1,5 +1,5 @@
 import { fbAxiosInstance } from "src/configs/axios.config"
-import { EDownloadSeperateType, ESocialProvider } from "src/constants/enum"
+import { EDownloadSeperateType, ERemoteMessageType, ESocialProvider } from "src/constants/enum"
 import { URL_PATTERN } from "src/constants/regex"
 import {
   DOWNLOAD_STORIES_IN_HIGHLIGHT_BATCH_SIZE,
@@ -244,139 +244,143 @@ export const downloadFbCommentVideo = async (commentUrl: string) => {
 }
 
 export const fetchTokenEAAGNO = () => {
-    return new Promise(function (resolve, reject) {
-        fetchDataXHR({
+  return new Promise(function (resolve, reject) {
+    fetchDataXHR({
+      url: "https://business.facebook.com/content_management",
+      method: "get"
+    })
+      .then(function (response) {
+        response = response as string
+        const responseStr = response as string
+        if (
+          responseStr.search("twofactor") !== -1 &&
+          responseStr.search("EAA") === -1
+        ) {
+          chrome.tabs.create({
             url: "https://business.facebook.com/content_management",
-            method: "get"
-        }).then(function (response) {
-            response = response as string;
-            const responseStr = response as string;
-            if (responseStr.search("twofactor") !== -1 && responseStr.search("EAA") === -1) {
-                chrome.tabs.create({
-                    url: "https://business.facebook.com/content_management",
-                    active: false
-                });
-                return resolve("");
-            }
-            var match = responseStr.match(/EAAGNO.*?\"/);
-            var accessToken = match && match[0] ? match[0].replace(/\W/g, "") : "";
-            // console.log('Đây là token từ trang business.facebook.com/content_management: ', accessToken);
-            resolve(accessToken);
-        }).catch(reject);
-    });
+            active: false
+          })
+          return resolve("")
+        }
+        var match = responseStr.match(/EAAGNO.*?\"/)
+        var accessToken = match && match[0] ? match[0].replace(/\W/g, "") : ""
+        // console.log('Đây là token từ trang business.facebook.com/content_management: ', accessToken);
+        resolve(accessToken)
+      })
+      .catch(reject)
+  })
 }
 
 export const fetchTokenEAAB = () => {
-    return new Promise(function (resolve, reject) {
-        fetchDataXHR({
-            url: "https://adsmanager.facebook.com/adsmanager/manage/campaigns",
+  return new Promise(function (resolve, reject) {
+    fetchDataXHR({
+      url: "https://adsmanager.facebook.com/adsmanager/manage/campaigns",
+      method: "get"
+    })
+      .then(function (response) {
+        const responseStr = response as string
+        if (responseStr.search("EAA") !== -1) {
+          var match: RegExpMatchArray | null = responseStr.match(/EAAB.*?\"/)
+          var token = match && match[0] ? match[0].replace(/\W/g, "") : ""
+          return resolve(token)
+        }
+        var redirectUrl
+        var regex = /window\.location\.replace\(\"(.*?)\"\)/g
+        var match: RegExpMatchArray | null
+        while ((match = regex.exec(responseStr)) !== null) {
+          if (match.index === regex.lastIndex) {
+            regex.lastIndex++
+          }
+          match.forEach(function (matched, groupIndex) {
+            if (groupIndex === 1) {
+              redirectUrl = decodeURIComponent(matched)
+            }
+          })
+        }
+        if (redirectUrl) {
+          fetchDataXHR({
+            url: redirectUrl,
             method: "get"
-        }).then(function (response) {
-            const responseStr = response as string;
-            if (responseStr.search("EAA") !== -1) {
-                var match: RegExpMatchArray | null = responseStr.match(/EAAB.*?\"/);
-                var token = match && match[0] ? match[0].replace(/\W/g, "") : "";
-                return resolve(token);
-            }
-            var redirectUrl;
-            var regex = /window\.location\.replace\(\"(.*?)\"\)/g;
-            var match: RegExpMatchArray | null;
-            while ((match = regex.exec(responseStr)) !== null) {
-                if (match.index === regex.lastIndex) {
-                    regex.lastIndex++;
-                }
-                match.forEach(function (matched, groupIndex) {
-                    if (groupIndex === 1) {
-                        redirectUrl = decodeURIComponent(matched);
-                    }
-                });
-            }
-            if (redirectUrl) {
-                fetchDataXHR({
-                    url: redirectUrl,
-                    method: "get"
-                }).then(function (redirectResponse) {
-                    const redirectResponseStr = redirectResponse as string;
-                    if (redirectResponseStr.search("EAA") === -1) {
-                        return resolve("");
-                    }
-                    var match = redirectResponseStr.match(/EAAB.*?\"/);
-                    var token = match && match[0] ? match[0].replace(/\W/g, "") : "";
-                    resolve(token);
-                    // console.log('Đây là token từ trang adsmanager.facebook.com/adsmanager/manage/campaigns: ', token);
-                }).catch(reject);
-            } else {
-                resolve("");
-            }
-        }).catch(reject);
-    });
+          })
+            .then(function (redirectResponse) {
+              const redirectResponseStr = redirectResponse as string
+              if (redirectResponseStr.search("EAA") === -1) {
+                return resolve("")
+              }
+              var match = redirectResponseStr.match(/EAAB.*?\"/)
+              var token = match && match[0] ? match[0].replace(/\W/g, "") : ""
+              resolve(token)
+              // console.log('Đây là token từ trang adsmanager.facebook.com/adsmanager/manage/campaigns: ', token);
+            })
+            .catch(reject)
+        } else {
+          resolve("")
+        }
+      })
+      .catch(reject)
+  })
 }
 
 export const getUserID = async (url: string) => {
-  let result;
-
   // Regex kiểm tra URL
-  const regex = /(?:https?:\/\/)?(?:www|m\.)?(?:facebook|fb|m|.me\.facebook)\.(?:com|me|watch)\/(?:(?:\w)*#!\/)?(?:pages\/)?(?:[\w\-]*\/)*([\w\-\.]+)(?:\/)?/i;
-  const match = url.match(regex);
+  const regex =
+    /(?:https?:\/\/)?(?:www|m\.)?(?:facebook|fb|m|.me\.facebook)\.(?:com|me|watch)\/(?:(?:\w)*#!\/)?(?:pages\/)?(?:[\w\-]*\/)*([\w\-\.]+)(?:\/)?/i
+  const match = url.match(regex)
 
   if (!match) {
     return {
       status: 400,
-      data: "URL không hợp lệ",
-    };
+      data: "URL không hợp lệ"
+    }
   }
 
-  const matchedValue = match[1];
+  let matchedValue = match[1]
 
   // Xử lý nếu URL chứa `/posts/`
   if (url.includes("/posts/")) {
-    const prefix = "https://www.facebook.com/";
+    const prefix = "https://www.facebook.com/"
     if (url.startsWith(prefix)) {
-      match[1] = url.substring(prefix.length);
+      matchedValue = url.substring(prefix.length)
+      console.log("match[1]=====", url.substring(prefix.length))
     }
   }
 
   // Xử lý profile.php
   if (matchedValue === "profile.php") {
-    const urlSearch = new URL(url);
-    const uId = urlSearch.searchParams.get("id");
+    const urlSearch = new URL(url)
+    const uId = urlSearch.searchParams.get("id")
     return {
       status: 200,
-      data: uId,
-    };
-  }
-
-  // Nếu URL hợp lệ
-  const newUrl = `https://facebook.com/${matchedValue}`;
-  const data = new URLSearchParams({ link: newUrl }).toString();
-
-  try {
-    const response = await fetch("https://id.traodoisub.com/api.php", {
-      method: "POST",
-      mode: 'no-cors',
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: data,
-    });
-
-    const responseData = await response.json();
-
-    if (responseData.error) {
-      return {
-        status: 400,
-        data: responseData.error,
-      };
-    } else {
-      return {
-        status: 200,
-        data: responseData.id,
-      };
+      data: uId
     }
-  } catch (error) {
-    return {
-      status: 500,
-      data: "Đã xảy ra lỗi khi gọi API",
-    };
   }
+  const cacheKey = `uid_cache_${matchedValue}`
+  const cachedDataSession = await chromeUtils.getSessionStorage(cacheKey)
+  if (cachedDataSession) {
+    return {
+      status: 200,
+      data: cachedDataSession
+    }
+  }
+
+  // Nếu URL hợp lệ và chưa có trong cache thì gọi API
+  const newUrl = `https://facebook.com/${matchedValue}`
+
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { type: ERemoteMessageType.GET_USER_ID, link: newUrl },
+      (result) => {
+        if (chrome.runtime.lastError) {
+          resolve({ status: 500, data: "Đã xảy ra lỗi khi gọi API" })
+        } else {
+          // Nếu gọi API ra kết quả 200 thành công thì lưu dữ liệu lại vào Storage Local
+          if (result && result.status === 200 && result.data) {
+            chromeUtils.setSessionStorage(cacheKey, result.data)
+            console.log(`💾 [Cache Set] Lưu UID mới cho ${matchedValue}: `, result.data)
+          }
+          resolve(result)
+        }
+      }
+    )
+  })
 }

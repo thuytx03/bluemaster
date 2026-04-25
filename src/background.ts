@@ -1,6 +1,7 @@
 import { ERemoteMessageType } from "src/constants/enum"
-import { checkExtensionVersion } from "./utils/common.util"
+
 import { captureRequestsZalo } from "./services/zalo.service"
+import { checkExtensionVersion } from "./utils/common.util"
 
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage()
@@ -8,12 +9,11 @@ chrome.action.onClicked.addListener(() => {
 
 let xHeadersData: any = null
 
-
-let zaloIMEI: string | null = null;
-let zaloCookies: any[] | null = null;
-let zaloUserAgent: string | null = null;
-let pendingZaloResponse: ((data: any) => void) | null = null;
-let pendingZaloTimeout: ReturnType<typeof setTimeout> | null = null;
+let zaloIMEI: string | null = null
+let zaloCookies: any[] | null = null
+let zaloUserAgent: string | null = null
+let pendingZaloResponse: ((data: any) => void) | null = null
+let pendingZaloTimeout: ReturnType<typeof setTimeout> | null = null
 
 chrome.runtime.onInstalled.addListener(async () => {
   const rules = [
@@ -71,50 +71,77 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse(xHeadersData)
   }
   if (message.action === "FB_DTSG") {
-    const profileUrl = `https://www.facebook.com/profile.php?id=${message.c_user}`;
+    const profileUrl = `https://www.facebook.com/profile.php?id=${message.c_user}`
     fetch(profileUrl)
-      .then(response => response.text())
-      .then(pageContent => {
-        const regexPattern = /DTSGInitialData(.?)+IntlPhonologicalRules/gm;
-        const match = pageContent.match(regexPattern);
-        const token = (match && match.length > 0) ? match[0].split("\"")[4] : null;
-        sendResponse(token);
+      .then((response) => response.text())
+      .then((pageContent) => {
+        const regexPattern = /DTSGInitialData(.?)+IntlPhonologicalRules/gm
+        const match = pageContent.match(regexPattern)
+        const token = match && match.length > 0 ? match[0].split('"')[4] : null
+        sendResponse(token)
       })
-      .catch(err => {
-        console.error("Có lỗi xảy ra:", err);
-        sendResponse(null);
+      .catch((err) => {
+        console.error("Có lỗi xảy ra:", err)
+        sendResponse(null)
       })
       .finally(() => {
         // đảm bảo kết thúc
-        return true;
-      });
+        return true
+      })
 
-    return true; // giữ kênh mở
+    return true // giữ kênh mở
+  }
+
+  if (message.type === ERemoteMessageType.GET_USER_ID) {
+    const data = new URLSearchParams({ link: message.link }).toString()
+    fetch("https://id.traodoisub.com/api.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: data,
+    })
+      .then(res => res.json())
+      .then(json => {
+        if (json.error) {
+          sendResponse({ status: 400, data: json.error })
+        } else {
+          sendResponse({ status: 200, data: json })
+        }
+      })
+      .catch(() => {
+        sendResponse({ status: 500, data: "Đã xảy ra lỗi khi gọi API" })
+      })
+    return true // giữ kênh mở cho async
   }
 })
 
 captureRequestsZalo({
   onIMEI: (imei) => {
-    zaloIMEI = imei;
-    maybeSendZaloInfo();
+    zaloIMEI = imei
+    maybeSendZaloInfo()
   },
   onCookies: (cookies) => {
-    zaloCookies = cookies;
-    maybeSendZaloInfo();
+    zaloCookies = cookies
+    maybeSendZaloInfo()
   },
   onUserAgent: (ua) => {
-    zaloUserAgent = ua;
-    maybeSendZaloInfo();
+    zaloUserAgent = ua
+    maybeSendZaloInfo()
   }
-});
+})
 
 function maybeSendZaloInfo() {
   if (pendingZaloResponse && zaloIMEI && zaloCookies && zaloUserAgent) {
-    pendingZaloResponse({ imei: zaloIMEI, cookies: zaloCookies, userAgent: zaloUserAgent });
-    pendingZaloResponse = null;
+    pendingZaloResponse({
+      imei: zaloIMEI,
+      cookies: zaloCookies,
+      userAgent: zaloUserAgent
+    })
+    pendingZaloResponse = null
     if (pendingZaloTimeout) {
-      clearTimeout(pendingZaloTimeout);
-      pendingZaloTimeout = null;
+      clearTimeout(pendingZaloTimeout)
+      pendingZaloTimeout = null
     }
   }
 }
@@ -122,20 +149,24 @@ function maybeSendZaloInfo() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "GET_ZALO_INFO") {
     if (zaloIMEI && zaloCookies && zaloUserAgent) {
-      sendResponse({ imei: zaloIMEI, cookies: zaloCookies, userAgent: zaloUserAgent });
+      sendResponse({
+        imei: zaloIMEI,
+        cookies: zaloCookies,
+        userAgent: zaloUserAgent
+      })
     } else {
       // Chưa có data, lưu callback lại, sẽ trả về khi đủ data hoặc timeout
-      pendingZaloResponse = sendResponse;
+      pendingZaloResponse = sendResponse
       pendingZaloTimeout = setTimeout(() => {
         if (pendingZaloResponse) {
-          pendingZaloResponse({ imei: null, cookies: null, userAgent: null });
-          pendingZaloResponse = null;
+          pendingZaloResponse({ imei: null, cookies: null, userAgent: null })
+          pendingZaloResponse = null
         }
-      }, 60000); // 1 phút
+      }, 60000) // 1 phút
     }
     // Giữ kênh mở cho callback bất đồng bộ
-    return true;
+    return true
   }
-});
+})
 
 checkExtensionVersion()
