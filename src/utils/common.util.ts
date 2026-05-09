@@ -4,7 +4,7 @@ import clsx, { ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ESocialProvider, EStorageKey } from "src/constants/enum"
 import useAuthStore from "src/store/auth"
-import useDownloadProcesses from "src/store/download-process"
+import useDownloadProcesses from "src/modules/download/store/download-process"
 import { chromeUtils } from "src/utils/chrome.util"
 import { EXTENSION_INFO } from "src/constants"
 

@@ -1,42 +1,51 @@
 import { Navigate, Route, Routes } from "react-router-dom"
-import PrivateRoute from "src/routes/PrivateRoute"
 import { APP_ROUTES } from "src/constants/route"
-import MainLayout from "src/layouts/MainLayout"
-import AccountsPage from "src/pages/accounts/AccountsPage"
-import ExportCookiesPage from "src/pages/cookies/ExportCookiesPage"
-import ImportCookiesPage from "src/pages/cookies/ImportCookiesPage"
-import FacebookDownloadAllPage from "src/pages/download-all/FacebookDownloadAllPage"
-import InstagramDownloadAllPage from "src/pages/download-all/InstagramDownloadAllPage"
-import ThreadsDownloadAllPage from "src/pages/download-all/ThreadsDownloadAllPage"
-import XDownloadAllPage from "src/pages/download-all/XDownloadAllPage"
-import DownloadSeperatePage from "src/pages/download-seperate/DownloadSeperatePage"
-import NotFound from "src/pages/errors/NotFound"
-import AccessTokenPage from "src/pages/facebook/AccessTokenPage"
-import ExtractUIDPage from "src/pages/facebook/ExtractUIDPage"
-import SettingPage from "src/pages/setting/SettingPage"
+import MainLayout from "../modules/shared/layouts/MainLayout"
+
+// Modules
+import AccountsPage from "../modules/accounts/pages/AccountsPage"
+import ExportCookiesPage from "../modules/cookies/pages/ExportCookiesPage"
+import ImportCookiesPage from "../modules/cookies/pages/ImportCookiesPage"
+import DownloadSeperatePage from "../modules/download/pages/DownloadSeperatePage"
+import FacebookDownloadAllPage from "../modules/facebook/pages/FacebookDownloadAllPage"
+import AccessTokenPage from "../modules/facebook/pages/AccessTokenPage"
+import ExtractUIDPage from "../modules/facebook/pages/ExtractUIDPage"
+import InstagramDownloadAllPage from "../modules/instagram/pages/InstagramDownloadAllPage"
+import SettingPage from "../modules/settings/pages/SettingPage"
+import ThreadsDownloadAllPage from "../modules/threads/pages/ThreadsDownloadAllPage"
+import XDownloadAllPage from "../modules/x/pages/XDownloadAllPage"
+import NotFound from "../modules/shared/pages/NotFound"
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route element={<MainLayout />}>
-        {/* <Route element={<HomePage/>}  index /> */}
-
-
-        {/* <Route element={<ForgotPasswordPage />} path={APP_ROUTES.AUTH.FORGOT_PASSWORD} /> */}
-
+        {/* Facebook Module */}
         <Route element={<AccessTokenPage />} path={APP_ROUTES.FACEBOOK.ACCESS_TOKEN} />
         <Route element={<ExtractUIDPage />} path={APP_ROUTES.FACEBOOK.EXTRACT_UID} />
         <Route element={<FacebookDownloadAllPage />} path={APP_ROUTES.DOWNLOAD_ALL.FACEBOOK} />
 
-
-        <Route  path={APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM} element={<InstagramDownloadAllPage />}/>
+        {/* Instagram Module */}
+        <Route path={APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM} element={<InstagramDownloadAllPage />}/>
+        
+        {/* Threads Module */}
         <Route path={APP_ROUTES.DOWNLOAD_ALL.THREADS} element={<ThreadsDownloadAllPage />} />
+        
+        {/* X Module */}
         <Route path={APP_ROUTES.DOWNLOAD_ALL.X} element={<XDownloadAllPage />} />
+        
+        {/* Accounts Module */}
         <Route path={APP_ROUTES.ACCOUNTS} element={<AccountsPage />} />
+        
+        {/* Download Module */}
         <Route path={APP_ROUTES.DOWNLOAD_SEPERATE} element={<DownloadSeperatePage />} />
+        
+        {/* Cookies Module */}
         <Route element={<ExportCookiesPage />} path={APP_ROUTES.COOKIES.INDEX} />
         <Route element={<ImportCookiesPage />} path={APP_ROUTES.COOKIES.IMPORT} />
         <Route element={<ExportCookiesPage />} path={APP_ROUTES.COOKIES.EXPORT} />
+        
+        {/* Settings Module */}
         <Route path={APP_ROUTES.SETTINGS} element={<SettingPage />} />
 
         {/* 404 Not Found */}

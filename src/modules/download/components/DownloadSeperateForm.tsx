@@ -1,0 +1,124 @@
+import { Alert, Button, Form, Input, Select } from "antd"
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
+
+import { EDownloadSeperateType } from "src/constants/enum"
+import { APP_ROUTES } from "src/constants/route"
+import { DOWNLOAD_SEPERATE_TYPE_OPTIONS } from "src/constants/variables"
+import { IDownloadSeperateForm } from "src/modules/shared/types/form.interface"
+import {
+  downloadFbCommentVideo,
+  downloadFbPostMedia,
+  downloadFbReel,
+  downloadFbStoryMedia,
+  downloadFbVideo
+} from "src/modules/facebook/utils/facebook.util"
+import {
+  downloadIgHighlightStories,
+  downloadIgPostMedia,
+  downloadIgReelMedia
+} from "src/modules/instagram/utils/instagram.util"
+import { downloadThreadsPostMedia } from "src/modules/threads/utils/threads.util"
+import { showErrorToast, showSuccessToast } from "src/utils/toast.util"
+import { downloadXPostMedia } from "src/modules/x/utils/x.util"
+
+const { Option, OptGroup } = Select
+
+const downloadSeperateFunction = {
+  [EDownloadSeperateType.FACEBOOK_POST]: downloadFbPostMedia,
+  [EDownloadSeperateType.FACEBOOK_STORY]: downloadFbStoryMedia,
+  [EDownloadSeperateType.FACEBOOK_VIDEO]: downloadFbVideo,
+  [EDownloadSeperateType.FACEBOOK_REEL]: downloadFbReel,
+  [EDownloadSeperateType.FACEBOOK_COMMENT_VIDEO]: downloadFbCommentVideo,
+
+  [EDownloadSeperateType.INSTAGRAM_POST]: downloadIgPostMedia,
+  [EDownloadSeperateType.INSTAGRAM_REEL]: downloadIgReelMedia,
+  [EDownloadSeperateType.INSTAGRAM_HIGHLIGHT]: downloadIgHighlightStories,
+
+  [EDownloadSeperateType.THREADS_POST]: downloadThreadsPostMedia,
+
+  [EDownloadSeperateType.X_POST]: downloadXPostMedia
+}
+
+
+const DownloadSeperateForm = () => {
+  const { t } = useTranslation()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [form] = Form.useForm<IDownloadSeperateForm>()
+
+  const handleSubmit = async (values: IDownloadSeperateForm) => {
+    try {
+      setIsSubmitting(true)
+      await downloadSeperateFunction[values.type](values.url)
+      showSuccessToast(t("download_success") || "Tải xuống thành công!")
+    } catch (error) {
+      showErrorToast((error as Error).message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div>
+      <Alert
+        className="mb-3"
+        message={
+          <div>
+            {t("ensure_social_verified") || "Hãy đảm bảo rằng bạn đã xác thực tài khoản Facebook/Instagram/Threads/X"} (
+            <span>
+              <Link to={APP_ROUTES.ACCOUNTS}>{t("here") || "tại đây"}</Link>
+            </span>
+            ) {t("before_using_features") || "trước khi sử dụng các tính năng tương ứng dưới đây!"}
+          </div>
+        }
+        type="warning"
+        showIcon
+        closable
+      />
+      <Form
+        form={form}
+        name="basic"
+        autoComplete="off"
+        onFinish={handleSubmit}
+        layout="vertical"
+        labelAlign="left">
+        <div className="flex gap-3 items-center">
+          <Form.Item<IDownloadSeperateForm>
+            style={{ flex: 1 }}
+            label={t("download_seperate_type_label") || "Loại:"}
+            name="type"
+            rules={[{ required: true, message: t("please_select_download_seperate_type") || "Vui lòng chọn loại tải xuống!" }]}
+          >
+            <Select>
+              {DOWNLOAD_SEPERATE_TYPE_OPTIONS.map((group) => (
+                <OptGroup key={group.group} label={group.group}>
+                  {group.options.map((option) => (
+                    <Option key={option.value} value={option.value}>
+                      {t(option.label)}
+                    </Option>
+                  ))}
+                </OptGroup>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item<IDownloadSeperateForm>
+            style={{ flex: 1 }}
+            label={t("url_label") || "Đường dẫn:"}
+            name="url"
+            rules={[{ required: true, message: t("please_enter_url") || "Vui lòng nhập đường dẫn!" }]}
+          >
+            <Input />
+          </Form.Item>
+        </div>
+        <Form.Item wrapperCol={{ span: 24 }}>
+          <Button type="primary" htmlType="submit" loading={isSubmitting}>
+            {t("download") || "Tải"}
+          </Button>
+        </Form.Item>
+      </Form>
+    </div>
+  )
+}
+
+export default DownloadSeperateForm

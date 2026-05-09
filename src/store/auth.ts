@@ -1,11 +1,11 @@
 import axios from "axios"
 import { create } from "zustand"
 import { ESocialProvider, EStorageKey } from "src/constants/enum"
-import { IAccounts } from "src/interfaces/account.interface"
-import facebookService from "src/services/facebook.service"
-import instagramService from "src/services/instagram.service"
-import threadsService from "src/services/threads.service"
-import xService from "src/services/x.service"
+import { IAccounts } from "src/modules/accounts/types/account.interface"
+import facebookService from "src/modules/facebook/services/facebook.service"
+import instagramService from "src/modules/instagram/services/instagram.service"
+import threadsService from "src/modules/threads/services/threads.service"
+import xService from "src/modules/x/services/x.service"
 import { chromeUtils } from "src/utils/chrome.util"
 
 export interface IAuth {

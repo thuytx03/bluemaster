@@ -1,6 +1,6 @@
 import { ERemoteMessageType } from "src/constants/enum"
 
-import { captureRequestsZalo } from "./services/zalo.service"
+import { captureRequestsZalo } from "./modules/zalo/services/zalo.service"
 import { checkExtensionVersion } from "./utils/common.util"
 
 chrome.action.onClicked.addListener(() => {
