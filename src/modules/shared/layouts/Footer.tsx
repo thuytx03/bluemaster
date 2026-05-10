@@ -1,32 +1,29 @@
 import { Typography } from "antd"
-import { Link } from "react-router-dom"
 import { EXTENSION_INFO } from "src/constants"
-import { useTranslation, Trans } from "react-i18next"
+import { useTranslation } from "react-i18next"
 
 const Footer = () => {
   const { t } = useTranslation()
   const year = new Date().getFullYear()
+  
   return (
-    <div className="flex gap-2 mx-auto items-center justify-center">
-      <Typography>
-        <div className=" pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
-          <div className="text-gray-500 text-sm">
-            {t("footer_copyright", { year, author: EXTENSION_INFO.author })} - v{EXTENSION_INFO.version}
-          </div>
-          {/* <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 ">
-            <Trans i18nKey="footer_thank"
-              components={{
-                chatgpt: <Link to="https://chatgpt.com/" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors" />,
-                plasmo: <Link to="https://www.plasmo.com/" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors" />,
-                reactjs: <Link to="https://react.dev/" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors" />,
-                antdesign: <Link to="https://ant.design/" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors" />,
-                tailwindcss: <Link to="https://tailwindcss.com/" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors" />
-              }}
-            />
-          </div> */}
+    <footer className="w-full py-4 px-6 border-t border-zinc-100 dark:border-zinc-900 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm">
+      <div className="flex flex-col items-center justify-center gap-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tracking-tight uppercase">
+            {t("footer_copyright", { year, author: EXTENSION_INFO.author })}
+          </span>
+          <div className="w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+          <span className="px-1.5 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
+            v{EXTENSION_INFO.version}
+          </span>
         </div>
-      </Typography>
-    </div>
+        
+        <div className="text-[10px] text-zinc-400/80 dark:text-zinc-600 font-medium">
+          Premium Social Extension Tool
+        </div>
+      </div>
+    </footer>
   )
 }
 
