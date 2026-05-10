@@ -1,14 +1,14 @@
 import React from 'react'
-import { 
-  Plus, 
-  BookOpen, 
-  Languages, 
-  Radio, 
-  LayoutGrid, 
+import {
+  Plus,
+  BookOpen,
+  Languages,
+  Radio,
+  LayoutGrid,
   Settings,
   ChevronRight
 } from 'lucide-react'
-import { FacebookIcon } from 'src/assets/icons'
+import iconUrl from "url:assets/icon.png"
 
 interface FloatingBarProps {
   isOpen: boolean
@@ -19,64 +19,52 @@ interface FloatingBarProps {
 const FloatingBar: React.FC<FloatingBarProps> = ({ isOpen, onOpen, theme }) => {
   if (isOpen) return null
 
-  const items = [
-    { icon: <Plus size={20} />, color: 'text-zinc-400', bg: 'bg-zinc-50' },
-    { icon: <BookOpen size={20} />, color: 'text-zinc-600', bg: 'bg-white' },
-    { icon: <Languages size={20} />, color: 'text-zinc-600', bg: 'bg-white' },
-    { icon: <Radio size={20} />, color: 'text-zinc-600', bg: 'bg-white' },
-    { 
-      icon: (
-        <div className="relative">
-          <LayoutGrid size={20} className="text-zinc-600" />
-          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-             <FacebookIcon className="size-3" />
-          </div>
-        </div>
-      ), 
-      bg: 'bg-white' 
-    },
-    { 
-      icon: (
-        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-blue-500 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform cursor-pointer">
-           <div className="w-5 h-5 bg-white rounded-sm flex items-center justify-center rotate-45">
-              <div className="w-2 h-2 bg-black rounded-full -rotate-45" />
-           </div>
-        </div>
-      ),
-      isAction: true
-    },
-    { icon: <Settings size={20} />, color: 'text-zinc-400', bg: 'bg-white' },
-  ]
-
   return (
-    <div className={`fixed right-2 bottom-1/2 translate-y-1/2 flex flex-col gap-3 z-[2147483647] transition-all duration-500 animate-in fade-in slide-in-from-right-10 ${theme === 'dark' ? 'dark' : ''}`}>
-      {items.map((item, index) => (
-        <div
-          key={index}
-          onClick={onOpen}
-          className={`
-            group relative flex items-center justify-center
-            ${item.isAction ? '' : 'w-11 h-11 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all duration-300 cursor-pointer border border-white/50 dark:border-zinc-800/50'}
-            ${item.bg || 'bg-white dark:bg-zinc-900'}
-            ${item.color || 'dark:text-zinc-400'}
-            hover:-translate-x-1 active:scale-95
-          `}
-        >
-          {item.icon}
-          
-          <div className="absolute right-full mr-3 px-2.5 py-1.5 bg-zinc-900/90 backdrop-blur-md text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 translate-x-2 group-hover:translate-x-0 shadow-xl whitespace-nowrap">
-            {index === 0 ? 'Phím tắt' : index === 5 ? 'Mở Menu' : 'Tính năng'}
+    <div
+      className={`fixed right-0 bottom-8 z-[2147483647] flex flex-col items-center gap-2.5 pointer-events-auto`}
+      data-xthuy-theme={theme || 'light'}
+    >
+      <div className="flex flex-col items-center gap-2">
+        {/* Plus Button */}
+        <button className="w-9 h-9 rounded-full bg-[#efefff] dark:bg-indigo-950/50 flex items-center justify-center shadow-md hover:scale-110 transition-all border border-white/50 text-[#7c7cfc]">
+          <Plus size={18} />
+        </button>
+
+        {/* Translation Button */}
+        <button className="w-9 h-9 rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center shadow-md hover:scale-110 transition-all border border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+          <Languages size={16} />
+        </button>
+
+        {/* Apps Button with Badge */}
+        <div className="relative">
+          <button className="w-9 h-9 rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center shadow-md hover:scale-110 transition-all border border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+            <LayoutGrid size={16} />
+          </button>
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white p-0.5 shadow-sm border border-zinc-100">
+            <img src="https://www.facebook.com/favicon.ico" alt="fb" className="w-full h-full rounded-full" />
           </div>
         </div>
-      ))}
-      
-      {/* Small drag/indicator arrow */}
-      <div 
-        onClick={onOpen}
-        className="flex items-center justify-center w-5 h-8 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-l-full shadow-sm border border-r-0 border-zinc-200 dark:border-zinc-800 absolute -left-5 top-1/2 -translate-y-1/2 cursor-pointer hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-      >
-        <ChevronRight size={12} className="text-zinc-400 rotate-180" />
       </div>
+
+      {/* Main Toggle Button (Pill Style) */}
+      <div
+        onClick={onOpen}
+        className="relative flex items-center justify-end w-[50px] h-[44px] bg-white/90 dark:bg-zinc-900/90
+         backdrop-blur-md rounded-l-full shadow-[-4px_0_20px_rgba(0,0,0,0.1)] border border-r-0 border-zinc-200 dark:border-zinc-800 cursor-pointer group hover:w-18 transition-all duration-300"
+      >
+        <div className="mr-2 relative w-8 h-8 rounded-full p-[1.5px] group-hover:scale-110 transition-transform">
+          <div className="w-full h-full rounded-full bg-white dark:bg-zinc-950 flex items-center justify-center overflow-hidden">
+            <div className="flex items-center gap-[1px] text-zinc-800 dark:text-white">
+              <img src={iconUrl} alt="logo" className="w-full h-full object-contain" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Settings Button */}
+      <button className="w-9 h-9 rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center shadow-md hover:scale-110 transition-all border border-zinc-100 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400">
+        <Settings size={16} />
+      </button>
     </div>
   )
 }

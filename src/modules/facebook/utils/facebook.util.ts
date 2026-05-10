@@ -256,7 +256,7 @@ export const fetchTokenEAAGNO = () => {
           responseStr.search("twofactor") !== -1 &&
           responseStr.search("EAA") === -1
         ) {
-          chrome.tabs.create({
+          chromeUtils.openNewTab({
             url: "https://business.facebook.com/content_management",
             active: false
           })
@@ -321,7 +321,12 @@ export const fetchTokenEAAB = () => {
   })
 }
 
-export const getUserID = async (url: string) => {
+interface IExtractUIDResult {
+  status: number
+  data: string | any
+}
+
+export const getUserID = async (url: string): Promise<IExtractUIDResult> => {
   // Regex kiểm tra URL
   const regex =
     /(?:https?:\/\/)?(?:www|m\.)?(?:facebook|fb|m|.me\.facebook)\.(?:com|me|watch)\/(?:(?:\w)*#!\/)?(?:pages\/)?(?:[\w\-]*\/)*([\w\-\.]+)(?:\/)?/i

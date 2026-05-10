@@ -2,7 +2,7 @@ import { format } from "@fast-csv/format"
 import axios from "axios"
 import clsx, { ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { ESocialProvider, EStorageKey } from "src/constants/enum"
+import { ERemoteMessageType, ESocialProvider, EStorageKey } from "src/constants/enum"
 import useAuthStore from "src/store/auth"
 import useDownloadProcesses from "src/modules/download/store/download-process"
 import { chromeUtils } from "src/utils/chrome.util"
@@ -201,32 +201,46 @@ export const copyToClipboard = (data: string) => {
     alert('Sao chép thất bại!');
   });
 }
-export const fetchDataXHR = (options: any) => {
-  var url = options.url,
-    method = options.method,
-    data = options.data,
-    headers = options.headers,
-    responseType = options.responseType;
+export const fetchDataXHR = async (options: any) => {
+  const { url, method, data, headers, responseType } = options
+
+  // Nếu đang ở content script (sidebar) và có chrome.runtime, sử dụng background fetch để tránh CORS
+  if (!chrome.cookies && chrome.runtime?.sendMessage) {
+    try {
+      const fetchOptions: any = {
+        method: (method || "GET").toUpperCase(),
+        headers
+      }
+      if (fetchOptions.method !== "GET" && data) {
+        fetchOptions.body = data
+      }
+      const response = await chrome.runtime.sendMessage({ type: ERemoteMessageType.BACKGROUND_FETCH, url, options: fetchOptions })
+      return response.data
+    } catch (error) {
+      console.error("Background Fetch Error:", error)
+      throw error
+    }
+  }
 
   return new Promise(function (resolve, reject) {
-    var xhr = new XMLHttpRequest();
+    var xhr = new XMLHttpRequest()
     xhr.onload = function () {
-      resolve(xhr.response);
-    };
+      resolve(xhr.response)
+    }
     xhr.onerror = function () {
-      reject(new Error("Network Error"));
-    };
-    xhr.open(method, url, true);
+      reject(new Error("Network Error"))
+    }
+    xhr.open(method || "GET", url, true)
     if (headers) {
       Object.keys(headers).forEach(function (key) {
-        xhr.setRequestHeader(key, headers[key]);
-      });
+        xhr.setRequestHeader(key, headers[key])
+      })
     }
     if (responseType) {
-      xhr.responseType = responseType;
+      xhr.responseType = responseType
     }
-    xhr.send(data);
-  });
+    xhr.send(data)
+  })
 }
 
 /**

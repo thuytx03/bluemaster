@@ -1,8 +1,7 @@
 import { Alert, Card, Tabs, Input, Button, Checkbox } from 'antd';
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import PageContainer from 'src/modules/shared/components/PageContainer';
-import { EXTENSION_INFO } from 'src/constants';
 import { copyTextToClipboard, onStartExtension } from 'src/utils/common.util';
 import { getUserID } from 'src/modules/facebook/utils/facebook.util';
 import { useTranslation } from 'react-i18next';
@@ -51,24 +50,24 @@ const ExtractUIDPage = () => {
     const handExportUIDProfile = async () => {
         if (!linkProfile) return toast.error(t('error_enter_user_link'));
         try {
-            await getUserID(linkProfile).then((res) => {
-                toast.custom((tToast) => (
+            await getUserID(linkProfile).then((res: any) => {
+                toast.custom((tId) => (
                     <div
-                        className={`${tToast.visible ? 'animate-custom-enter' : 'animate-custom-leave'
-                            } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+                        className={`max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
                     >
                         <div className="flex-1 w-0 p-4">
-                            <div className="flex items-start">
+                            <div className="flex items-start text-zinc-900 dark:text-zinc-100">
                                 {t('uid')} {res.data}
                             </div>
                         </div>
-                        <div className="flex border-l border-gray-200">
+                        <div className="flex border-l border-gray-200 dark:border-zinc-800">
                             <button
                                 onClick={() => {
-                                    copyTextToClipboard(res.data)
+                                    copyTextToClipboard(String(res.data || ''))
                                     toast.success(t('copy_uid_success'))
+                                    toast.dismiss(tId)
                                 }}
-                                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             >
                                 {t('copy')}
                             </button>

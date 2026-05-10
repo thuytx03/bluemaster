@@ -1,6 +1,6 @@
 import { Alert, Button, Card, Input, Upload } from 'antd'
 import React, { useState } from 'react'
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { ImportOutlined, UploadOutlined } from "@ant-design/icons";
 import PageContainer from 'src/modules/shared/components/PageContainer'
 import { useTranslation } from 'react-i18next';
@@ -162,7 +162,7 @@ const ImportCookiesPage = () => {
                                 }
                             }
 
-                            const result = await chrome.cookies.set({
+                            const result = await chromeUtils.setChromeCookie({
                                 ...setDetails,
                                 ...extraOptions,
                                 url: finalUrl,

@@ -1,23 +1,80 @@
+import { ERemoteMessageType } from "src/constants/enum"
+
 const getChromeCookies = async (domain: string): Promise<string> => {
+  if (!chrome.cookies) {
+    return new Promise((resolve, reject) => {
+      // Nếu là URL thì gửi url, nếu không thì gửi domain
+      const isUrl = /^https?:\/\//i.test(domain)
+      const params = isUrl ? { url: domain } : { domain }
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.GET_COOKIES, ...params },
+        (response) => {
+          if (response) {
+            resolve(response)
+          } else {
+            resolve("")
+          }
+        }
+      )
+    })
+  }
   return new Promise((resolve, reject) => {
-    chrome.cookies.getAll({ domain }, function (cookies) {
-      if (cookies.length > 0) {
+    const isUrl = /^https?:\/\//i.test(domain)
+    const filter = isUrl ? { url: domain } : { domain }
+    chrome.cookies.getAll(filter, function (cookies) {
+      if (cookies && cookies.length > 0) {
         let cookieList = cookies
           .map((cookie) => `${cookie.name}=${cookie.value}`)
           .join(";")
         resolve(cookieList)
       } else {
-        reject("Không tìm thấy cookie")
+        resolve("")
       }
     })
   })
 }
-export function setCookie(
+
+const getChromeCookiesList = async (domain: string): Promise<chrome.cookies.Cookie[]> => {
+  if (!chrome.cookies) {
+    return new Promise((resolve, reject) => {
+      const isUrl = /^https?:\/\//i.test(domain)
+      const params = isUrl ? { url: domain } : { domain }
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.GET_COOKIES_LIST, ...params },
+        (response) => {
+          if (response) {
+            resolve(response)
+          } else {
+            resolve([])
+          }
+        }
+      )
+    })
+  }
+  return new Promise((resolve) => {
+    const isUrl = /^https?:\/\//i.test(domain)
+    const filter = isUrl ? { url: domain } : { domain }
+    chrome.cookies.getAll(filter, function (cookies) {
+      resolve(cookies || [])
+    })
+  })
+}
+ function setCookie(
   domain: string,
   name: string,
   value: string,
   expirationDays: number
 ) {
+  if (!chrome.cookies) {
+    chrome.runtime.sendMessage({
+      type: ERemoteMessageType.SET_COOKIE,
+      url: domain,
+      name,
+      value,
+      expirationDays
+    })
+    return
+  }
   const expirationDate =
     Math.floor(Date.now() / 1000) + expirationDays * 24 * 60 * 60
   chrome.cookies.set(
@@ -39,10 +96,38 @@ export function setCookie(
   )
 }
 
-export function getCookie(
+const setChromeCookie = async (details: chrome.cookies.SetDetails): Promise<chrome.cookies.Cookie | null> => {
+  if (!chrome.cookies) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.SET_COOKIE, details },
+        (response) => {
+          resolve(response || null)
+        }
+      )
+    })
+  }
+  return new Promise((resolve) => {
+    chrome.cookies.set(details, (cookie) => {
+      resolve(cookie || null)
+    })
+  })
+}
+
+ function getCookie(
   domain: string,
   name: string
 ): Promise<string | null> {
+  if (!chrome.cookies) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.GET_COOKIE, url: domain, name },
+        (response) => {
+          resolve(response || null)
+        }
+      )
+    })
+  }
   return new Promise((resolve, reject) => {
     chrome.cookies.get(
       {
@@ -64,6 +149,16 @@ export function getCookie(
   })
 }
 const removeCookie = async (domain: string, name: string) => {
+  if (!chrome.cookies) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.REMOVE_COOKIE, url: domain, name },
+        (response) => {
+          resolve(!!response)
+        }
+      )
+    })
+  }
   return new Promise((resolve, reject) => {
     chrome.cookies.remove(
       {
@@ -82,12 +177,50 @@ const removeCookie = async (domain: string, name: string) => {
   })
 }
 const openNewTab = async (options: chrome.tabs.CreateProperties) => {
+  if (!chrome.tabs) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.TABS_CREATE, options },
+        (response) => {
+          resolve(response)
+        }
+      )
+    })
+  }
   const tab = await chrome.tabs.create(options)
   return tab
 }
 
 const closeTab = async (tabId: number): Promise<void> => {
+  if (!chrome.tabs) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.TABS_REMOVE, tabId },
+        () => {
+          resolve()
+        }
+      )
+    })
+  }
   await chrome.tabs.remove(tabId)
+}
+
+const queryTabs = async (queryInfo: chrome.tabs.QueryInfo): Promise<chrome.tabs.Tab[]> => {
+  if (!chrome.tabs) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.TABS_QUERY, queryInfo },
+        (response) => {
+          resolve(response || [])
+        }
+      )
+    })
+  }
+  return new Promise((resolve) => {
+    chrome.tabs.query(queryInfo, (tabs) => {
+      resolve(tabs)
+    })
+  })
 }
 
 const getStorage = async <T>(key: string): Promise<T | null> => {
@@ -196,6 +329,20 @@ const downloadFile = async (
   options: chrome.downloads.DownloadOptions,
   waitUntilCompleted: boolean = true
 ) => {
+  if (!chrome.downloads) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: ERemoteMessageType.DOWNLOAD_FILE, options },
+        (response) => {
+          if (response?.error) {
+            reject(response.error)
+          } else {
+            resolve("Tải xuống bắt đầu (Background)")
+          }
+        }
+      )
+    })
+  }
   return new Promise(async (resolve, reject) => {
     chrome.downloads.download(options, (downloadId) => {
       if (chrome.runtime.lastError) {
@@ -227,6 +374,8 @@ export const chromeUtils = {
   getCookie,
   removeCookie,
   getChromeCookies,
+  getChromeCookiesList,
+  setChromeCookie,
   getStorage,
   setStorage,
   removeStorage,
@@ -235,5 +384,6 @@ export const chromeUtils = {
   removeSessionStorage,
   downloadFile,
   openNewTab,
-  closeTab
+  closeTab,
+  queryTabs
 }

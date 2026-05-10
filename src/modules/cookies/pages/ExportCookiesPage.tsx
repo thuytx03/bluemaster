@@ -1,17 +1,19 @@
 import { Alert, Button, Card, Dropdown, Input } from 'antd'
 import React, { useState } from 'react'
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { CopyOutlined, CheckOutlined, ExportOutlined } from "@ant-design/icons";
 import PageContainer from 'src/modules/shared/components/PageContainer'
 import { EXTENSION_INFO } from 'src/constants';
 import { copyTextToClipboard } from 'src/utils/common.util';
 import { exportToJson, exportToTXT } from 'src/utils/export.util';
 import { useTranslation } from 'react-i18next';
+import { chromeUtils } from 'src/utils/chrome.util';
+import { ERemoteMessageType } from 'src/constants/enum';
 
 
 const ExportCookiesPage = () => {
     const { t } = useTranslation();
-    const [url, setUrl] = useState<string>('https://')
+    const [url, setUrl] = useState<string>(window.location.origin);
     const [cookies, setCookies] = useState<string>('');
     const [cookieString, setCookieString] = useState<string>('');
     const [isCopy, setIsCopy] = useState<boolean>(false);
@@ -30,29 +32,24 @@ const ExportCookiesPage = () => {
             validUrl = 'https://' + validUrl;
         }
         // check nếu url là của zalo thì open tab
-        if(url.includes("chat.zalo.me")){
-            chrome.tabs.create({ url: "https://chat.zalo.me/" });
+        if (url.includes("chat.zalo.me")) {
+            chromeUtils.openNewTab({ url: "https://chat.zalo.me/" });
             chrome.runtime.sendMessage({ action: "GET_ZALO_INFO" }, (response) => {
                 setZaloData(response);
             });
         }
-        
+
         return toast.promise(
             (async () => {
-                chrome.tabs.query({
-                    active: true
-                }, function (tabs) {
-                    chrome.cookies.getAll({
-                        url: validUrl
-                    }, function (cookiesArray) {
-                        const cookieJson = JSON.stringify({
-                            url: validUrl,
-                            cookies: cookiesArray
-                        }, null, 2);
-                        setCookies(cookieJson);
-                        setCookieString(cookiesArray.map(cookie => `${cookie.name}=${cookie.value}`).join('; '));
-                    });
-                });
+                const cookiesArray = await chromeUtils.getChromeCookiesList(validUrl)
+
+                const cookieJson = JSON.stringify({
+                    url: validUrl,
+                    cookies: cookiesArray
+                }, null, 2);
+                
+                setCookies(cookieJson);
+                setCookieString(cookiesArray.map((cookie: {name:string, value:string}) => `${cookie.name}=${cookie.value}`).join('; '));
             })(),
             {
                 loading: t('loading_get_cookies', { url: validUrl }),
@@ -82,7 +79,7 @@ const ExportCookiesPage = () => {
                     />
                 </div>
                 <div className="space-y-2 mt-3">
-                   
+
                     <div className='flex items-center gap-2'>
                         <Input
                             placeholder={t('input_url_placeholder')}
@@ -96,7 +93,7 @@ const ExportCookiesPage = () => {
                             {t('get_cookies')}
                         </Button>
                     </div>
-                    {(zaloData && url.includes("chat.zalo.me"))  && (
+                    {(zaloData && url.includes("chat.zalo.me")) && (
                         <Card size="small" className="mb-2">
                             <div><b>IMEI:</b> {zaloData.imei || "Không có dữ liệu"}</div>
                             <div><b>UserAgent:</b> {zaloData.userAgent || "Không có dữ liệu"}</div>

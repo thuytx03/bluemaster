@@ -114,6 +114,129 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       })
     return true // giữ kênh mở cho async
   }
+
+  if (message.type === ERemoteMessageType.GET_COOKIES) {
+    chrome.cookies.getAll({ domain: message.domain }, (cookies) => {
+      if (cookies && cookies.length > 0) {
+        const cookieList = cookies
+          .map((cookie) => `${cookie.name}=${cookie.value}`)
+          .join(";")
+        sendResponse(cookieList)
+      } else {
+        sendResponse(null)
+      }
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.GET_COOKIE) {
+    chrome.cookies.get({ url: message.url, name: message.name }, (cookie) => {
+      if (cookie) {
+        sendResponse(decodeURIComponent(cookie.value))
+      } else {
+        sendResponse(null)
+      }
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.SET_COOKIE) {
+    if (message.details) {
+      chrome.cookies.set(message.details, (cookie) => {
+        sendResponse(cookie)
+      })
+    } else {
+      const expirationDate = Math.floor(Date.now() / 1000) + (message.expirationDays || 30) * 24 * 60 * 60
+      chrome.cookies.set(
+        {
+          url: message.url,
+          name: message.name,
+          value: encodeURIComponent(message.value),
+          expirationDate: expirationDate,
+          secure: true,
+          sameSite: "lax"
+        },
+        (cookie) => {
+          sendResponse(cookie)
+        }
+      )
+    }
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.REMOVE_COOKIE) {
+    chrome.cookies.remove({ url: message.url, name: message.name }, (details) => {
+      sendResponse(details)
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.DOWNLOAD_FILE) {
+    chrome.downloads.download(message.options, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ error: chrome.runtime.lastError.message })
+      } else {
+        sendResponse({ downloadId })
+      }
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.TABS_CREATE) {
+    chrome.tabs.create(message.options, (tab) => {
+      sendResponse(tab)
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.TABS_QUERY) {
+    chrome.tabs.query(message.queryInfo, (tabs) => {
+      sendResponse(tabs)
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.TABS_REMOVE) {
+    chrome.tabs.remove(message.tabId, () => {
+      sendResponse(true)
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.GET_COOKIES_LIST) {
+    const filter: chrome.cookies.GetAllDetails = {}
+    if (message.url) {
+      filter.url = message.url
+    } else if (message.domain) {
+      filter.domain = message.domain
+    }
+
+    chrome.cookies.getAll(filter, (cookies) => {
+      sendResponse(cookies || [])
+    })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.BACKGROUND_FETCH) {
+    const { url, options } = message
+    fetch(url, {
+      ...options,
+      credentials: "include" // Đảm bảo gửi kèm cookies của trình duyệt
+    })
+      .then(async (response) => {
+        const text = await response.text()
+        sendResponse({
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          data: text
+        })
+      })
+      .catch((error) => {
+        sendResponse({ error: error.message })
+      })
+    return true
+  }
 })
 
 captureRequestsZalo({

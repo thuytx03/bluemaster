@@ -3,8 +3,8 @@ import { ESocialProvider } from "src/constants/enum"
 import { REQUEST_ACCEPT_HEADER } from "src/constants/variables"
 import useAuthStore from "src/store/auth"
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
-import { getCookie } from "src/utils/chrome.util";
 import { COOKIE_DOMAIN_FCHAT } from "src/constants";
+import { chromeUtils } from "src/utils/chrome.util";
 const igAxiosInstance = axios.create({
   baseURL: "https://www.instagram.com/graphql/query"
 })
@@ -66,7 +66,7 @@ const axiosClient = (baseURL: string | undefined, token?: string) => {
 
   axiosInstance.interceptors.request.use(
     async (config) => {
-      const accessToken = token || await getCookie(COOKIE_DOMAIN_FCHAT, 'accessToken');
+      const accessToken = token || await chromeUtils.getCookie(COOKIE_DOMAIN_FCHAT, 'accessToken');
       config.headers.set('Authorization', 'Bearer ' + accessToken);
       return config;
     },

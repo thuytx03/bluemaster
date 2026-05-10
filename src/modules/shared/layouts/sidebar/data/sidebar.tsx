@@ -15,7 +15,7 @@ export const useMenuItems = (): MenuItem[] => {
   return [
     {
       key: "facebook",
-      icon: <FacebookIcon className="size-4" />,
+      icon: <FacebookIcon className="size-5" />,
       label: "Facebook",
       children: [
         {
@@ -42,7 +42,7 @@ export const useMenuItems = (): MenuItem[] => {
     
     {
       key: "instagram",
-      icon: <InstagramIcon className="size-4" />,
+      icon: <InstagramIcon className="size-5" />,
       label: "Instagram",
       children: [
         {
@@ -58,7 +58,7 @@ export const useMenuItems = (): MenuItem[] => {
     },
     {
       key: "threads",
-      icon: <ThreadsIcon className="size-4" />,
+      icon: <ThreadsIcon className="size-5" />,
       label: "Threads",
       children: [
 
@@ -75,7 +75,7 @@ export const useMenuItems = (): MenuItem[] => {
     },
     {
       key: "x",
-      icon: <XIcon className="size-4" />,
+      icon: <XIcon className="size-5" />,
       label: "X",
       children: [
 
@@ -91,17 +91,8 @@ export const useMenuItems = (): MenuItem[] => {
       ]
     },
     {
-      key: APP_ROUTES.DOWNLOAD_SEPERATE,
-      icon: <DownloadIcon className="size-4" />,
-      label: (
-        <Link to={APP_ROUTES.DOWNLOAD_SEPERATE}>
-          {t("download_individually")}
-        </Link>
-      )
-    },
-    {
       key: "cookies",
-      icon: <Cookie className="size-4" />,
+      icon: <Cookie className="size-5" />,
       label: "Cookies",
       children: [
         {
@@ -118,12 +109,12 @@ export const useMenuItems = (): MenuItem[] => {
     },
     {
       key: APP_ROUTES.ACCOUNTS,
-      icon: <UserIcon className="size-4" />,
-      label: <Link to={APP_ROUTES.ACCOUNTS}>{t("accounts")}</Link>
+      icon: <UserIcon className="size-5" />,
+      label: <Link to={APP_ROUTES.ACCOUNTS}>{t("accounts")}</Link>,
     },
     {
       key: APP_ROUTES.SETTINGS,
-      icon: <SettingIcon className="size-4" />,
+      icon: <SettingIcon className="size-5" />,
       label: <Link to={APP_ROUTES.SETTINGS}>{t("settings")}</Link>
     }
   ]

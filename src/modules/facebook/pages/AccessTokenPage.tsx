@@ -1,6 +1,6 @@
 import { Alert, Button, Card } from "antd";
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Tabs } from 'antd';
 import { Input } from "antd";
 import { CopyOutlined, CheckOutlined } from "@ant-design/icons";

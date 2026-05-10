@@ -66,6 +66,7 @@ const getFacebookAccountData = async () => {
     }
     return fbAccountData
   } catch (error) {
+    console.log("Lỗi khi lấy dữ liệu tài khoản Facebook", error)
     throw new Error(
       "Không thể lấy dữ liệu tài khoản Facebook. Đảm bảo rằng bạn đã đăng nhập vào Facebook trên trình duyệt"
     )
