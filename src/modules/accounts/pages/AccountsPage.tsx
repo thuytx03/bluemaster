@@ -1,30 +1,30 @@
 import { useTranslation } from "react-i18next"
 import {
-  FacebookIcon,
-  InstagramIcon,
-  ThreadsIcon,
-  XIcon
-} from "src/assets/icons"
-import CardAccount from "src/modules/accounts/components/CardAccount"
-import PageContainer from "src/modules/shared/components/PageContainer"
-import { ESocialProvider } from "src/constants/enum"
+  Facebook,
+  Instagram,
+  MessageCircle,
+  Twitter
+} from "lucide-react"
+import CardAccount from "../components/CardAccount"
+import PageContainer from "../../shared/components/PageContainer"
+import { ESocialProvider } from "../../../constants/enum"
 
 const SOCIAL_ACCOUNTS = [
   {
     socialName: ESocialProvider.FACEBOOK,
-    icon: FacebookIcon
+    icon: Facebook
   },
   {
     socialName: ESocialProvider.INSTAGRAM,
-    icon: InstagramIcon
+    icon: Instagram
   },
   {
     socialName: ESocialProvider.THREADS,
-    icon: ThreadsIcon
+    icon: MessageCircle
   },
   {
     socialName: ESocialProvider.X,
-    icon: XIcon
+    icon: Twitter
   }
 ]
 

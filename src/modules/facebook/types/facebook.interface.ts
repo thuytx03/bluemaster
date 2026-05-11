@@ -19,7 +19,6 @@ export type Member = {
 }
 
 export type ExportState = {
-  isLayoutExportUid: boolean;
   count: number;
   options: any[];
   arrUID: Member[];

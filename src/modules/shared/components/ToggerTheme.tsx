@@ -1,8 +1,8 @@
 import { MoonOutlined, SunOutlined } from '@ant-design/icons'
 import React from 'react'
 
-import { TTheme } from "src/modules/shared/types/common.interface"
-import useExtensionState from "src/store/extension-state"
+import { TTheme } from "../types/common.interface"
+import useExtensionState from "../../../store/extension-state"
 
 const ToggerTheme = () => {
   const {

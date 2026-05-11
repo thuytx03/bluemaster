@@ -183,24 +183,6 @@ export const normalizeText = (text: string) => {
 };
 
 
-export const removeCacheStorage = async () => {
-  await chrome.storage.local.remove(['data']);
-}
-export const onStartExtension = async (data: any) => {
-  chrome.storage.local.set({
-    data: {
-      ...data,
-      active: true
-    }
-  });
-}
-export const copyToClipboard = (data: string) => {
-  navigator.clipboard.writeText(data).then(() => {
-    alert('Đã sao chép!');
-  }).catch(err => {
-    alert('Sao chép thất bại!');
-  });
-}
 export const fetchDataXHR = async (options: any) => {
   const { url, method, data, headers, responseType } = options
 

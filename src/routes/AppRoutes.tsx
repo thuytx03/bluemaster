@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom"
-import { APP_ROUTES } from "src/constants/route"
+import { APP_ROUTES } from "../constants/route"
 import MainLayout from "../modules/shared/layouts/MainLayout"
 
 // Modules
@@ -10,6 +10,7 @@ import DownloadSeperatePage from "../modules/download/pages/DownloadSeperatePage
 import FacebookDownloadAllPage from "../modules/facebook/pages/FacebookDownloadAllPage"
 import AccessTokenPage from "../modules/facebook/pages/AccessTokenPage"
 import ExtractUIDPage from "../modules/facebook/pages/ExtractUIDPage"
+import ExportUIDPage from "../modules/facebook/pages/ExportUIDPage"
 import InstagramDownloadAllPage from "../modules/instagram/pages/InstagramDownloadAllPage"
 import SettingPage from "../modules/settings/pages/SettingPage"
 import ThreadsDownloadAllPage from "../modules/threads/pages/ThreadsDownloadAllPage"
@@ -23,6 +24,7 @@ const AppRoutes = () => {
         {/* Facebook Module */}
         <Route element={<AccessTokenPage />} path={APP_ROUTES.FACEBOOK.ACCESS_TOKEN} />
         <Route element={<ExtractUIDPage />} path={APP_ROUTES.FACEBOOK.EXTRACT_UID} />
+        <Route element={<ExportUIDPage />} path={APP_ROUTES.FACEBOOK.EXPORT_UID} />
         <Route element={<FacebookDownloadAllPage />} path={APP_ROUTES.DOWNLOAD_ALL.FACEBOOK} />
 
         {/* Instagram Module */}

@@ -1,5 +1,5 @@
 import { Typography } from "antd"
-import { EXTENSION_INFO } from "src/constants"
+import { EXTENSION_INFO } from "../../../constants"
 import { useTranslation } from "react-i18next"
 
 const Footer = () => {

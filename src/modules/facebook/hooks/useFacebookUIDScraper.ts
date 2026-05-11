@@ -2,9 +2,19 @@ import $ from "jquery"
 import { useEffect, useRef, useState } from "react"
 import { ExportState } from "src/modules/facebook/types/facebook.interface"
 import { chromeUtils } from "src/utils/chrome.util"
-import { removeCacheStorage } from "src/utils/common.util"
 import { getUserID } from "src/modules/facebook/utils/facebook.util"
 import { EStorageKey } from "src/constants/enum"
+
+export const onStartExtension = async (data: any) => {
+  await chromeUtils.setStorage(EStorageKey.FB_SCRAPER_DATA, {
+    ...data,
+    active: true
+  })
+}
+
+const removeCacheStorage = async () => {
+  await chromeUtils.removeStorage(EStorageKey.FB_SCRAPER_DATA)
+}
 
 export const useFacebookUIDScraper = () => {
   const fileName = "danh_sach_uid_txt_" + new Date().getTime()
@@ -22,7 +32,6 @@ export const useFacebookUIDScraper = () => {
   })
 
   const [state, setState] = useState<ExportState>({
-    isLayoutExportUid: false,
     count: 0,
     options: [],
     arrUID: [],
@@ -32,6 +41,7 @@ export const useFacebookUIDScraper = () => {
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const isRestoring = useRef(false)
+  const isScrapingActive = useRef(false)
   const [isCopy, setIsCopy] = useState<boolean>(false)
 
   const updateState = (updates: Partial<ExportState>) => {
@@ -81,8 +91,8 @@ export const useFacebookUIDScraper = () => {
     checkType(configRef.current.type, configRef.current.cursorEnd)
   }
 
-  const handleClose = () => {
-    updateState({ isLayoutExportUid: false, status: "stop" })
+  const cleanup = () => {
+    isScrapingActive.current = false
     configRef.current.status = "stop"
     removeCacheStorage()
     chromeUtils.removeStorage(EStorageKey.FB_SCRAPER_PROGRESS)
@@ -724,7 +734,7 @@ export const useFacebookUIDScraper = () => {
   }
 
   useEffect(() => {
-    if (state.isLayoutExportUid && !isRestoring.current) {
+    if (isScrapingActive.current && !isRestoring.current) {
       chromeUtils.setStorage(EStorageKey.FB_SCRAPER_PROGRESS, {
         state,
         config: {
@@ -738,59 +748,44 @@ export const useFacebookUIDScraper = () => {
         },
         textAreaValue: textAreaRef.current?.value || "",
         url: window.location.href
-      }, { expireInDays: 7 });
+      }, { expireInDays: 7 })
     }
   }, [state])
 
   useEffect(() => {
-    let ignore = false;
-    
-    (async () => {
-      chrome.storage.local.get(["data"], async (storageData) => {
-        if (ignore) return;
-        const progress = await chromeUtils.getStorage<any>(EStorageKey.FB_SCRAPER_PROGRESS);
-        
-        if (storageData.data && storageData.data.active) {
-          chromeUtils.removeStorage(EStorageKey.FB_SCRAPER_PROGRESS);
-          updateState({ isLayoutExportUid: true, status: "continue", success: false, arrUID: [], count: 0 });
-          if (textAreaRef.current) textAreaRef.current.value = "";
+    let ignore = false
+    ;(async () => {
+      const scraperData = await chromeUtils.getStorage<any>(EStorageKey.FB_SCRAPER_DATA)
+      if (ignore) return
+      const progress = await chromeUtils.getStorage<any>(EStorageKey.FB_SCRAPER_PROGRESS)
 
-          configRef.current.options = storageData.data.options || [];
-          configRef.current.indexOption = 0;
-          configRef.current.type = storageData.data.type;
-          
-          index(storageData.data.type);
-          removeCacheStorage();
-        } else if (progress) {
-          if (progress.url === window.location.href) {
-            isRestoring.current = true;
-            updateState({ ...progress.state, status: "stop" });
-            configRef.current = { ...configRef.current, ...progress.config, status: "stop" };
-            
-            // Textarea cần thời gian render, đồng thời việc updateState sẽ trigger useEffect save
-            // Nếu lưu ngay lúc textarea chưa có value sẽ làm ghi đè mất data (lưu chuỗi rỗng)
-            const textToRestore = progress.textAreaValue || progress.state?.arrUID?.map((u: any) => u.name ? `${u.uid}|${u.name}` : u.uid).join('\n') + '\n';
-            
-            const trySetText = () => {
-              if (textAreaRef.current) {
-                textAreaRef.current.value = textToRestore;
-                // Khôi phục xong mới cho phép ghi đè Storage
-                setTimeout(() => {
-                  isRestoring.current = false;
-                }, 100);
-              } else {
-                requestAnimationFrame(trySetText);
-              }
-            };
-            requestAnimationFrame(trySetText);
+      if (scraperData && scraperData.active) {
+        chromeUtils.removeStorage(EStorageKey.FB_SCRAPER_PROGRESS)
+        isScrapingActive.current = true
+        updateState({ status: "continue", success: false, arrUID: [], count: 0 })
+        if (textAreaRef.current) textAreaRef.current.value = ""
+        configRef.current.options = scraperData.options || []
+        configRef.current.indexOption = 0
+        configRef.current.type = scraperData.type
+        removeCacheStorage()
+        index(scraperData.type)
+      } else if (progress && progress.url === window.location.href) {
+        isRestoring.current = true
+        updateState({ ...progress.state, status: "stop" })
+        configRef.current = { ...configRef.current, ...progress.config, status: "stop" }
+        const textToRestore = progress.textAreaValue || progress.state?.arrUID?.map((u: any) => u.name ? `${u.uid}|${u.name}` : u.uid).join('\n') + '\n'
+        const trySetText = () => {
+          if (textAreaRef.current) {
+            textAreaRef.current.value = textToRestore
+            setTimeout(() => { isRestoring.current = false }, 100)
+          } else {
+            requestAnimationFrame(trySetText)
           }
         }
-      });
-    })();
-
-    return () => {
-      ignore = true;
-    }
+        requestAnimationFrame(trySetText)
+      }
+    })()
+    return () => { ignore = true }
   }, [])
 
   return {
@@ -798,7 +793,7 @@ export const useFacebookUIDScraper = () => {
     textAreaRef,
     isCopy,
     setIsCopy,
-    handleClose,
+    cleanup,
     handleStop,
     handleContinue,
     fileName

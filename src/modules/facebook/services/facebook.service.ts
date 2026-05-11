@@ -1,16 +1,16 @@
 import axios from "axios"
 
-import { fbAxiosInstance } from "src/configs/axios.config"
-import { ESocialProvider } from "src/constants/enum"
-import { MAX_RETRY_REQUEST } from "src/constants/variables"
-import { IFacebookAccount } from "src/modules/accounts/types/account.interface"
-import { IGetListResponse, IMedia } from "src/modules/shared/types/common.interface"
+import { fbAxiosInstance } from "../../../configs/axios.config"
+import { ESocialProvider } from "../../../constants/enum"
+import { MAX_RETRY_REQUEST } from "../../../constants/variables"
+import { IFacebookAccount } from "../../accounts/types/account.interface"
+import { IGetListResponse, IMedia } from "../../shared/types/common.interface"
 import {
   IFacebookPost,
   IFacebookStory
-} from "src/modules/facebook/types/facebook.interface"
-import useAuthStore from "src/store/auth"
-import { chromeUtils } from "src/utils/chrome.util"
+} from "../types/facebook.interface"
+import useAuthStore from "../../../store/auth"
+import { chromeUtils } from "../../../utils/chrome.util"
 
 const makeRequestToFb = async (docID: string, query: any) => {
   try {

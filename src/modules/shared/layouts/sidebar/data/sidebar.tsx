@@ -2,9 +2,8 @@ import React from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import type { MenuProps } from "antd"
-import { APP_ROUTES } from "src/constants/route"
-import { DownloadIcon, FacebookIcon, InstagramIcon, SettingIcon, ThreadsIcon, UserIcon, XIcon, ZaloIcon } from "src/assets/icons"
-import { Braces, Cookie, Pickaxe } from "lucide-react"
+import { APP_ROUTES } from "../../../../../constants/route"
+import { Download, Facebook, Instagram, Settings, User, Twitter, MessageCircle, HelpCircle, Braces, Cookie, Pickaxe } from "lucide-react"
 import { ExportOutlined, ImportOutlined } from "@ant-design/icons"
 
 type MenuItem = Required<MenuProps>["items"][number]
@@ -15,7 +14,7 @@ export const useMenuItems = (): MenuItem[] => {
   return [
     {
       key: "facebook",
-      icon: <FacebookIcon className="size-5" />,
+      icon: <Facebook className="size-5" />,
       label: "Facebook",
       children: [
         {
@@ -30,7 +29,7 @@ export const useMenuItems = (): MenuItem[] => {
         },
         {
           key: APP_ROUTES.DOWNLOAD_ALL.FACEBOOK,
-          icon: <DownloadIcon className="size-4" />,
+          icon: <Download className="size-4" />,
           label: (
             <Link to={APP_ROUTES.DOWNLOAD_ALL.FACEBOOK}>
               {t("batch_download")}
@@ -42,12 +41,12 @@ export const useMenuItems = (): MenuItem[] => {
     
     {
       key: "instagram",
-      icon: <InstagramIcon className="size-5" />,
+      icon: <Instagram className="size-5" />,
       label: "Instagram",
       children: [
         {
           key: APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM,
-          icon: <DownloadIcon className="size-4" />,
+          icon: <Download className="size-4" />,
           label: (
             <Link to={APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM}>
               {t("batch_download")}
@@ -58,13 +57,13 @@ export const useMenuItems = (): MenuItem[] => {
     },
     {
       key: "threads",
-      icon: <ThreadsIcon className="size-5" />,
+      icon: <MessageCircle className="size-5" />,
       label: "Threads",
       children: [
 
         {
           key: APP_ROUTES.DOWNLOAD_ALL.THREADS,
-          icon: <DownloadIcon className="size-4" />,
+          icon: <Download className="size-4" />,
           label: (
             <Link to={APP_ROUTES.DOWNLOAD_ALL.THREADS}>
               {t("batch_download")}
@@ -75,13 +74,13 @@ export const useMenuItems = (): MenuItem[] => {
     },
     {
       key: "x",
-      icon: <XIcon className="size-5" />,
+      icon: <Twitter className="size-5" />,
       label: "X",
       children: [
 
         {
           key: APP_ROUTES.DOWNLOAD_ALL.X,
-          icon: <DownloadIcon className="size-4" />,
+          icon: <Download className="size-4" />,
           label: (
             <Link to={APP_ROUTES.DOWNLOAD_ALL.X}>
               {t("batch_download")}
@@ -109,12 +108,12 @@ export const useMenuItems = (): MenuItem[] => {
     },
     {
       key: APP_ROUTES.ACCOUNTS,
-      icon: <UserIcon className="size-5" />,
+      icon: <User className="size-5" />,
       label: <Link to={APP_ROUTES.ACCOUNTS}>{t("accounts")}</Link>,
     },
     {
       key: APP_ROUTES.SETTINGS,
-      icon: <SettingIcon className="size-5" />,
+      icon: <Settings className="size-5" />,
       label: <Link to={APP_ROUTES.SETTINGS}>{t("settings")}</Link>
     }
   ]

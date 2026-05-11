@@ -1,4 +1,5 @@
 {
+    "error_uid_not_found": "Không tìm thấy UID",
     "sending_message_in_progress": "Đang gửi tin nhắn...",
     "all_messages_sent": "Đã gửi xong tất cả tin nhắn!",
     "failed_to_send_message": "Gửi tin nhắn thất bại!",

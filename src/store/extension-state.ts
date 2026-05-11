@@ -1,8 +1,8 @@
 import { create } from "zustand"
 
-import { EStorageKey } from "src/constants/enum"
-import { TTheme } from "src/modules/shared/types/common.interface"
-import { chromeUtils } from "src/utils/chrome.util"
+import { EStorageKey } from "../constants/enum"
+import { TTheme } from "../modules/shared/types/common.interface"
+import { chromeUtils } from "../utils/chrome.util"
 
 interface IExtensionState {
   currentVersion: string
@@ -32,15 +32,6 @@ const useExtensionState = create<IExtensionStateStore>((set) => ({
       extensionState: { ...state.extensionState, theme }
     }))
     await chromeUtils.setStorage(EStorageKey.THEME, theme)
-    
-    // Apply theme to the extension root if in content script
-    const extensionRoot = document.querySelector(".xthuy-social-root")
-    if (extensionRoot) {
-      extensionRoot.className = `xthuy-social-root ${theme}`
-    } else {
-      // Fallback for options page or if root not found
-      document.documentElement.setAttribute("class", theme)
-    }
   }
 }))
 

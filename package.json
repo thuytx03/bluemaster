@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "description": "Bộ công cụ mạng xã hội đa năng: tải video/ảnh, gửi tin nhắn hàng loạt, lên lịch, quét UID, hỗ trợ Facebook, X, Instagram...",
   "author": "Trịnh Xuân Thuỷ",
+  "alias": {
+    "src": "./src"
+  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build --zip && if not exist package mkdir package && powershell -Command \"Move-Item build/chrome-mv3-prod.zip package/xthuy_social_extension_$(node -p \\\"require('./package.json').version\\\").zip\"",

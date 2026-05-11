@@ -2,9 +2,9 @@ import { Alert, Button, Card, Input, Upload } from 'antd'
 import React, { useState } from 'react'
 import { toast } from 'sonner';
 import { ImportOutlined, UploadOutlined } from "@ant-design/icons";
-import PageContainer from 'src/modules/shared/components/PageContainer'
+import PageContainer from '../../shared/components/PageContainer'
 import { useTranslation } from 'react-i18next';
-import { chromeUtils } from 'src/utils/chrome.util';
+import { chromeUtils } from '../../../utils/chrome.util';
 
 const ImportCookiesPage = () => {
     const { t } = useTranslation();

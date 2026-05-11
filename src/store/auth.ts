@@ -1,12 +1,12 @@
 import axios from "axios"
 import { create } from "zustand"
-import { ESocialProvider, EStorageKey } from "src/constants/enum"
-import { IAccounts } from "src/modules/accounts/types/account.interface"
-import facebookService from "src/modules/facebook/services/facebook.service"
-import instagramService from "src/modules/instagram/services/instagram.service"
-import threadsService from "src/modules/threads/services/threads.service"
-import xService from "src/modules/x/services/x.service"
-import { chromeUtils } from "src/utils/chrome.util"
+import { ESocialProvider, EStorageKey } from "../constants/enum"
+import { IAccounts } from "../modules/accounts/types/account.interface"
+import facebookService from "../modules/facebook/services/facebook.service"
+import instagramService from "../modules/instagram/services/instagram.service"
+import threadsService from "../modules/threads/services/threads.service"
+import xService from "../modules/x/services/x.service"
+import { chromeUtils } from "../utils/chrome.util"
 
 export interface IAuth {
   isAuthenticated: boolean

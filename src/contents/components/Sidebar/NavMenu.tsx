@@ -1,8 +1,8 @@
 import React from 'react'
 import { useNavigate, useLocation } from "react-router-dom"
 import { Button, Tooltip, Popover } from "antd"
-import { X, BookOpen, Languages, Radio, HelpCircle, Layout, Columns, Maximize2 } from "lucide-react"
-import { useMenuItems } from 'src/modules/shared/layouts/sidebar/data/sidebar'
+import { X, BookOpen, Languages, Radio, HelpCircle, LayoutGrid, Columns2, Maximize2 } from "lucide-react"
+import { useMenuItems } from "../../../modules/shared/layouts/sidebar/data/sidebar"
 
 interface NavMenuProps {
     theme: string
@@ -50,7 +50,7 @@ export const NavMenu: React.FC<NavMenuProps> = ({ theme, onOpen, setIsOpen, layo
                             type={layoutMode === 'overlay' ? 'primary' : 'text'}
                             shape="circle"
                             size="small"
-                            icon={<Layout size={14} />}
+                            icon={<LayoutGrid size={14} />}
                             onClick={() => setLayoutMode('overlay')}
                             className={layoutMode === 'overlay' ? 'bg-primary' : 'text-zinc-400'}
                         />
@@ -60,7 +60,7 @@ export const NavMenu: React.FC<NavMenuProps> = ({ theme, onOpen, setIsOpen, layo
                             type={layoutMode === 'push' ? 'primary' : 'text'}
                             shape="circle"
                             size="small"
-                            icon={<Columns size={14} />}
+                            icon={<Columns2 size={14} />}
                             onClick={() => setLayoutMode('push')}
                             className={layoutMode === 'push' ? 'bg-primary' : 'text-zinc-400'}
                         />

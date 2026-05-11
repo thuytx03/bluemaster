@@ -190,7 +190,6 @@ const openNewTab = async (options: chrome.tabs.CreateProperties) => {
   const tab = await chrome.tabs.create(options)
   return tab
 }
-
 const closeTab = async (tabId: number): Promise<void> => {
   if (!chrome.tabs) {
     return new Promise((resolve) => {
@@ -226,6 +225,15 @@ const queryTabs = async (queryInfo: chrome.tabs.QueryInfo): Promise<chrome.tabs.
 const getStorage = async <T>(key: string): Promise<T | null> => {
   return new Promise((resolve) => {
     chrome.storage.local.get(key, function (result) {
+      if (chrome.runtime.lastError) {
+        console.error("Storage get error:", chrome.runtime.lastError)
+        resolve(null)
+        return
+      }
+      if (!result) {
+        resolve(null)
+        return
+      }
       const item = result[key]
       if (
         item &&
@@ -280,6 +288,10 @@ const setSessionStorage = async <T>(
   options?: { expireInDays?: number }
 ): Promise<void> => {
   return new Promise((resolve) => {
+    if (!chrome.storage || !chrome.storage.session) {
+      resolve()
+      return
+    }
     let storageValue = value as any
     if (options?.expireInDays !== undefined) {
       storageValue = {
@@ -296,7 +308,19 @@ const setSessionStorage = async <T>(
 
 const getSessionStorage = async <T>(key: string): Promise<T | null> => {
   return new Promise((resolve) => {
+    if (!chrome.storage || !chrome.storage.session) {
+      resolve(null)
+      return
+    }
     chrome.storage.session.get(key, function (result) {
+      if (chrome.runtime.lastError) {
+        resolve(null)
+        return
+      }
+      if (!result) {
+        resolve(null)
+        return
+      }
       const item = result[key]
       if (
         item &&
@@ -319,6 +343,10 @@ const getSessionStorage = async <T>(key: string): Promise<T | null> => {
 
 const removeSessionStorage = async (key: string): Promise<void> => {
   return new Promise((resolve) => {
+    if (!chrome.storage || !chrome.storage.session) {
+      resolve()
+      return
+    }
     chrome.storage.session.remove(key, function () {
       resolve()
     })

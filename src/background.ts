@@ -44,6 +44,17 @@ chrome.runtime.onInstalled.addListener(async () => {
   console.log(
     "Rule to remove Origin header for Facebook GraphQL API has been applied."
   )
+
+  // Allow content scripts to access session storage
+  try {
+    if (chrome.storage && chrome.storage.session && (chrome.storage.session as any).setAccessLevel) {
+      await (chrome.storage.session as any).setAccessLevel({
+        accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
+      })
+    }
+  } catch (e) {
+    console.error("Failed to set session storage access level:", e)
+  }
 })
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
@@ -235,6 +246,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch((error) => {
         sendResponse({ error: error.message })
       })
+    return true
+  }
+
+  if(message.type === ERemoteMessageType.SET_STORAGE){
+    chrome.storage.local.set({ [message.key]: message.value }, () => {
+      sendResponse(true)
+    })
+    return true
+  }
+
+  if(message.type === ERemoteMessageType.GET_STORAGE){
+    chrome.storage.local.get([message.key], (result) => {
+      const item = result[message.key]
+      if (item && typeof item === "object" && "__expireAt" in item && "__value" in item) {
+        if (Date.now() > item.__expireAt) {
+          chrome.storage.local.remove(message.key)
+          sendResponse(null)
+        } else {
+          sendResponse(item.__value)
+        }
+      } else {
+        sendResponse(item ?? null)
+      }
+    })
+    return true
+  }
+
+  if(message.type === ERemoteMessageType.REMOVE_STORAGE){
+    chrome.storage.local.remove([message.key], () => {
+      sendResponse(true)
+    })
     return true
   }
 })

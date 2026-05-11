@@ -1,7 +1,7 @@
 import { Card } from "antd"
 
-import FacebookDownloadAllForm from "src/modules/facebook/components/FacebookDownloadAllForm"
-import PageContainer from "src/modules/shared/components/PageContainer"
+import FacebookDownloadAllForm from "../components/FacebookDownloadAllForm"
+import PageContainer from "../../shared/components/PageContainer"
 
 import { useTranslation } from "react-i18next"
 

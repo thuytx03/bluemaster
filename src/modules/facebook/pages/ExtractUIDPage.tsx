@@ -1,10 +1,13 @@
 import { Alert, Card, Tabs, Input, Button, Checkbox } from 'antd';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import PageContainer from 'src/modules/shared/components/PageContainer';
-import { copyTextToClipboard, onStartExtension } from 'src/utils/common.util';
-import { getUserID } from 'src/modules/facebook/utils/facebook.util';
+import PageContainer from '../../shared/components/PageContainer';
+import { copyTextToClipboard } from '../../../utils/common.util';
+import { onStartExtension } from '../hooks/useFacebookUIDScraper';
+import { getUserID } from '../utils/facebook.util';
 import { useTranslation } from 'react-i18next';
+import { chromeUtils } from 'src/utils/chrome.util';
+import { EStorageKey } from 'src/constants/enum';
 
 
 const ExtractUIDPage = () => {
@@ -12,7 +15,7 @@ const ExtractUIDPage = () => {
     const [linkGroup, setLinkGroup] = useState<string>("");
     const [linkPost, setLinkPost] = useState<string>("");
     const [linkProfile, setLinkProfile] = useState<string>("");
-
+    const [uidProfile, setUidProfile] = useState<string>("");
     const [postOptions, setPostOptions] = useState({
         comment: true,
         like: false,
@@ -22,8 +25,8 @@ const ExtractUIDPage = () => {
     const handExportUIDGroup = async () => {
         if (!linkGroup) return toast.error(t('error_enter_group_link'));
         try {
-            chrome.tabs.create({ url: linkGroup });
-            onStartExtension({ type: "group" });
+            await onStartExtension({ type: "group" });
+            chromeUtils.openNewTab({ url: linkGroup });
         } catch (error) {
             console.log("error", error);
             toast.error(t('error_occurred'));
@@ -33,15 +36,12 @@ const ExtractUIDPage = () => {
     const handExportUIDPost = async () => {
         if (!linkPost) return toast.error(t('error_enter_post_link'));
         try {
-            chrome.tabs.create({ url: linkPost });
             const options = [];
             if (postOptions.comment) options.push("comment");
             if (postOptions.like) options.push("like");
             if (postOptions.share) options.push("share");
-            await onStartExtension({
-                type: "post",
-                options: options
-            });
+            await onStartExtension({ type: "post", options });
+            chromeUtils.openNewTab({ url: linkPost });
         } catch (error) {
             toast.error(t('error_occurred'));
         }
@@ -50,30 +50,25 @@ const ExtractUIDPage = () => {
     const handExportUIDProfile = async () => {
         if (!linkProfile) return toast.error(t('error_enter_user_link'));
         try {
+            const key = EStorageKey.EXTRACTED_UID_FACEBOOK + linkProfile
+            const uid = await chromeUtils.getStorage(key)
+            if (uid) {
+                setUidProfile(uid as string)
+                return;
+            }
+
             await getUserID(linkProfile).then((res: any) => {
-                toast.custom((tId) => (
-                    <div
-                        className={`max-w-md w-full bg-white dark:bg-zinc-900 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
-                    >
-                        <div className="flex-1 w-0 p-4">
-                            <div className="flex items-start text-zinc-900 dark:text-zinc-100">
-                                {t('uid')} {res.data}
-                            </div>
-                        </div>
-                        <div className="flex border-l border-gray-200 dark:border-zinc-800">
-                            <button
-                                onClick={() => {
-                                    copyTextToClipboard(String(res.data || ''))
-                                    toast.success(t('copy_uid_success'))
-                                    toast.dismiss(tId)
-                                }}
-                                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                {t('copy')}
-                            </button>
-                        </div>
-                    </div>
-                ))
+                if (!res || !res.data) {
+                    toast.error(t('error_uid_not_found') || 'Không tìm thấy UID');
+                    return;
+                }
+                const uidValue = res.data?.id || res.data?.uid || (typeof res.data === 'object' ? JSON.stringify(res.data) : res.data);
+                if (uidValue) {
+                    setUidProfile(uidValue)
+                    chromeUtils.setStorage(key, uidValue)
+                } else {
+                    toast.error(t('error_uid_not_found') || 'Không tìm thấy UID');
+                }
             });
         } catch (error) {
             toast.error(t('error_occurred'));
@@ -180,6 +175,28 @@ const ExtractUIDPage = () => {
                                                     placeholder={t('extract_uid_profile_placeholder')}
                                                     required
                                                 />
+                                                {
+                                                    uidProfile && (
+                                                        <div>
+                                                            <div className="text-base font-semibold mb-1">{t('uid')}</div>
+                                                            <div className='flex items-center justify-end gap-4'>
+                                                                <Input
+                                                                    type="text"
+                                                                    value={uidProfile}
+                                                                    disabled
+                                                                    readOnly
+                                                                    className="w-full"
+                                                                />
+                                                                <Button type="primary" onClick={() => {
+                                                                    copyTextToClipboard(uidProfile)
+                                                                    toast.success(t('copy_success'))
+                                                                }}>
+                                                                    {t('copy')}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
                                                 <Button type="primary" onClick={handExportUIDProfile}>
                                                     {t('scan_now')}
                                                 </Button>

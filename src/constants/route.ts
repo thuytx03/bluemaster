@@ -10,7 +10,8 @@ export const APP_ROUTES = {
     ACCESS_TOKEN: "/facebook/access-token",
     DOWNLOAD_SEPERATE: "/facebook/download-seperate",
     DOWNLOAD_ALL: "/facebook/download-all",
-    EXTRACT_UID: "/facebook/extract-uid"
+    EXTRACT_UID: "/facebook/extract-uid",
+    EXPORT_UID: "/facebook/export-uid"
   },
   TIKTOK: {
     

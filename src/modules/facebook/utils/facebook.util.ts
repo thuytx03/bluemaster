@@ -1,19 +1,19 @@
-import { fbAxiosInstance } from "src/configs/axios.config"
-import { EDownloadSeperateType, ERemoteMessageType, ESocialProvider } from "src/constants/enum"
-import { URL_PATTERN } from "src/constants/regex"
+import { fbAxiosInstance } from "../../../configs/axios.config"
+import { EDownloadSeperateType, ERemoteMessageType, ESocialProvider } from "../../../constants/enum"
+import { URL_PATTERN } from "../../../constants/regex"
 import {
   DOWNLOAD_STORIES_IN_HIGHLIGHT_BATCH_SIZE,
   MAX_RETRY_REQUEST
-} from "src/constants/variables"
-import { IFacebookStory } from "src/modules/facebook/types/facebook.interface"
-import facebookService from "src/modules/facebook/services/facebook.service"
-import { chromeUtils } from "src/utils/chrome.util"
+} from "../../../constants/variables"
+import { IFacebookStory } from "../types/facebook.interface"
+import facebookService from "../services/facebook.service"
+import { chromeUtils } from "../../../utils/chrome.util"
 import {
   downloadByBatch,
   extractIdFromUrl,
   fetchDataXHR,
   isVerifyAccount
-} from "src/utils/common.util"
+} from "../../../utils/common.util"
 
 export const downloadFbPostMedia = async (postUrl: string) => {
   try {

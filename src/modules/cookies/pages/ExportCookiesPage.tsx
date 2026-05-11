@@ -2,13 +2,13 @@ import { Alert, Button, Card, Dropdown, Input } from 'antd'
 import React, { useState } from 'react'
 import { toast } from 'sonner';
 import { CopyOutlined, CheckOutlined, ExportOutlined } from "@ant-design/icons";
-import PageContainer from 'src/modules/shared/components/PageContainer'
-import { EXTENSION_INFO } from 'src/constants';
-import { copyTextToClipboard } from 'src/utils/common.util';
-import { exportToJson, exportToTXT } from 'src/utils/export.util';
+import PageContainer from '../../shared/components/PageContainer'
+import { EXTENSION_INFO } from '../../../constants';
+import { copyTextToClipboard } from '../../../utils/common.util';
+import { exportToJson, exportToTXT } from '../../../utils/export.util';
 import { useTranslation } from 'react-i18next';
-import { chromeUtils } from 'src/utils/chrome.util';
-import { ERemoteMessageType } from 'src/constants/enum';
+import { chromeUtils } from '../../../utils/chrome.util';
+import { ERemoteMessageType } from '../../../constants/enum';
 
 
 const ExportCookiesPage = () => {

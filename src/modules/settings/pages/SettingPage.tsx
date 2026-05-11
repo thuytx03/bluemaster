@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
-import PageContainer from "src/modules/shared/components/PageContainer"
-import ThemeSwitcher from "src/modules/shared/components/ThemeSwitcher"
+import PageContainer from "../../shared/components/PageContainer"
+import ThemeSwitcher from "../../shared/components/ThemeSwitcher"
 
 const SettingPage = () => {
   const { t } = useTranslation()

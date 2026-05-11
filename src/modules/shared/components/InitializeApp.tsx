@@ -1,13 +1,13 @@
 import { Spin } from "antd"
 import axios from "axios"
 import { FC, PropsWithChildren, useEffect, useState } from "react"
-import { EXTENSION_INFO } from "src/constants"
-import { ESocialProvider, EStorageKey } from "src/constants/enum"
-import { IAccounts } from "src/modules/accounts/types/account.interface"
-import { TTheme } from "src/modules/shared/types/common.interface"
-import useAuthStore from "src/store/auth"
-import useExtensionState from "src/store/extension-state"
-import { chromeUtils } from "src/utils/chrome.util"
+import { EXTENSION_INFO } from "../../../constants"
+import { ESocialProvider, EStorageKey } from "../../../constants/enum"
+import { IAccounts } from "../../accounts/types/account.interface"
+import { TTheme } from "../types/common.interface"
+import useAuthStore from "../../../store/auth"
+import useExtensionState from "../../../store/extension-state"
+import { chromeUtils } from "../../../utils/chrome.util"
 
 const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
   const { updateAccountData } = useAuthStore()
@@ -26,12 +26,19 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
       const accountsInStorage = await chromeUtils.getStorage<IAccounts>(
         EStorageKey.ACCOUNTS
       )
-      const { data } = await axios.get(
-        `${EXTENSION_INFO.link_info}?t=${new Date().getTime()}`
-      )
-      const extensionLatestVersion = data.version
-      const { version: currentVersion } = chrome.runtime.getManifest()
-      const isUpdateAvailable = currentVersion !== extensionLatestVersion
+      let isUpdateAvailable = false
+      let extensionLatestVersion = chrome.runtime.getManifest().version
+
+      try {
+        const { data } = await axios.get(
+          `${EXTENSION_INFO.link_info}?t=${new Date().getTime()}`
+        )
+        extensionLatestVersion = data.version
+        const { version: currentVersion } = chrome.runtime.getManifest()
+        isUpdateAvailable = currentVersion !== extensionLatestVersion
+      } catch (e) {
+        console.warn("Could not check for updates:", e)
+      }
       const theme = await chromeUtils.getStorage<TTheme>(EStorageKey.THEME)
       if (accountsInStorage) {
         const updatedAccounts = { ...accountsInStorage }
@@ -50,7 +57,6 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
           currentVersion: extensionLatestVersion,
           theme: theme || "light"
         })
-        document.documentElement.setAttribute("class", theme || "light")
       }
     } catch (error) {
       console.log("Đã có lỗi xảy ra khi khởi tạo extension", error)

@@ -1,8 +1,8 @@
 import React from 'react'
 import { TypeAnimation } from 'react-type-animation'
-import { EXTENSION_INFO } from 'src/constants'
-import ToggerTheme from 'src/modules/shared/components/ToggerTheme'
-import SwitchLanguage from 'src/modules/shared/components/SwitchLanguage'
+import { EXTENSION_INFO } from '../../../constants'
+import ToggerTheme from '../../../modules/shared/components/ToggerTheme'
+import SwitchLanguage from '../../../modules/shared/components/SwitchLanguage'
 import iconUrl from "url:assets/icon.png"
 
 export const SidebarHeader: React.FC = () => {

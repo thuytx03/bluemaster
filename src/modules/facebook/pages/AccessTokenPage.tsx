@@ -4,11 +4,11 @@ import { toast } from "sonner";
 import { Tabs } from 'antd';
 import { Input } from "antd";
 import { CopyOutlined, CheckOutlined } from "@ant-design/icons";
-import PageContainer from "src/modules/shared/components/PageContainer";
-import { EXTENSION_INFO } from "src/constants";
-import { IAccessTokenPage } from "src/modules/facebook/types/facebook.interface";
-import { copyTextToClipboard } from "src/utils/common.util";
-import { fetchTokenEAAB, fetchTokenEAAGNO } from "src/modules/facebook/utils/facebook.util";
+import PageContainer from "../../shared/components/PageContainer";
+import { EXTENSION_INFO } from "../../../constants";
+import { IAccessTokenPage } from "../types/facebook.interface";
+import { copyTextToClipboard } from "../../../utils/common.util";
+import { fetchTokenEAAB, fetchTokenEAAGNO } from "../utils/facebook.util";
 import { useTranslation } from "react-i18next";
 
 
