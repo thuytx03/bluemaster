@@ -69,6 +69,7 @@ const ExportUIDPage = () => {
         <div className="flex items-center gap-2 mt-3">
           <ExportMemberToExcel data={state.arrUID} />
           <Button
+          type="primary"
             onClick={() => exportToTXT(textAreaRef.current?.value || "", fileName)}
           >
             Export TXT
