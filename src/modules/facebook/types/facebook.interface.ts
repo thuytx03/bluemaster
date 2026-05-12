@@ -18,6 +18,8 @@ export type Member = {
   url?: string;
 }
 
+export type FormatType = 'uid' | 'uid_name'
+
 export type ExportState = {
   count: number;
   options: any[];

@@ -1,6 +1,6 @@
 import $ from "jquery"
 import { useEffect, useRef, useState } from "react"
-import { ExportState } from "src/modules/facebook/types/facebook.interface"
+import { ExportState, FormatType, Member } from "src/modules/facebook/types/facebook.interface"
 import { chromeUtils } from "src/utils/chrome.util"
 import { getUserID } from "src/modules/facebook/utils/facebook.util"
 import { EStorageKey } from "src/constants/enum"
@@ -42,7 +42,24 @@ export const useFacebookUIDScraper = () => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const isRestoring = useRef(false)
   const isScrapingActive = useRef(false)
+  const targetUrlRef = useRef<string>("")
   const [isCopy, setIsCopy] = useState<boolean>(false)
+  const [format, setFormat] = useState<FormatType>('uid_name')
+  const formatRef = useRef<FormatType>('uid_name')
+
+  const formatLine = (m: Member, fmt: FormatType): string => {
+    if (fmt === 'uid') return m.uid
+    return m.name ? `${m.uid}|${m.name}` : m.uid
+  }
+
+  const handleFormatChange = (newFormat: FormatType) => {
+    setFormat(newFormat)
+    formatRef.current = newFormat
+    if (textAreaRef.current) {
+      const lines = state.arrUID.map(m => formatLine(m, newFormat))
+      textAreaRef.current.value = lines.join('\n') + (lines.length ? '\n' : '')
+    }
+  }
 
   const updateState = (updates: Partial<ExportState>) => {
     setState((prev) => ({ ...prev, ...updates }))
@@ -70,7 +87,6 @@ export const useFacebookUIDScraper = () => {
     return ""
   }
 
-  const groupID = getIdUrl(window.location.href)
   const userID = getCookie("c_user")
 
   const handleStop = () => {
@@ -140,29 +156,19 @@ export const useFacebookUIDScraper = () => {
         isValid = false
       }
       if (isValid) {
-        const newMember = { uid: member.id, name: member.name, url: member.url }
-
-        setState((prevState) => ({
-          ...prevState,
-          arrUID: [newMember, ...prevState.arrUID]
-        }))
-
+        const newMember: Member = { uid: member.id, name: member.name, url: member.url }
+        setState((prevState) => ({ ...prevState, arrUID: [newMember, ...prevState.arrUID] }))
         if (textAreaRef.current) {
-          textAreaRef.current.value =
-            `${member.id}|${member.name}\n` + textAreaRef.current.value
+          textAreaRef.current.value = formatLine(newMember, formatRef.current) + "\n" + textAreaRef.current.value
         }
       }
     }
 
     if (member.id && !member.name) {
-      const newMember = { uid: member.id }
-      setState((prevState) => ({
-        ...prevState,
-        arrUID: [newMember, ...prevState.arrUID]
-      }))
-
+      const newMember: Member = { uid: member.id }
+      setState((prevState) => ({ ...prevState, arrUID: [newMember, ...prevState.arrUID] }))
       if (textAreaRef.current) {
-        textAreaRef.current.value = member.id + "\n" + textAreaRef.current.value
+        textAreaRef.current.value = formatLine(newMember, formatRef.current) + "\n" + textAreaRef.current.value
       }
     }
   }
@@ -227,8 +233,9 @@ export const useFacebookUIDScraper = () => {
               data.data.node.new_members.page_info.has_next_page
             configRef.current.cursorEnd =
               data.data.node.new_members.page_info.end_cursor
-
             members.forEach((member: any) => {
+            console.log("ember.node", member.node)
+
               setListMemberUid({
                 id: member.node.id,
                 name: member.node.name,
@@ -396,9 +403,10 @@ export const useFacebookUIDScraper = () => {
             }
 
             comments.forEach((comment: any) => {
-              const authorId = comment.node.author.id
-              const authorName = comment.node.author.name
-              setListMemberUid({ id: authorId, name: authorName })
+              setListMemberUid({
+                id: comment.node.author.id,
+                name: comment.node.author.name
+              })
             })
 
             updateState({ count: getQuantityMember() })
@@ -515,13 +523,8 @@ export const useFacebookUIDScraper = () => {
             }
 
             shares.forEach((share: any) => {
-              const shareId =
-                share.node.comet_sections.context_layout.story.comet_sections
-                  .title.story.actors[0].id
-              const shareName =
-                share.node.comet_sections.context_layout.story.comet_sections
-                  .title.story.actors[0].name
-              setListMemberUid({ id: shareId, name: shareName })
+              const actor = share.node.comet_sections.context_layout.story.comet_sections.title.story.actors[0]
+              setListMemberUid({ id: actor.id, name: actor.name })
             })
             updateState({ count: getQuantityMember() })
 
@@ -617,9 +620,7 @@ export const useFacebookUIDScraper = () => {
             }
 
             reactors.forEach((reactor: any) => {
-              const reactorId = reactor.node.id
-              const reactorName = reactor.node.name
-              setListMemberUid({ id: reactorId, name: reactorName })
+              setListMemberUid({ id: reactor.node.id, name: reactor.node.name })
             })
             updateState({ count: getQuantityMember() })
 
@@ -699,7 +700,8 @@ export const useFacebookUIDScraper = () => {
     additionalParam: string | null = null
   ) => {
     switch (type) {
-      case "group":
+      case "group": {
+        const groupID = getIdUrl(targetUrlRef.current)
         if (additionalParam && userID) {
           await getUIdMembersGroup(
             "https://www.facebook.com/api/graphql",
@@ -715,6 +717,7 @@ export const useFacebookUIDScraper = () => {
           )
         }
         break
+      }
       case "post":
         if (additionalParam) {
           await getUidInPost(
@@ -725,7 +728,7 @@ export const useFacebookUIDScraper = () => {
           )
         } else {
           await fetchUidPost(
-            window.location.href,
+            targetUrlRef.current,
             "https://www.facebook.com/api/graphql"
           )
         }
@@ -747,7 +750,7 @@ export const useFacebookUIDScraper = () => {
           postId: configRef.current.postId
         },
         textAreaValue: textAreaRef.current?.value || "",
-        url: window.location.href
+        url: targetUrlRef.current
       }, { expireInDays: 7 })
     }
   }, [state])
@@ -762,6 +765,7 @@ export const useFacebookUIDScraper = () => {
       if (scraperData && scraperData.active) {
         chromeUtils.removeStorage(EStorageKey.FB_SCRAPER_PROGRESS)
         isScrapingActive.current = true
+        targetUrlRef.current = scraperData.url || ""
         updateState({ status: "continue", success: false, arrUID: [], count: 0 })
         if (textAreaRef.current) textAreaRef.current.value = ""
         configRef.current.options = scraperData.options || []
@@ -769,7 +773,8 @@ export const useFacebookUIDScraper = () => {
         configRef.current.type = scraperData.type
         removeCacheStorage()
         index(scraperData.type)
-      } else if (progress && progress.url === window.location.href) {
+      } else if (progress && progress.url) {
+        targetUrlRef.current = progress.url
         isRestoring.current = true
         updateState({ ...progress.state, status: "stop" })
         configRef.current = { ...configRef.current, ...progress.config, status: "stop" }
@@ -796,6 +801,8 @@ export const useFacebookUIDScraper = () => {
     cleanup,
     handleStop,
     handleContinue,
-    fileName
+    fileName,
+    format,
+    handleFormatChange
   }
 }

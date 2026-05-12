@@ -1,6 +1,7 @@
 import { Alert, Card, Tabs, Input, Button, Checkbox } from 'antd';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../shared/components/PageContainer';
 import { copyTextToClipboard } from '../../../utils/common.util';
 import { onStartExtension } from '../hooks/useFacebookUIDScraper';
@@ -8,10 +9,12 @@ import { getUserID } from '../utils/facebook.util';
 import { useTranslation } from 'react-i18next';
 import { chromeUtils } from 'src/utils/chrome.util';
 import { EStorageKey } from 'src/constants/enum';
+import { APP_ROUTES } from 'src/constants/route';
 
 
 const ExtractUIDPage = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [linkGroup, setLinkGroup] = useState<string>("");
     const [linkPost, setLinkPost] = useState<string>("");
     const [linkProfile, setLinkProfile] = useState<string>("");
@@ -25,8 +28,8 @@ const ExtractUIDPage = () => {
     const handExportUIDGroup = async () => {
         if (!linkGroup) return toast.error(t('error_enter_group_link'));
         try {
-            await onStartExtension({ type: "group" });
-            chromeUtils.openNewTab({ url: linkGroup });
+            await onStartExtension({ type: "group", url: linkGroup });
+            navigate(APP_ROUTES.FACEBOOK.EXPORT_UID);
         } catch (error) {
             console.log("error", error);
             toast.error(t('error_occurred'));
@@ -40,8 +43,8 @@ const ExtractUIDPage = () => {
             if (postOptions.comment) options.push("comment");
             if (postOptions.like) options.push("like");
             if (postOptions.share) options.push("share");
-            await onStartExtension({ type: "post", options });
-            chromeUtils.openNewTab({ url: linkPost });
+            await onStartExtension({ type: "post", options, url: linkPost });
+            navigate(APP_ROUTES.FACEBOOK.EXPORT_UID);
         } catch (error) {
             toast.error(t('error_occurred'));
         }
