@@ -10,7 +10,7 @@ const MainLayout = () => {
     <InitializeApp>
       <Layout className="bg-transparent h-full">
         <Content className="bg-transparent h-full">
-          <div className="p-2 h-full">
+          <div className="p-2 h-full overflow-y-auto">
             <Outlet />
           </div>
         </Content>

@@ -16,6 +16,7 @@ import SettingPage from "../modules/settings/pages/SettingPage"
 import ThreadsDownloadAllPage from "../modules/threads/pages/ThreadsDownloadAllPage"
 import XDownloadAllPage from "../modules/x/pages/XDownloadAllPage"
 import NotFound from "../modules/shared/pages/NotFound"
+import InboxPage from "../modules/facebook/pages/inbox"
 
 const AppRoutes = () => {
   return (
@@ -28,25 +29,28 @@ const AppRoutes = () => {
         <Route element={<FacebookDownloadAllPage />} path={APP_ROUTES.DOWNLOAD_ALL.FACEBOOK} />
 
         {/* Instagram Module */}
-        <Route path={APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM} element={<InstagramDownloadAllPage />}/>
-        
+        <Route path={APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM} element={<InstagramDownloadAllPage />} />
+
         {/* Threads Module */}
         <Route path={APP_ROUTES.DOWNLOAD_ALL.THREADS} element={<ThreadsDownloadAllPage />} />
-        
+
         {/* X Module */}
         <Route path={APP_ROUTES.DOWNLOAD_ALL.X} element={<XDownloadAllPage />} />
-        
+
         {/* Accounts Module */}
         <Route path={APP_ROUTES.ACCOUNTS} element={<AccountsPage />} />
-        
+
         {/* Download Module */}
         <Route path={APP_ROUTES.DOWNLOAD_SEPERATE} element={<DownloadSeperatePage />} />
-        
+
         {/* Cookies Module */}
         <Route element={<ExportCookiesPage />} path={APP_ROUTES.COOKIES.INDEX} />
         <Route element={<ImportCookiesPage />} path={APP_ROUTES.COOKIES.IMPORT} />
         <Route element={<ExportCookiesPage />} path={APP_ROUTES.COOKIES.EXPORT} />
-        
+
+        {/* Inbox Module */}
+        <Route path={APP_ROUTES.INBOX} element={<InboxPage />} />
+
         {/* Settings Module */}
         <Route path={APP_ROUTES.SETTINGS} element={<SettingPage />} />
 

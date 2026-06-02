@@ -86,21 +86,20 @@ export const getShadowHostId: PlasmoGetShadowHostId = () => "xthuy-social-sideba
 
 const queryClient = new QueryClient()
 
-// Debug: verify all imported components at module level
-console.log("[Xthuy Debug] Component check:", {
-    FloatingBar: typeof FloatingBar,
-    NavMenu: typeof NavMenu,
-    SidebarHeader: typeof SidebarHeader,
-    Footer: typeof Footer,
-    AppRoutes: typeof AppRoutes,
-    Toaster: typeof Toaster,
-    ErrorBoundary: typeof ErrorBoundary,
-    MemoryRouter: typeof MemoryRouter,
-    StyleProvider: typeof StyleProvider,
-    ConfigProvider: typeof ConfigProvider,
-    App: typeof App,
-    QueryClientProvider: typeof QueryClientProvider,
-})
+// console.log("[Xthuy Debug] Component check:", {
+//     FloatingBar: typeof FloatingBar,
+//     NavMenu: typeof NavMenu,
+//     SidebarHeader: typeof SidebarHeader,
+//     Footer: typeof Footer,
+//     AppRoutes: typeof AppRoutes,
+//     Toaster: typeof Toaster,
+//     ErrorBoundary: typeof ErrorBoundary,
+//     MemoryRouter: typeof MemoryRouter,
+//     StyleProvider: typeof StyleProvider,
+//     ConfigProvider: typeof ConfigProvider,
+//     App: typeof App,
+//     QueryClientProvider: typeof QueryClientProvider,
+// })
 
 const RootContent = () => {
     const [isOpen, setIsOpen] = useState(false)

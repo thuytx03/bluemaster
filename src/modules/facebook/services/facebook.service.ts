@@ -1,5 +1,4 @@
 import axios from "axios"
-
 import { fbAxiosInstance } from "../../../configs/axios.config"
 import { ESocialProvider } from "../../../constants/enum"
 import { MAX_RETRY_REQUEST } from "../../../constants/variables"
@@ -53,17 +52,18 @@ const getFacebookAccountData = async () => {
       throw new Error()
     }
     const profileInfor = JSON.parse(originalProfileInfor[1])
-
     const id = profileInfor.id
     const fullName = profileInfor.name
     const avatar = profileInfor.profile_picture.uri
     const fbAccountData: IFacebookAccount = {
       id,
+      name: fullName,
       username: fullName,
       avatar,
       cookies,
       fbDtsg
     }
+    console.log("fb account data", fbAccountData)
     return fbAccountData
   } catch (error) {
     console.log("Lỗi khi lấy dữ liệu tài khoản Facebook", error)

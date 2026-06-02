@@ -234,7 +234,6 @@ export const useFacebookUIDScraper = () => {
             configRef.current.cursorEnd =
               data.data.node.new_members.page_info.end_cursor
             members.forEach((member: any) => {
-            console.log("ember.node", member.node)
 
               setListMemberUid({
                 id: member.node.id,

@@ -28,5 +28,6 @@ export const APP_ROUTES = {
     EXPORT: '/cookies/export'
   },
   DOWNLOAD_SEPERATE: "/download-seperate",
-  SETTINGS: "/settings"
+  SETTINGS: "/settings",
+  INBOX: "/inbox"
 }

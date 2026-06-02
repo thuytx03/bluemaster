@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import type { MenuProps } from "antd"
 import { APP_ROUTES } from "../../../../../constants/route"
-import { Download, Facebook, Instagram, Settings, User, Twitter, MessageCircle, HelpCircle, Braces, Cookie, Pickaxe } from "lucide-react"
+import { Download, Facebook, Instagram, Settings, User, Twitter, MessageCircle, HelpCircle, Braces, Cookie, Pickaxe, Inbox } from "lucide-react"
 import { ExportOutlined, ImportOutlined } from "@ant-design/icons"
 
 type MenuItem = Required<MenuProps>["items"][number]
@@ -35,6 +35,11 @@ export const useMenuItems = (): MenuItem[] => {
               {t("batch_download")}
             </Link>
           )
+        },
+        {
+          key: APP_ROUTES.INBOX,
+          icon: <Inbox className="size-4" />,
+          label: <Link to={APP_ROUTES.INBOX}>{t("auto_inbox")}</Link>
         }
       ]
     },

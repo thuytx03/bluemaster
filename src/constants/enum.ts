@@ -7,7 +7,13 @@ export enum EStorageKey {
   THEME = "THEME",
   FB_SCRAPER_PROGRESS = "FB_SCRAPER_PROGRESS",
   EXTRACTED_UID_FACEBOOK = "EXTRACTED_UID_FACEBOOK",
-  FB_SCRAPER_DATA = "data"
+  FB_SCRAPER_DATA = "data",
+
+  // Auto-run features
+  AUTO_RUN_FEATURES_DISABLED = "AUTO_RUN_FEATURES_DISABLED",
+  BLOCK_OPEN_URLS_REGEXS = "BLOCK_OPEN_URLS_REGEXS",
+  WEB_TIMER_DATA = "web_timer",
+  WEB_TIMER_SHOW_ON_TITLE = "web_timer_show_time_on_title"
 }
 
 export enum ESocialProvider {

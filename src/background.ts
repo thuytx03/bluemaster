@@ -1,7 +1,157 @@
 import { ERemoteMessageType } from "src/constants/enum"
 
+import { rules } from "./constants/rules"
+import {
+  fetchBusinessInboxConfig,
+  fetchPageListInbox,
+  fetchUsersInboxBg,
+  getInboxRequestConfig
+} from "./modules/facebook/pages/inbox/services/inbox-background.service"
+import facebookService from "./modules/facebook/services/facebook.service"
 import { captureRequestsZalo } from "./modules/zalo/services/zalo.service"
 import { checkExtensionVersion } from "./utils/common.util"
+import { RUN_FUNC } from "./constants"
+
+async function bgFetch(
+  url: string,
+  options?: RequestInit
+): Promise<{
+  ok: boolean
+  status: number
+  statusText: string
+  body: string
+  url: string
+  headers: Record<string, string>
+}> {
+  const res = await fetch(url, options)
+  let body = ""
+  const contentType = res.headers.get("Content-Type") ?? ""
+  const isTextual =
+    contentType.startsWith("text/") ||
+    contentType.includes("json") ||
+    contentType.includes("javascript") ||
+    contentType.includes("xml")
+  if (isTextual) {
+    body = await res.text()
+  } else {
+    // Binary content (image/video/audio/etc.) — return as base64 data URL
+    const buffer = await res.arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+    let binary = ""
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    const mime = contentType || "application/octet-stream"
+    body = `data:${mime};base64,${btoa(binary)}`
+  }
+  const headers: Record<string, string> = {}
+  res.headers.forEach((v, k) => {
+    headers[k] = v
+  })
+  return {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    body,
+    url: res.url,
+    headers
+  }
+}
+
+chrome.runtime.onMessageExternal.addListener(
+  (request, _sender, sendResponse) => {
+    if (request.action === "ping") {
+      sendResponse({ pong: true })
+      return
+    }
+
+    if (request.action === RUN_FUNC) {
+      const { fnPath, params = [] } = request as {
+        fnPath: string
+        params: unknown[]
+      }
+
+      if (fnPath === "customFetch") {
+        const [url, opts] = params as [string, RequestInit?]
+        bgFetch(url, opts)
+          .then(sendResponse)
+          .catch(() => sendResponse(null))
+        return true
+      }
+
+      // Generic chrome.* function dispatcher
+      if (fnPath.startsWith("chrome.")) {
+        const parts = fnPath.split(".")
+        let fn: unknown = chrome
+        for (const part of parts.slice(1))
+          fn = (fn as Record<string, unknown>)?.[part]
+        if (typeof fn === "function") {
+          try {
+            const result = (fn as Function)(...(params as unknown[]))
+            if (
+              result &&
+              typeof (result as Promise<unknown>).then === "function"
+            ) {
+              ;(result as Promise<unknown>)
+                .then(sendResponse)
+                .catch(() => sendResponse(null))
+            } else {
+              sendResponse(result)
+            }
+          } catch {
+            sendResponse(null)
+          }
+          return true
+        }
+      }
+
+      sendResponse(null)
+      return true
+    }
+
+    if (request.action === "GET_FB_USER_INFO") {
+      facebookService
+        .getFacebookAccountData()
+        .then((data) => sendResponse({ success: true, data }))
+        .catch(() =>
+          sendResponse({
+            success: false,
+            data: {
+              id: request.payload?.c_user ?? "",
+              name: "Tài khoản cá nhân",
+              avatar: request.payload?.c_user
+                ? `https://graph.facebook.com/${request.payload.c_user}/picture?type=normal`
+                : ""
+            }
+          })
+        )
+      return true
+    }
+
+    if (request.action === "INBOX_UPLOAD_MEDIA") {
+      const { url, filesBase64 } = (request.payload ?? {}) as {
+        url: string
+        filesBase64: { fieldName: string; name: string; type: string; data: string }[]
+      }
+      const doUpload = async () => {
+        const formData = new FormData()
+        for (const f of filesBase64) {
+          const base64Data = f.data.includes(",") ? f.data.split(",")[1] : f.data
+          const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
+          const blob = new Blob([bytes], { type: f.type || "application/octet-stream" })
+          formData.append(f.fieldName, blob, f.name)
+        }
+        const res = await fetch(url, { method: "POST", credentials: "include", body: formData })
+        const body = await res.text()
+        return { ok: res.ok, status: res.status, body }
+      }
+      doUpload()
+        .then(sendResponse)
+        .catch((e) => sendResponse({ ok: false, status: 0, body: "", error: e.message }))
+      return true
+    }
+  }
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage()
@@ -16,38 +166,17 @@ let pendingZaloResponse: ((data: any) => void) | null = null
 let pendingZaloTimeout: ReturnType<typeof setTimeout> | null = null
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const rules = [
-    {
-      id: 1,
-      priority: 1,
-      action: {
-        type: "modifyHeaders",
-        requestHeaders: [
-          {
-            header: "Origin",
-            operation: "remove"
-          }
-        ]
-      },
-      condition: {
-        urlFilter: "https://www.facebook.com/api/graphql/*",
-        resourceTypes: ["xmlhttprequest"]
-      }
-    }
-  ]
-
   await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [1],
+    removeRuleIds: [1, 10, 11, 12, 13],
     addRules: rules as any
   })
-
-  console.log(
-    "Rule to remove Origin header for Facebook GraphQL API has been applied."
-  )
-
   // Allow content scripts to access session storage
   try {
-    if (chrome.storage && chrome.storage.session && (chrome.storage.session as any).setAccessLevel) {
+    if (
+      chrome.storage &&
+      chrome.storage.session &&
+      (chrome.storage.session as any).setAccessLevel
+    ) {
       await (chrome.storage.session as any).setAccessLevel({
         accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
       })
@@ -78,6 +207,123 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 )
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // ==================== AUTO-RUN HELPERS ====================
+  if (message.type === "IDLE_QUERY_STATE") {
+    const threshold =
+      typeof message.threshold === "number" ? message.threshold : 60
+    chrome.idle.queryState(threshold, sendResponse)
+    return true
+  }
+
+  // ==================== INBOX HANDLERS ====================
+  if (message.action === "INBOX_GET_CONFIG") {
+    const userId = message.payload?.c_user
+    fetchBusinessInboxConfig(userId).then(sendResponse)
+    return true
+  }
+
+  if (message.action === "INBOX_GET_PAGE_LIST") {
+    const userId = message.payload?.c_user
+    const tabId = sender.tab?.id ?? null
+
+    const sendProgress = (count: number, isComplete: boolean) => {
+      if (tabId) {
+        chrome.tabs
+          .sendMessage(tabId, {
+            action: "INBOX_PAGE_LIST_PROGRESS",
+            payload: { count, isComplete }
+          })
+          .catch(() => {})
+      }
+    }
+
+    fetchBusinessInboxConfig(userId)
+      .then((configResult) => {
+        if (!configResult.success)
+          return sendResponse({ success: false, error: configResult.error })
+        return fetchPageListInbox([], null, sendProgress).then(sendResponse)
+      })
+      .catch((e) => sendResponse({ success: false, error: e.message }))
+    return true
+  }
+
+  if (message.action === "INBOX_GET_THREADS") {
+    const { page_id, before_call } = message.payload ?? {}
+    fetchUsersInboxBg(page_id, before_call ?? null).then(sendResponse)
+    return true
+  }
+
+  if (message.action === "GET_FB_USER_INFO") {
+    facebookService
+      .getFacebookAccountData()
+      .then((data) => sendResponse({ success: true, data: data }))
+      .catch(() =>
+        sendResponse({
+          success: false,
+          data: {
+            id: message.payload?.c_user,
+            name: "Tài khoản cá nhân",
+            avatar: `https://graph.facebook.com/${message.payload?.c_user}/picture?type=normal`
+          }
+        })
+      )
+    return true
+  }
+
+  if (message.action === "INBOX_GET_REQUEST_CONFIG") {
+    sendResponse({ success: true, config: getInboxRequestConfig() })
+    return true
+  }
+
+  if (message.action === "INBOX_GET_C_USER") {
+    chrome.cookies.get(
+      { url: "https://www.facebook.com", name: "c_user" },
+      (cookie) => {
+        sendResponse({ value: cookie ? cookie.value : null })
+      }
+    )
+    return true
+  }
+
+  if (message.action === "INBOX_FETCH_IMAGE_BASE64") {
+    const url: string = message.url
+    if (!url?.startsWith("http")) {
+      sendResponse({ success: false, message: "Invalid URL" })
+      return true
+    }
+    const tryUrls: string[] = [url]
+    if (url.includes("scontent")) {
+      const large = url
+        .replace(/\/s\d+x\d+\//g, "/s200x200/")
+        .replace(/\/p\d+x\d+\//g, "/p200x200/")
+      if (large !== url) tryUrls.unshift(large)
+    }
+    const tryFetch = async () => {
+      for (const u of tryUrls) {
+        try {
+          const res = await fetch(u, { redirect: "follow" })
+          if (!res.ok) continue
+          const ct = res.headers.get("Content-Type") ?? ""
+          if (!ct.includes("image")) continue
+          const blob = await res.blob()
+          if (blob.size < 100) continue
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+          })
+          return { success: true, base64, size: blob.size }
+        } catch {
+          continue
+        }
+      }
+      return { success: false, message: "All URLs failed" }
+    }
+    tryFetch().then(sendResponse)
+    return true
+  }
+
   if (message.type === ERemoteMessageType.RETRIEVE_X_ACCOUNT_CREDENTIALS) {
     sendResponse(xHeadersData)
   }
@@ -108,12 +354,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     fetch("https://id.traodoisub.com/api.php", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: data,
+      body: data
     })
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         if (json.error) {
           sendResponse({ status: 400, data: json.error })
         } else {
@@ -157,7 +403,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse(cookie)
       })
     } else {
-      const expirationDate = Math.floor(Date.now() / 1000) + (message.expirationDays || 30) * 24 * 60 * 60
+      const expirationDate =
+        Math.floor(Date.now() / 1000) +
+        (message.expirationDays || 30) * 24 * 60 * 60
       chrome.cookies.set(
         {
           url: message.url,
@@ -176,9 +424,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === ERemoteMessageType.REMOVE_COOKIE) {
-    chrome.cookies.remove({ url: message.url, name: message.name }, (details) => {
-      sendResponse(details)
-    })
+    chrome.cookies.remove(
+      { url: message.url, name: message.name },
+      (details) => {
+        sendResponse(details)
+      }
+    )
     return true
   }
 
@@ -249,17 +500,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true
   }
 
-  if(message.type === ERemoteMessageType.SET_STORAGE){
+  if (message.type === ERemoteMessageType.SET_STORAGE) {
     chrome.storage.local.set({ [message.key]: message.value }, () => {
       sendResponse(true)
     })
     return true
   }
 
-  if(message.type === ERemoteMessageType.GET_STORAGE){
+  if (message.type === ERemoteMessageType.GET_STORAGE) {
     chrome.storage.local.get([message.key], (result) => {
       const item = result[message.key]
-      if (item && typeof item === "object" && "__expireAt" in item && "__value" in item) {
+      if (
+        item &&
+        typeof item === "object" &&
+        "__expireAt" in item &&
+        "__value" in item
+      ) {
         if (Date.now() > item.__expireAt) {
           chrome.storage.local.remove(message.key)
           sendResponse(null)
@@ -273,7 +529,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true
   }
 
-  if(message.type === ERemoteMessageType.REMOVE_STORAGE){
+  if (message.type === ERemoteMessageType.REMOVE_STORAGE) {
     chrome.storage.local.remove([message.key], () => {
       sendResponse(true)
     })
@@ -311,7 +567,7 @@ function maybeSendZaloInfo() {
   }
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "GET_ZALO_INFO") {
     if (zaloIMEI && zaloCookies && zaloUserAgent) {
       sendResponse({

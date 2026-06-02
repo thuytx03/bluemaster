@@ -10,3 +10,4 @@ export const EXTENSION_INFO = {
     link_info: API_BASE_URL + '/extension.json'
 }
 export const COOKIE_DOMAIN_FCHAT = 'https://fchat.ai'
+export const RUN_FUNC = "xthuy:runFunc"

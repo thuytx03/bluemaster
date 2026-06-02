@@ -2,6 +2,7 @@ import { ESocialProvider } from "src/constants/enum"
 
 export interface IAccountData {
   id: string
+  name: string
   username: string
   avatar: string
   cookies: string
