@@ -7,7 +7,49 @@ import {
 } from "src/modules/facebook/utils/payload.util"
 
 // ==================== STATE ====================
+// Lives only as long as the service worker; see ensureInboxConfig()
 let inboxRequestConfig: Record<string, any> = {}
+let configPromise: Promise<boolean> | null = null
+
+/** Facebook answers with these when fb_dtsg / session tokens are stale or missing */
+const STALE_CONFIG_ERROR_CODES = new Set([1357001, 1357004, 1357005, 1348020])
+
+const getCUserBg = (): Promise<string | null> =>
+  new Promise((resolve) => {
+    chrome.cookies.get({ url: "https://www.facebook.com", name: "c_user" }, (cookie) =>
+      resolve(cookie?.value ?? null)
+    )
+  })
+
+/**
+ * Make sure the request config is loaded. MV3 service workers are stopped after a
+ * short idle, which wipes the in-memory config while the page list is still served
+ * from the 15-minute cache, so every consumer has to call this first.
+ */
+export async function ensureInboxConfig(force = false): Promise<boolean> {
+  if (!force && inboxRequestConfig.fb_dtsg) return true
+  if (!configPromise) {
+    configPromise = (async () => {
+      const userId = await getCUserBg()
+      if (!userId) return false
+      const res = await fetchBusinessInboxConfig(userId)
+      return res.success
+    })().finally(() => {
+      configPromise = null
+    })
+  }
+  return configPromise
+}
+
+/** JSON strings in Facebook error bodies keep their \uXXXX escapes; decode them */
+const decodeJsonString = (raw: string | undefined): string => {
+  if (!raw) return ""
+  try {
+    return JSON.parse(`"${raw}"`)
+  } catch {
+    return raw
+  }
+}
 
 // ==================== FETCH BUSINESS CONFIG ====================
 
@@ -211,8 +253,12 @@ export async function fetchPageListInbox(
 export async function fetchUsersInboxBg(
   pageId: string,
   beforeCall: string | null,
-  limit = 50
+  limit = 50,
+  isRetry = false
 ): Promise<{ success: boolean; data?: any; error?: any }> {
+  if (!(await ensureInboxConfig(isRetry))) {
+    return { success: false, error: "Không lấy được cấu hình Facebook. Hãy đăng nhập lại facebook.com." }
+  }
   inboxRequestConfig.__req = generateRequest()
 
   const body = new URLSearchParams({
@@ -263,14 +309,19 @@ export async function fetchUsersInboxBg(
 
     if (text.includes('"error":') && text.includes('"errorSummary"')) {
       const errorMatch = text.match(/"error":\s*(\d+)/)
+      const code = errorMatch ? parseInt(errorMatch[1]) : NaN
+      // Stale tokens: reload the config once and retry the same page
+      if (!isRetry && STALE_CONFIG_ERROR_CODES.has(code)) {
+        return fetchUsersInboxBg(pageId, beforeCall, limit, true)
+      }
       const errorDescMatch = text.match(/"errorDescription":\s*"([^"]+)"/)
       const errorSummaryMatch = text.match(/"errorSummary":\s*"([^"]+)"/)
       return {
         success: false,
         error: {
-          error: errorMatch ? parseInt(errorMatch[1]) : "Unknown",
-          errorDescription: errorDescMatch?.[1] ?? "",
-          errorSummary: errorSummaryMatch?.[1] ?? ""
+          error: Number.isNaN(code) ? "Unknown" : code,
+          errorDescription: decodeJsonString(errorDescMatch?.[1]),
+          errorSummary: decodeJsonString(errorSummaryMatch?.[1])
         }
       }
     }

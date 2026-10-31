@@ -2,6 +2,7 @@ import { ERemoteMessageType } from "src/constants/enum"
 
 import { rules } from "src/constants/rules.constants"
 import {
+  ensureInboxConfig,
   fetchBusinessInboxConfig,
   fetchPageListInbox,
   fetchUsersInboxBg,
@@ -238,7 +239,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === "INBOX_GET_REQUEST_CONFIG") {
-    sendResponse({ success: true, config: getInboxRequestConfig() })
+    // Reload the config if the service worker was restarted since the page list was fetched
+    ensureInboxConfig()
+      .then((ok) => sendResponse(ok ? { success: true, config: getInboxRequestConfig() } : { success: false }))
+      .catch(() => sendResponse({ success: false }))
     return true
   }
 
