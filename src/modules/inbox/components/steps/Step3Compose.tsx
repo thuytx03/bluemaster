@@ -1,4 +1,4 @@
-import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react"
+import EmojiPicker, { EmojiClickData, EmojiStyle, Theme } from "emoji-picker-react"
 import { Eye, EyeOff, Paperclip, Smile, Wand2 } from "lucide-react"
 import React, { useCallback, useRef, useState } from "react"
 
@@ -21,15 +21,14 @@ import useMessageTemplate from "src/modules/inbox/hooks/useMessageTemplate"
 import useInboxStore from "src/modules/inbox/stores/inbox.store"
 import { TAttachmentPosition, TAttachmentType } from "src/modules/inbox/types/inbox.types"
 import StepFooter from "src/modules/inbox/components/StepFooter"
+import { TEMPLATE_TOKENS } from "src/modules/inbox/utils/message-template.util"
 
-const SYNTAX_HINTS = [
-  { token: "bm-[u]", desc: "Tên người nhận" },
-  { token: "bm-[r]", desc: "Emoji vui ngẫu nhiên" },
-  { token: "bm-[q]", desc: "Emoji buồn ngẫu nhiên" },
-  { token: "bm-[y]", desc: "Emoji ngạc nhiên (Fanpage) / Gọi (Profile)" },
-  { token: "bm-[x]", desc: "Xưng hô (chỉ Profile)" },
-  { token: "a|b|c", desc: "SPIN: chọn ngẫu nhiên" }
-]
+/* Chips shown above the editor; profile-only tokens are hidden for fanpage campaigns */
+const SYNTAX_HINTS = Object.values(TEMPLATE_TOKENS).map((t) => ({
+  token: t.token,
+  desc: t.label,
+  profileOnly: t.profileOnly
+}))
 
 const Step3Compose: React.FC = () => {
   const { campaign, nextStep, prevStep } = useInboxStore()
@@ -126,13 +125,14 @@ const Step3Compose: React.FC = () => {
           <span className="bm-mr-1 bm-inline-flex bm-items-center bm-gap-1 bm-text-[11px] bm-font-medium bm-text-fg-muted">
             <Wand2 size={12} /> Cú pháp
           </span>
-          {SYNTAX_HINTS.map((h) => (
+          {SYNTAX_HINTS.filter((h) => !h.profileOnly || campaign.category === "profile").map((h) => (
             <Tooltip key={h.token} content={h.desc} placement="bottom-start">
               <button
                 type="button"
                 onClick={() => handleInsertSyntax(h.token)}
-                className="bm-inline-flex bm-h-6 bm-items-center bm-rounded-md bm-border bm-border-line bm-bg-surface bm-px-1.5 bm-font-mono bm-text-[11px] bm-text-fg-muted bm-transition-colors hover:bm-border-brand hover:bm-text-brand-ink">
-                {h.token}
+                className="bm-inline-flex bm-h-6 bm-items-center bm-gap-1 bm-rounded-md bm-border bm-border-line bm-bg-surface bm-px-1.5 bm-text-[11px] bm-text-fg-muted bm-transition-colors hover:bm-border-brand hover:bm-text-brand-ink">
+                <span className="bm-font-mono bm-text-brand-ink">{h.token}</span>
+                <span className="bm-hidden pw-sm:bm-inline">{h.desc.split(" (")[0]}</span>
               </button>
             </Tooltip>
           ))}
@@ -149,13 +149,15 @@ const Step3Compose: React.FC = () => {
           ref={textAreaRef}
           value={messageTemplate.content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Nhập nội dung tin nhắn... Dùng [u] để chèn tên, a|b|c để spin nội dung ngẫu nhiên"
+          placeholder="Ví dụ: Chào {name} {emoji}, bên mình {đang có|vừa ra mắt} ưu đãi mới..."
           rows={7}
           className="bm-rounded-none bm-border-0 bm-bg-transparent focus:bm-shadow-none"
         />
         <div className="bm-flex bm-items-center bm-justify-between bm-border-t bm-border-line/70 bm-px-3 bm-py-1.5 bm-text-[11px] bm-text-fg-subtle">
           <span>
-            {campaign.category === "fanpage" ? "* [x] [y] chỉ dùng cho Profile" : "Hỗ trợ [x] xưng hô và [y] gọi"}
+            {campaign.category === "fanpage"
+              ? "{name} = tên khách · {emoji} = emoji ngẫu nhiên · {a|b|c} = chọn ngẫu nhiên"
+              : "{name} = tên khách · {me} = cách bạn xưng · {you} = cách gọi khách · {a|b|c} = chọn ngẫu nhiên"}
           </span>
           <span className="bm-tabular-nums">{charCount} ký tự</span>
         </div>
@@ -167,7 +169,10 @@ const Step3Compose: React.FC = () => {
           height={360}
           width={320}
           theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
-          lazyLoadEmojis
+          /* native glyphs: facebook.com's CSP blocks the CDN sprite images the default style needs */
+          emojiStyle={EmojiStyle.NATIVE}
+          skinTonesDisabled
+          searchPlaceholder="Tìm emoji..."
           previewConfig={{ showPreview: false }}
         />
       </Popover>

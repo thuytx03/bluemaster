@@ -30,6 +30,7 @@ const Step1Scan: React.FC = () => {
     pageLoadError,
     scanError,
     fetchPages,
+    pagesFetchedAt,
     startScan
   } = useInboxScan()
 
@@ -69,14 +70,21 @@ const Step1Scan: React.FC = () => {
             Nhấn vào một trang để bắt đầu quét hộp thư.
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          icon={<RefreshCw size={13} className={cn(loadingPages && "bm-animate-spin")} />}
-          onClick={fetchPages}
-          loading={loadingPages}>
-          Làm mới
-        </Button>
+        <div className="bm-flex bm-flex-col bm-items-end bm-gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            icon={<RefreshCw size={13} className={cn(loadingPages && "bm-animate-spin")} />}
+            onClick={() => fetchPages(true)}
+            loading={loadingPages}>
+            Làm mới
+          </Button>
+          {pagesFetchedAt && (
+            <span className="bm-text-[11px] bm-text-fg-subtle">
+              Cập nhật lúc {new Date(pagesFetchedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} · tự làm mới sau 15 phút
+            </span>
+          )}
+        </div>
       </div>
 
       {pageLoadError && <Callout tone="danger" compact>{pageLoadError}</Callout>}
