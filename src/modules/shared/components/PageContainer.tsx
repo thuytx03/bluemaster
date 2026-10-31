@@ -2,7 +2,6 @@ import { ArrowUpRight, Rocket } from "lucide-react"
 import { FC, PropsWithChildren, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
-import { EXTENSION_INFO } from "src/constants"
 import { cn } from "src/modules/shared/ui"
 import useExtensionState from "src/stores/extension-state.store"
 
@@ -41,15 +40,16 @@ const PageContainer: FC<IPageContainerProps> = ({
                 {t("update_available_title")}
               </div>
               <div className="bm-truncate bm-text-[11.5px] bm-text-fg-muted">
-                {t("update_available_desc")}
+                {extensionState.updateNotes || t("update_available_desc")}
               </div>
             </div>
             <a
-              href={EXTENSION_INFO.link_download}
+              href={extensionState.downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="bm-inline-flex bm-h-8 bm-shrink-0 bm-items-center bm-gap-1 bm-rounded-lg bm-bg-brand bm-px-3 bm-text-[12px] bm-font-medium bm-text-brand-fg hover:bm-bg-brand-hover hover:bm-no-underline">
               {t("update_button")}
+              {extensionState.latestVersion ? ` v${extensionState.latestVersion}` : ""}
               <ArrowUpRight size={13} />
             </a>
           </div>

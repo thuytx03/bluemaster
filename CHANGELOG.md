@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Auto inbox: the stop button now ends the scan and keeps what was found; progress shows elapsed time and rate instead of a fixed 100%.
 - Auto inbox: page list cached for 15 minutes with a refresh button; readable template tokens (`{name}`, `{me}`, `{you}`, `{emoji}`); native emoji picker.
 - Manifest: `unlimitedStorage` so large inboxes and download history fit in extension storage.
+- Update check: reads `version.json` from the repository (6-hour alarm, 1-hour cache) instead of the rate-limited GitHub API; proper semver comparison; builds below `min_supported` are blocked with an update screen; system notification fixed for MV3 (bundled icon, click handler registered at worker start). Needs the `alarms` permission.
 
 ## [1.0.0] - 2026-10-31
 

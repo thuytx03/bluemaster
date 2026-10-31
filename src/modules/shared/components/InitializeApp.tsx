@@ -5,8 +5,9 @@ import { useTranslation } from "react-i18next"
 import iconUrl from "url:assets/icon.png"
 
 import { EXTENSION_INFO } from "src/constants"
-import { versionFromTag } from "src/constants/api.constants"
 import { ESocialProvider, EStorageKey } from "src/constants/enum"
+import UpdateRequiredScreen from "src/modules/shared/components/UpdateRequiredScreen"
+import { requestVersionCheck } from "src/modules/shared/services/version-check.service"
 import { IAccounts } from "src/modules/facebook/types/account.types"
 import useDownloadProcesses from "src/stores/download-process.store"
 import { TSingleFileNameConfig } from "src/modules/download/types/download.types"
@@ -18,7 +19,7 @@ import { chromeUtils } from "src/utils/chrome.util"
 const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
   const { t } = useTranslation()
   const { updateAccountData, authenticate } = useAuthStore()
-  const { setExtensionState } = useExtensionState()
+  const { extensionState, setExtensionState } = useExtensionState()
   const hydrateDownloadHistory = useDownloadProcesses((s) => s.hydrate)
   const [isInitialized, setIsInitialized] = useState(true)
 
@@ -34,19 +35,9 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
       const accountsInStorage = await chromeUtils.getStorage<IAccounts>(
         EStorageKey.ACCOUNTS
       )
-      let isUpdateAvailable = false
-      let extensionLatestVersion = chrome.runtime.getManifest().version
-
-      try {
-        const { data } = await axios.get(
-          `${EXTENSION_INFO.link_info}?t=${new Date().getTime()}`
-        )
-        extensionLatestVersion = versionFromTag(data?.tag_name) || extensionLatestVersion
-        const { version: currentVersion } = chrome.runtime.getManifest()
-        isUpdateAvailable = currentVersion !== extensionLatestVersion
-      } catch (e) {
-        console.warn("Could not check for updates:", e)
-      }
+      // The background owns the update check (cache + alarm); null means offline
+      // or no answer yet, in which case the panel simply does not nag.
+      const versionCheck = await requestVersionCheck()
       const theme = await chromeUtils.getStorage<TTheme>(EStorageKey.THEME)
       const layoutMode = await chromeUtils.getStorage<TLayoutMode>(EStorageKey.LAYOUT_MODE)
       const uiScale = await chromeUtils.getStorage<number>(EStorageKey.UI_SCALE)
@@ -57,8 +48,16 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
         )
       await hydrateDownloadHistory()
       setExtensionState({
-        isUpdateAvailable,
-        currentVersion: extensionLatestVersion,
+        ...(versionCheck
+          ? {
+              latestVersion: versionCheck.latestVersion,
+              minSupportedVersion: versionCheck.minSupportedVersion,
+              isUpdateAvailable: versionCheck.isUpdateAvailable,
+              isUpdateRequired: versionCheck.isUpdateRequired,
+              updateNotes: versionCheck.notes,
+              downloadUrl: versionCheck.downloadUrl
+            }
+          : {}),
         theme: theme || "light",
         layoutMode: layoutMode === "overlay" ? "overlay" : "push",
         uiScale: typeof uiScale === "number" && uiScale >= 0.8 && uiScale <= 1.5 ? uiScale : 1,
@@ -97,6 +96,10 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
     // Mount-only bootstrap: reads storage, verifies the account, loads history
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  if (!isInitialized && extensionState.isUpdateRequired) {
+    return <UpdateRequiredScreen />
+  }
 
   return isInitialized ? (
     <div className="bm-flex bm-h-full bm-w-full bm-flex-col bm-items-center bm-justify-center bm-gap-4 bm-bg-app x-dots">

@@ -1,11 +1,7 @@
-import axios from "axios"
 import clsx, { ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { ERemoteMessageType, ESocialProvider, EStorageKey } from "src/constants/enum"
+import { ERemoteMessageType, ESocialProvider } from "src/constants/enum"
 import useAuthStore from "src/stores/auth.store"
-import { chromeUtils } from "src/utils/chrome.util"
-import { EXTENSION_INFO } from "src/constants"
-import { GITHUB_ICON_URL, GITHUB_LATEST_RELEASE_API, GITHUB_REPO_URL, versionFromTag } from "src/constants/api.constants"
 
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms))
@@ -20,45 +16,6 @@ export const isVerifyAccount = (socialName: ESocialProvider) => {
     return false
   }
   return true
-}
-
-export const checkExtensionVersion = async () => {
-  const notificationId = "update-notification"
-  const { version: currentVersion } = chrome.runtime.getManifest()
-  const { data } = await axios.get(
-    GITHUB_LATEST_RELEASE_API
-  )
-  const latestVersion = versionFromTag(data?.tag_name)
-  if (!latestVersion) return
-  const notifyLatestExtensionVersion = await chromeUtils.getStorage(
-    EStorageKey.NOTIFY_LATEST_EXTENSION_VERSION
-  )
-  if (notifyLatestExtensionVersion === latestVersion) {
-    return
-  }
-  if (currentVersion !== latestVersion) {
-    await chromeUtils.setStorage(
-      EStorageKey.NOTIFY_LATEST_EXTENSION_VERSION,
-      latestVersion
-    )
-    chrome.notifications.create(notificationId, {
-      type: "basic",
-      iconUrl: GITHUB_ICON_URL,
-      title: `🎉 ${EXTENSION_INFO.displayName} đã có phiên bản mới!`,
-      message: `Vui lòng cập nhật để tận hưởng các tính năng và cải tiến mới nhất.`
-    })
-    await chromeUtils.setStorage(
-      EStorageKey.NOTIFY_LATEST_EXTENSION_VERSION,
-      latestVersion
-    )
-  }
-  chrome.notifications.onClicked.addListener((clickedId) => {
-    if (clickedId === notificationId) {
-      chrome.tabs.create({
-        url: GITHUB_REPO_URL
-      })
-    }
-  })
 }
 
 export const fetchDataXHR = async (options: any) => {

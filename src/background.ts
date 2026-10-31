@@ -9,7 +9,13 @@ import {
   getInboxRequestConfig
 } from "src/modules/inbox/services/inbox-background.service"
 import facebookService from "src/modules/facebook/services/facebook.service"
-import { checkExtensionVersion } from "src/utils/common.util"
+import {
+  isUpdateNotification,
+  openDownloadPage,
+  runVersionCheck,
+  scheduleVersionCheckAlarm,
+  VERSION_CHECK_ALARM
+} from "src/modules/shared/services/version-check.service"
 import {
   downloadFileWithChromeApi,
   downloadForbiddenMediaWithChromeApi
@@ -180,6 +186,26 @@ chrome.runtime.onInstalled.addListener(async () => {
   } catch (e) {
     console.error("Failed to set session storage access level:", e)
   }
+  // Fresh install or reload of a new build: re-evaluate immediately so a stale
+  // "update available" state clears and a required update is announced.
+  await scheduleVersionCheckAlarm()
+  runVersionCheck({ force: true })
+})
+
+chrome.runtime.onStartup.addListener(() => {
+  scheduleVersionCheckAlarm()
+  runVersionCheck()
+})
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === VERSION_CHECK_ALARM) runVersionCheck({ force: true })
+})
+
+// Registered at top level: the worker may have been woken by this very click.
+chrome.notifications.onClicked.addListener((notificationId) => {
+  if (!isUpdateNotification(notificationId)) return
+  chrome.notifications.clear(notificationId)
+  openDownloadPage()
 })
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -499,6 +525,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })
     return true
   }
+
+  if (message.type === ERemoteMessageType.VERSION_CHECK) {
+    runVersionCheck({ force: !!message.force })
+      .then(sendResponse)
+      .catch(() => sendResponse(null))
+    return true
+  }
 })
 
-checkExtensionVersion()
+// Worker (re)start: cheap because a fresh cached result is reused.
+scheduleVersionCheckAlarm()
+runVersionCheck()

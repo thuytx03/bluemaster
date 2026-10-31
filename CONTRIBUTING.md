@@ -36,4 +36,6 @@ Use the issue templates. For bugs, include the extension version, browser versio
 
 ## Releasing (maintainers)
 
-Bump `version` in `package.json`, update `CHANGELOG.md`, commit, then push a tag `vX.Y.Z`. The release workflow builds, signs the checksum and publishes the zip.
+Bump `version` in `package.json`, set the same value as `latest` in `version.json`, update `CHANGELOG.md`, commit, then push a tag `vX.Y.Z`. The release workflow checks that the tag, `package.json` and `version.json` agree, builds, signs the checksum and publishes the zip.
+
+Installed extensions fetch `version.json` from `main` (every 6 hours and when the panel opens). A build older than `latest` gets an update banner; a build older than `min_supported` is blocked until the user updates, so raise `min_supported` only when older builds genuinely stop working. `notes` is a one-line summary shown with the prompt, `download_url` is where the buttons point.

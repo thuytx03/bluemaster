@@ -164,12 +164,12 @@ const SettingPage = () => {
                   </span>
                   {extensionState.isUpdateAvailable ? (
                     <a
-                      href={EXTENSION_INFO.link_download}
+                      href={extensionState.downloadUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bm-inline-flex bm-items-center bm-gap-1 bm-text-[11.5px]">
                       <Badge tone="warning" size="xs">
-                        {t("update_button")} v{extensionState.currentVersion}
+                        {t("update_button")} v{extensionState.latestVersion}
                       </Badge>
                     </a>
                   ) : (

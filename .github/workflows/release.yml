@@ -35,6 +35,21 @@ jobs:
             echo "Tag v$TAG does not match package.json version $PKG" >&2
             exit 1
           fi
+          # Installed extensions read version.json to learn about this release
+          LATEST="$(node -p "require('./version.json').latest")"
+          if [ "$TAG" != "$LATEST" ]; then
+            echo "Tag v$TAG does not match version.json latest $LATEST" >&2
+            exit 1
+          fi
+          node -e '
+            const v = require("./version.json");
+            const n = (s) => String(s).replace(/^v/, "").split(".").map(Number);
+            const [a, b] = [n(v.min_supported ?? v.latest), n(v.latest)];
+            for (let i = 0; i < Math.max(a.length, b.length); i++) {
+              if ((a[i] ?? 0) > (b[i] ?? 0)) { console.error("version.json min_supported is above latest"); process.exit(1) }
+              if ((a[i] ?? 0) < (b[i] ?? 0)) break;
+            }
+          '
 
       - name: Type-check and lint
         run: pnpm check

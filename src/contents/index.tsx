@@ -93,6 +93,14 @@ const EXPANDED_WIDTH = () =>
 
 const RootContent = () => {
   const [isOpen, setIsOpen] = useState(false)
+  // Transitions stay off until the panel is first opened. Otherwise, when the saved
+  // position (center/full) replaces the default (right) during hydration, the closed
+  // panel animates from opacity 1 to 0 and its white surface flashes over the page.
+  const [animated, setAnimated] = useState(false)
+  const openPanel = useCallback(() => {
+    setAnimated(true)
+    setIsOpen(true)
+  }, [])
   const [width, setWidth] = useState(DEFAULT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
 
@@ -267,6 +275,7 @@ const RootContent = () => {
     const onKey = (e: KeyboardEvent) => {
       if (e.altKey && e.code === "KeyX" && !e.ctrlKey && !e.metaKey) {
         e.preventDefault()
+        setAnimated(true)
         setIsOpen((o) => !o)
         return
       }
@@ -290,7 +299,7 @@ const RootContent = () => {
                 <ErrorBoundary name="FloatingBar">
                   <FloatingBar
                     isOpen={isOpen}
-                    onOpen={() => setIsOpen(true)}
+                    onOpen={openPanel}
                     theme={theme}
                     side={isLeft ? "left" : "right"}
                   />
@@ -302,7 +311,8 @@ const RootContent = () => {
                   aria-hidden={!isOpen}
                   className={cn(
                     "bm-fixed bm-z-[2147483647] bm-flex",
-                    !isResizing &&
+                    animated &&
+                      !isResizing &&
                       "bm-transition-[transform,opacity] bm-duration-300 bm-ease-out",
                     panelPosition === "right" &&
                       cn(

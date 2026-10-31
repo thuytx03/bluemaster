@@ -5,6 +5,8 @@ export const GITHUB_RELEASES_URL = `${GITHUB_REPO_URL}/releases/latest`
 /** GitHub API: `tag_name` of the latest published release (e.g. "v1.2.0"); 404 while no release exists */
 export const GITHUB_LATEST_RELEASE_API = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
 export const GITHUB_ICON_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/HEAD/assets/icon.png`
+/** `version.json` on the default branch: latest + min_supported version (see src/utils/version.util.ts) */
+export const VERSION_MANIFEST_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/version.json`
 
 /** "v1.2.0" -> "1.2.0" */
 export const versionFromTag = (tag: unknown) =>

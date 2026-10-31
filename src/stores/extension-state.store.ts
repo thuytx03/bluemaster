@@ -6,11 +6,18 @@ import {
   TSingleFileNameConfig
 } from "src/modules/download/types/download.types"
 import { TLayoutMode, TPanelPosition, TTheme } from "src/modules/shared/types/common.types"
+import { GITHUB_RELEASES_URL } from "src/constants/api.constants"
 import { chromeUtils } from "src/utils/chrome.util"
 
 interface IExtensionState {
-  currentVersion: string
+  /** Newest released version according to the last update check */
+  latestVersion: string
+  minSupportedVersion: string | null
   isUpdateAvailable: boolean
+  /** Running build is below the supported minimum: the panel is blocked */
+  isUpdateRequired: boolean
+  updateNotes: string
+  downloadUrl: string
   theme: TTheme
   layoutMode: TLayoutMode
   /** Panel zoom factor (1 = 100%) */
@@ -35,8 +42,12 @@ interface IExtensionStateStore {
 
 const useExtensionState = create<IExtensionStateStore>((set, get) => ({
   extensionState: {
-    currentVersion: "",
+    latestVersion: "",
+    minSupportedVersion: null,
     isUpdateAvailable: false,
+    isUpdateRequired: false,
+    updateNotes: "",
+    downloadUrl: GITHUB_RELEASES_URL,
     theme: "light",
     layoutMode: "push",
     uiScale: 1,

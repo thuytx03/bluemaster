@@ -1,0 +1,7 @@
+{
+  "$comment": "Read by installed extensions to decide whether to show an update banner (latest) or block the UI until the user updates (min_supported). Keep `latest` equal to the version you tag; raise `min_supported` only when older builds no longer work.",
+  "latest": "1.0.0",
+  "min_supported": "1.0.0",
+  "download_url": "https://github.com/thuytx03/bluemaster/releases/latest",
+  "notes": ""
+}

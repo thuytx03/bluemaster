@@ -92,6 +92,7 @@
       "tabs",
       "storage",
       "unlimitedStorage",
+      "alarms",
       "notifications"
     ],
     "host_permissions": [
