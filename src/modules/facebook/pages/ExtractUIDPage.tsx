@@ -84,28 +84,25 @@ const ExtractUIDPage = () => {
     try {
       setLoadingProfile(true)
       const key = EStorageKey.EXTRACTED_UID_FACEBOOK + linkProfile
-      const uid = await chromeUtils.getStorage(key)
-      if (uid) {
-        setUidProfile(uid as string)
+      // Only trust a cached value that is an actual numeric id (older builds cached error text)
+      const uid = await chromeUtils.getStorage<string>(key)
+      if (uid && /^\d+$/.test(uid)) {
+        setUidProfile(uid)
         return
       }
+      if (uid) await chromeUtils.removeStorage(key)
 
-      await getUserID(linkProfile).then((res: any) => {
-        if (!res || !res.data) {
-          toast.error(t("error_uid_not_found") || "Không tìm thấy UID")
-          return
-        }
-        const uidValue =
-          res.data?.id ||
-          res.data?.uid ||
-          (typeof res.data === "object" ? JSON.stringify(res.data) : res.data)
-        if (uidValue) {
-          setUidProfile(uidValue)
-          chromeUtils.setStorage(key, uidValue)
-        } else {
-          toast.error(t("error_uid_not_found") || "Không tìm thấy UID")
-        }
-      })
+      const res = await getUserID(linkProfile)
+      if (res.status !== 200 || typeof res.data !== "string" || !/^\d+$/.test(res.data)) {
+        toast.error(
+          typeof res.data === "string" && res.data
+            ? res.data
+            : t("error_uid_not_found") || "Không tìm thấy UID"
+        )
+        return
+      }
+      setUidProfile(res.data)
+      await chromeUtils.setStorage(key, res.data)
     } catch (error) {
       toast.error(t("error_occurred"))
     } finally {

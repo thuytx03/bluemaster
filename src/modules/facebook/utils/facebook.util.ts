@@ -1,4 +1,4 @@
-import { ERemoteMessageType } from "src/constants/enum"
+import facebookService from "src/modules/facebook/services/facebook.service"
 import { chromeUtils } from "src/utils/chrome.util"
 import { fetchDataXHR } from "src/utils/common.util"
 
@@ -79,66 +79,41 @@ interface IExtractUIDResult {
   data: string | any
 }
 
+/**
+ * Resolve a Facebook profile/page/group URL (or bare username) to its numeric id
+ * using the logged-in session: the profile page HTML carries the id, so no
+ * third-party lookup service is needed.
+ */
 export const getUserID = async (url: string): Promise<IExtractUIDResult> => {
-  // Regex kiểm tra URL
   const regex =
     /(?:https?:\/\/)?(?:www|m\.)?(?:facebook|fb|m|.me\.facebook)\.(?:com|me|watch)\/(?:(?:\w)*#!\/)?(?:pages\/)?(?:[\w-]*\/)*([\w\-.]+)(?:\/)?/i
   const match = url.match(regex)
-
   if (!match) {
-    return {
-      status: 400,
-      data: "URL không hợp lệ"
-    }
+    return { status: 400, data: "URL không hợp lệ" }
   }
 
-  let matchedValue = match[1]
-
-  // Xử lý nếu URL chứa `/posts/`
-  if (url.includes("/posts/")) {
-    const prefix = "https://www.facebook.com/"
-    if (url.startsWith(prefix)) {
-      matchedValue = url.substring(prefix.length)
-      console.log("match[1]=====", url.substring(prefix.length))
-    }
+  // profile.php?id=123 already contains the id
+  if (match[1] === "profile.php") {
+    const id = new URL(url.startsWith("http") ? url : `https://${url}`).searchParams.get("id")
+    return id ? { status: 200, data: id } : { status: 400, data: "URL không hợp lệ" }
   }
 
-  // Xử lý profile.php
-  if (matchedValue === "profile.php") {
-    const urlSearch = new URL(url)
-    const uId = urlSearch.searchParams.get("id")
-    return {
-      status: 200,
-      data: uId
-    }
-  }
-  const cacheKey = `uid_cache_${matchedValue}`
-  const cachedDataSession = await chromeUtils.getSessionStorage(cacheKey)
-  if (cachedDataSession) {
-    return {
-      status: 200,
-      data: cachedDataSession
-    }
+  // group URLs: resolve the group id
+  const groupSlug = url.match(/facebook\.com\/groups\/([A-Za-z0-9._-]+)/i)?.[1]
+  const identifier = groupSlug ?? match[1]
+  const cacheKey = `uid_cache_${groupSlug ? "group_" : ""}${identifier}`
+  const cached = await chromeUtils.getSessionStorage(cacheKey)
+  if (cached) {
+    return { status: 200, data: cached }
   }
 
-  // Nếu URL hợp lệ và chưa có trong cache thì gọi API
-  const newUrl = `https://facebook.com/${matchedValue}`
-
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(
-      { type: ERemoteMessageType.GET_USER_ID, link: newUrl },
-      (result) => {
-        if (chrome.runtime.lastError) {
-          resolve({ status: 500, data: "Đã xảy ra lỗi khi gọi API" })
-        } else {
-          // Nếu gọi API ra kết quả 200 thành công thì lưu dữ liệu lại vào Storage Local
-          if (result && result.status === 200 && result.data) {
-            chromeUtils.setSessionStorage(cacheKey, result.data)
-            console.log(`💾 [Cache Set] Lưu UID mới cho ${matchedValue}: `, result.data)
-          }
-          resolve(result)
-        }
-      }
-    )
-  })
+  try {
+    const id = groupSlug
+      ? await facebookService.getGroupIdFromName(groupSlug)
+      : (await facebookService.getProfileInfo(identifier)).id
+    await chromeUtils.setSessionStorage(cacheKey, id)
+    return { status: 200, data: id }
+  } catch (error) {
+    return { status: 404, data: (error as Error).message || "Không tìm thấy UID" }
+  }
 }

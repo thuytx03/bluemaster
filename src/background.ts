@@ -313,29 +313,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true // giữ kênh mở
   }
 
-  if (message.type === ERemoteMessageType.GET_USER_ID) {
-    const data = new URLSearchParams({ link: message.link }).toString()
-    fetch("https://id.traodoisub.com/api.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: data
-    })
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.error) {
-          sendResponse({ status: 400, data: json.error })
-        } else {
-          sendResponse({ status: 200, data: json })
-        }
-      })
-      .catch(() => {
-        sendResponse({ status: 500, data: "Đã xảy ra lỗi khi gọi API" })
-      })
-    return true // giữ kênh mở cho async
-  }
-
   if (message.type === ERemoteMessageType.GET_COOKIES) {
     chrome.cookies.getAll({ domain: message.domain }, (cookies) => {
       if (cookies && cookies.length > 0) {

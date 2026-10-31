@@ -33,7 +33,6 @@ export enum ESingleDownloadType {
 }
 
 export enum ERemoteMessageType {
-  GET_USER_ID = "GET_USER_ID",
   GET_COOKIES = "GET_COOKIES",
   SET_COOKIE = "SET_COOKIE",
   GET_COOKIE = "GET_COOKIE",
