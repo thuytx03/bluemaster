@@ -112,10 +112,10 @@ This extension automates actions on your own Facebook account. You are responsib
 
 ## Releasing
 
-CI runs type-check, lint and build on every push and pull request. To publish a version: bump `version` in `package.json`, commit, then push a matching tag. The release workflow builds the extension, attaches `bluemaster-<version>.zip` (plus a SHA-256 checksum) to a GitHub Release, and the extension's update check picks it up.
+CI runs type-check, lint and build on every push and pull request. To publish a version, run `pnpm version <patch|minor|major>` and push with tags. That bumps `package.json`, syncs `version.json` and `CHANGELOG.md`, commits and tags; the release workflow then builds the extension, attaches `bluemaster-<version>.zip` (plus a SHA-256 checksum) to a GitHub Release, and the extension's update check picks it up.
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+pnpm version minor && git push --follow-tags
 ```
 
 ## Contributing
