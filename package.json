@@ -1,7 +1,7 @@
 {
   "name": "bluemaster",
   "displayName": "Bluemaster for Facebook",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Open-source browser extension toolkit for Facebook: bulk photo/video/reel/story downloads, multi-URL downloads, UID scraping, bulk inbox messaging, access tokens and cookie tools.",
   "author": "Trịnh Xuân Thuỷ",
   "license": "MIT",
