@@ -120,7 +120,7 @@ git tag v1.0.0 && git push origin v1.0.0
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a PR run `pnpm check` and make sure `pnpm build` succeeds; CI enforces the same checks. Keep the naming rules above and the single 8 px border radius used across the UI kit in `src/modules/shared/ui`.
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions and the PR checklist, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community rules. Security issues go through [SECURITY.md](SECURITY.md); the data handling is described in [PRIVACY.md](PRIVACY.md). Changes per version are in [CHANGELOG.md](CHANGELOG.md). Keep the naming rules above and the single 8 px border radius used across the UI kit in `src/modules/shared/ui`.
 
 ## License
 

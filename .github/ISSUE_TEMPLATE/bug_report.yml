@@ -1,0 +1,46 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Bluemaster version
+      placeholder: "1.0.0 (see Settings > About)"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: "Chrome 142 / Edge 142 / Brave"
+    validations:
+      required: true
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Which tool?
+      options: [Bulk download, Multi-URL download, UID scraper, Auto inbox, Access token, Cookies, Auto-run helper, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What URL type did you use (profile, group, post, reel...)? Do not paste cookies or tokens.
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See error ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output
+      description: Open DevTools on the Facebook tab, filter by "Bluemaster", paste the relevant lines.
+      render: text
