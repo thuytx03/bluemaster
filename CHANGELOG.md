@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-31
+
 ### Changed
 - Auto inbox: customer scan runs up to 4 parallel time-sliced lanes with work stealing, asks for larger pages, drops the fixed 20-second wait at the end of every scan and backs off faster on errors.
 - Auto inbox: scan results are cached per page for 7 days; re-scanning only fetches threads updated since, with a "Quét lại từ đầu" option for a full pass.
@@ -34,3 +36,4 @@ First public release under the Bluemaster name.
 - Instagram, Threads, X, TikTok and Zalo features; the extension is Facebook-only.
 
 [1.0.0]: https://github.com/thuytx03/bluemaster/releases/tag/v1.0.0
+[1.0.1]: https://github.com/thuytx03/bluemaster/compare/v1.0.0...v1.0.1
