@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" width="120" alt="Bluemaster logo" />
+  <img src="assets/icon.png" width="120" alt="Bluemaster logo" style="border-radius:24px" />
 </p>
 
 <h1 align="center">Bluemaster for Facebook</h1>
