@@ -24,11 +24,9 @@ import StepFooter from "src/modules/inbox/components/StepFooter"
 import { TEMPLATE_TOKENS } from "src/modules/inbox/utils/message-template.util"
 
 /* Chips shown above the editor; profile-only tokens are hidden for fanpage campaigns */
-const SYNTAX_HINTS = Object.values(TEMPLATE_TOKENS).map((t) => ({
-  token: t.token,
-  desc: t.label,
-  profileOnly: t.profileOnly
-}))
+const SYNTAX_HINTS = Object.entries(TEMPLATE_TOKENS)
+  .filter(([key]) => key !== "spin") // spin stays supported in the engine but is not advertised as a chip
+  .map(([, t]) => ({ token: t.token, desc: t.label, profileOnly: t.profileOnly }))
 
 const Step3Compose: React.FC = () => {
   const { campaign, nextStep, prevStep } = useInboxStore()
@@ -149,15 +147,15 @@ const Step3Compose: React.FC = () => {
           ref={textAreaRef}
           value={messageTemplate.content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Ví dụ: Chào {name} {emoji}, bên mình {đang có|vừa ra mắt} ưu đãi mới..."
+          placeholder="Ví dụ: Chào {name} {emoji}, bên mình đang có ưu đãi mới..."
           rows={7}
           className="bm-rounded-none bm-border-0 bm-bg-transparent focus:bm-shadow-none"
         />
         <div className="bm-flex bm-items-center bm-justify-between bm-border-t bm-border-line/70 bm-px-3 bm-py-1.5 bm-text-[11px] bm-text-fg-subtle">
           <span>
             {campaign.category === "fanpage"
-              ? "{name} = tên khách · {emoji} = emoji ngẫu nhiên · {a|b|c} = chọn ngẫu nhiên"
-              : "{name} = tên khách · {me} = cách bạn xưng · {you} = cách gọi khách · {a|b|c} = chọn ngẫu nhiên"}
+              ? "{name} = tên khách · {emoji} = emoji ngẫu nhiên"
+              : "{name} = tên khách · {me} = cách bạn xưng · {you} = cách gọi khách"}
           </span>
           <span className="bm-tabular-nums">{charCount} ký tự</span>
         </div>
