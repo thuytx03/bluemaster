@@ -38,6 +38,15 @@ dist/
 keys.json
 
 # typescript
-.tsbuildinfo
-được nhé, cứ getGroupInfo là có danh sách id member định dạng id_0, bỏ _0 là có id user
+*.tsbuildinfo
 
+
+# packaged zips
+package/
+
+# local analysis material
+social_bulk_downloader/
+.codegraph/
+
+# local agent settings
+.claude/

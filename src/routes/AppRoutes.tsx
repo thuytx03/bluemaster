@@ -1,47 +1,36 @@
-import { Navigate, Route, Routes } from "react-router-dom"
-import { APP_ROUTES } from "../constants/route"
-import MainLayout from "../modules/shared/layouts/MainLayout"
+import { Route, Routes } from "react-router-dom"
+
+import { APP_ROUTES } from "src/constants/route.constants"
+import MainLayout from "src/modules/shared/layouts/MainLayout"
 
 // Modules
-import AccountsPage from "../modules/accounts/pages/AccountsPage"
-import ExportCookiesPage from "../modules/cookies/pages/ExportCookiesPage"
-import ImportCookiesPage from "../modules/cookies/pages/ImportCookiesPage"
-import DownloadSeperatePage from "../modules/download/pages/DownloadSeperatePage"
-import FacebookDownloadAllPage from "../modules/facebook/pages/FacebookDownloadAllPage"
-import AccessTokenPage from "../modules/facebook/pages/AccessTokenPage"
-import ExtractUIDPage from "../modules/facebook/pages/ExtractUIDPage"
-import ExportUIDPage from "../modules/facebook/pages/ExportUIDPage"
-import InstagramDownloadAllPage from "../modules/instagram/pages/InstagramDownloadAllPage"
-import SettingPage from "../modules/settings/pages/SettingPage"
-import ThreadsDownloadAllPage from "../modules/threads/pages/ThreadsDownloadAllPage"
-import XDownloadAllPage from "../modules/x/pages/XDownloadAllPage"
-import NotFound from "../modules/shared/pages/NotFound"
-import InboxPage from "../modules/facebook/pages/inbox"
+import ExportCookiesPage from "src/modules/cookies/pages/ExportCookiesPage"
+import ImportCookiesPage from "src/modules/cookies/pages/ImportCookiesPage"
+import DownloadAllPage from "src/modules/download/pages/DownloadAllPage"
+import MultiUrlDownloadPage from "src/modules/download/pages/MultiUrlDownloadPage"
+import AccessTokenPage from "src/modules/facebook/pages/AccessTokenPage"
+import ExportUIDPage from "src/modules/facebook/pages/ExportUIDPage"
+import ExtractUIDPage from "src/modules/facebook/pages/ExtractUIDPage"
+import InboxPage from "src/modules/inbox/pages/InboxPage"
+import SettingPage from "src/modules/settings/pages/SettingPage"
+import HomePage from "src/modules/shared/pages/HomePage"
+import NotFound from "src/modules/shared/pages/NotFound"
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route element={<MainLayout />}>
+        {/* Home */}
+        <Route element={<HomePage />} path={APP_ROUTES.HOME} />
+
         {/* Facebook Module */}
         <Route element={<AccessTokenPage />} path={APP_ROUTES.FACEBOOK.ACCESS_TOKEN} />
         <Route element={<ExtractUIDPage />} path={APP_ROUTES.FACEBOOK.EXTRACT_UID} />
         <Route element={<ExportUIDPage />} path={APP_ROUTES.FACEBOOK.EXPORT_UID} />
-        <Route element={<FacebookDownloadAllPage />} path={APP_ROUTES.DOWNLOAD_ALL.FACEBOOK} />
-
-        {/* Instagram Module */}
-        <Route path={APP_ROUTES.DOWNLOAD_ALL.INSTAGRAM} element={<InstagramDownloadAllPage />} />
-
-        {/* Threads Module */}
-        <Route path={APP_ROUTES.DOWNLOAD_ALL.THREADS} element={<ThreadsDownloadAllPage />} />
-
-        {/* X Module */}
-        <Route path={APP_ROUTES.DOWNLOAD_ALL.X} element={<XDownloadAllPage />} />
-
-        {/* Accounts Module */}
-        <Route path={APP_ROUTES.ACCOUNTS} element={<AccountsPage />} />
 
         {/* Download Module */}
-        <Route path={APP_ROUTES.DOWNLOAD_SEPERATE} element={<DownloadSeperatePage />} />
+        <Route element={<DownloadAllPage />} path={APP_ROUTES.DOWNLOAD_ALL.FACEBOOK} />
+        <Route element={<MultiUrlDownloadPage />} path={APP_ROUTES.MULTI_URL_DOWNLOAD} />
 
         {/* Cookies Module */}
         <Route element={<ExportCookiesPage />} path={APP_ROUTES.COOKIES.INDEX} />

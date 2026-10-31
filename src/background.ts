@@ -1,16 +1,19 @@
 import { ERemoteMessageType } from "src/constants/enum"
 
-import { rules } from "./constants/rules"
+import { rules } from "src/constants/rules.constants"
 import {
   fetchBusinessInboxConfig,
   fetchPageListInbox,
   fetchUsersInboxBg,
   getInboxRequestConfig
-} from "./modules/facebook/pages/inbox/services/inbox-background.service"
-import facebookService from "./modules/facebook/services/facebook.service"
-import { captureRequestsZalo } from "./modules/zalo/services/zalo.service"
-import { checkExtensionVersion } from "./utils/common.util"
-import { RUN_FUNC } from "./constants"
+} from "src/modules/inbox/services/inbox-background.service"
+import facebookService from "src/modules/facebook/services/facebook.service"
+import { checkExtensionVersion } from "src/utils/common.util"
+import {
+  downloadFileWithChromeApi,
+  downloadForbiddenMediaWithChromeApi
+} from "src/utils/download-core.util"
+import { RUN_FUNC } from "src/constants"
 
 async function bgFetch(
   url: string,
@@ -157,14 +160,6 @@ chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage()
 })
 
-let xHeadersData: any = null
-
-let zaloIMEI: string | null = null
-let zaloCookies: any[] | null = null
-let zaloUserAgent: string | null = null
-let pendingZaloResponse: ((data: any) => void) | null = null
-let pendingZaloTimeout: ReturnType<typeof setTimeout> | null = null
-
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.declarativeNetRequest.updateDynamicRules({
     removeRuleIds: [1, 10, 11, 12, 13],
@@ -186,35 +181,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   }
 })
 
-chrome.webRequest.onBeforeSendHeaders.addListener(
-  (details) => {
-    const headers = details.requestHeaders || []
-    const authorization =
-      headers.find((h) => h.name.toLowerCase() === "authorization")?.value || ""
-    const xCsrfToken =
-      headers.find((h) => h.name.toLowerCase() === "x-csrf-token")?.value || ""
-
-    // Lưu header mới nhất
-    if (authorization && xCsrfToken) {
-      xHeadersData = {
-        authorization,
-        xCsrfToken
-      }
-    }
-  },
-  { urls: ["*://x.com/i/api/graphql/*"] },
-  ["requestHeaders", "extraHeaders"]
-)
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // ==================== AUTO-RUN HELPERS ====================
-  if (message.type === "IDLE_QUERY_STATE") {
-    const threshold =
-      typeof message.threshold === "number" ? message.threshold : 60
-    chrome.idle.queryState(threshold, sendResponse)
-    return true
-  }
-
   // ==================== INBOX HANDLERS ====================
   if (message.action === "INBOX_GET_CONFIG") {
     const userId = message.payload?.c_user
@@ -324,9 +291,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true
   }
 
-  if (message.type === ERemoteMessageType.RETRIEVE_X_ACCOUNT_CREDENTIALS) {
-    sendResponse(xHeadersData)
-  }
   if (message.action === "FB_DTSG") {
     const profileUrl = `https://www.facebook.com/profile.php?id=${message.c_user}`
     fetch(profileUrl)
@@ -434,13 +398,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === ERemoteMessageType.DOWNLOAD_FILE) {
-    chrome.downloads.download(message.options, (downloadId) => {
-      if (chrome.runtime.lastError) {
-        sendResponse({ error: chrome.runtime.lastError.message })
-      } else {
-        sendResponse({ downloadId })
-      }
-    })
+    downloadFileWithChromeApi({ ...message.options, ...message.config })
+      .then((result) => sendResponse({ success: true, result }))
+      .catch((error: Error) =>
+        sendResponse({ error: error?.message || "Download failed" })
+      )
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.DOWNLOAD_FORBIDDEN_MEDIA) {
+    downloadForbiddenMediaWithChromeApi(
+      message.mediaUrl,
+      message.filename,
+      message.config ?? {}
+    )
+      .then((result) => sendResponse({ success: true, result }))
+      .catch((error: Error) =>
+        sendResponse({ error: error?.message || "Download failed" })
+      )
     return true
   }
 
@@ -476,6 +451,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.cookies.getAll(filter, (cookies) => {
       sendResponse(cookies || [])
     })
+    return true
+  }
+
+  if (message.type === ERemoteMessageType.FETCH_BINARY) {
+    // Binary-safe fetch for the ZIP downloader: body comes back as a data URL
+    bgFetch(message.url, { credentials: "include" })
+      .then((result) => sendResponse(result))
+      .catch((error: Error) => sendResponse({ ok: false, error: error.message }))
     return true
   }
 
@@ -533,59 +516,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.remove([message.key], () => {
       sendResponse(true)
     })
-    return true
-  }
-})
-
-captureRequestsZalo({
-  onIMEI: (imei) => {
-    zaloIMEI = imei
-    maybeSendZaloInfo()
-  },
-  onCookies: (cookies) => {
-    zaloCookies = cookies
-    maybeSendZaloInfo()
-  },
-  onUserAgent: (ua) => {
-    zaloUserAgent = ua
-    maybeSendZaloInfo()
-  }
-})
-
-function maybeSendZaloInfo() {
-  if (pendingZaloResponse && zaloIMEI && zaloCookies && zaloUserAgent) {
-    pendingZaloResponse({
-      imei: zaloIMEI,
-      cookies: zaloCookies,
-      userAgent: zaloUserAgent
-    })
-    pendingZaloResponse = null
-    if (pendingZaloTimeout) {
-      clearTimeout(pendingZaloTimeout)
-      pendingZaloTimeout = null
-    }
-  }
-}
-
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.action === "GET_ZALO_INFO") {
-    if (zaloIMEI && zaloCookies && zaloUserAgent) {
-      sendResponse({
-        imei: zaloIMEI,
-        cookies: zaloCookies,
-        userAgent: zaloUserAgent
-      })
-    } else {
-      // Chưa có data, lưu callback lại, sẽ trả về khi đủ data hoặc timeout
-      pendingZaloResponse = sendResponse
-      pendingZaloTimeout = setTimeout(() => {
-        if (pendingZaloResponse) {
-          pendingZaloResponse({ imei: null, cookies: null, userAgent: null })
-          pendingZaloResponse = null
-        }
-      }, 60000) // 1 phút
-    }
-    // Giữ kênh mở cho callback bất đồng bộ
     return true
   }
 })

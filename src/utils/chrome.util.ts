@@ -1,8 +1,13 @@
 import { ERemoteMessageType } from "src/constants/enum"
+import {
+  downloadFileWithChromeApi,
+  downloadForbiddenMediaWithChromeApi,
+  IDownloadFileConfig
+} from "src/utils/download-core.util"
 
 const getChromeCookies = async (domain: string): Promise<string> => {
   if (!chrome.cookies) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // Nếu là URL thì gửi url, nếu không thì gửi domain
       const isUrl = /^https?:\/\//i.test(domain)
       const params = isUrl ? { url: domain } : { domain }
@@ -18,7 +23,7 @@ const getChromeCookies = async (domain: string): Promise<string> => {
       )
     })
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const isUrl = /^https?:\/\//i.test(domain)
     const filter = isUrl ? { url: domain } : { domain }
     chrome.cookies.getAll(filter, function (cookies) {
@@ -36,7 +41,7 @@ const getChromeCookies = async (domain: string): Promise<string> => {
 
 const getChromeCookiesList = async (domain: string): Promise<chrome.cookies.Cookie[]> => {
   if (!chrome.cookies) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const isUrl = /^https?:\/\//i.test(domain)
       const params = isUrl ? { url: domain } : { domain }
       chrome.runtime.sendMessage(
@@ -86,7 +91,7 @@ const getChromeCookiesList = async (domain: string): Promise<chrome.cookies.Cook
       secure: true, // Nếu website sử dụng HTTPS
       sameSite: "lax" // Cấu hình SameSite (None, Lax, Strict)
     },
-    (cookie) => {
+    () => {
       if (chrome.runtime.lastError) {
         console.error("Error setting cookie:", chrome.runtime.lastError)
       } else {
@@ -128,7 +133,7 @@ const setChromeCookie = async (details: chrome.cookies.SetDetails): Promise<chro
       )
     })
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     chrome.cookies.get(
       {
         url: domain, // URL cần truy cập để lấy cookie
@@ -159,13 +164,13 @@ const removeCookie = async (domain: string, name: string) => {
       )
     })
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     chrome.cookies.remove(
       {
         url: domain,
         name: name
       },
-      (cookie) => {
+      () => {
         if (chrome.runtime.lastError) {
           console.error("Error removing cookie:", chrome.runtime.lastError)
           resolve(false)
@@ -353,48 +358,73 @@ const removeSessionStorage = async (key: string): Promise<void> => {
   })
 }
 
+const normalizeDownloadConfig = (
+  config?: boolean | IDownloadFileConfig
+): IDownloadFileConfig =>
+  typeof config === "boolean" ? { waitUntilCompleted: config } : (config ?? {})
+
+/**
+ * Download a file with retry/resume semantics (see download-core.ts).
+ * Works from a content script (delegates to the background service worker)
+ * as well as from extension pages that own the `downloads` API.
+ *
+ * `config` may be a boolean for backwards compatibility (= waitUntilCompleted).
+ */
 const downloadFile = async (
   options: chrome.downloads.DownloadOptions,
-  waitUntilCompleted: boolean = true
-) => {
+  config?: boolean | IDownloadFileConfig
+): Promise<string> => {
+  const downloadConfig = normalizeDownloadConfig(config)
   if (!chrome.downloads) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
-        { type: ERemoteMessageType.DOWNLOAD_FILE, options },
+        { type: ERemoteMessageType.DOWNLOAD_FILE, options, config: downloadConfig },
         (response) => {
-          if (response?.error) {
-            reject(response.error)
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message))
+          } else if (!response || response.error) {
+            reject(new Error(response?.error || "Download failed"))
           } else {
-            resolve("Tải xuống bắt đầu (Background)")
+            resolve(response.result || "completed")
           }
         }
       )
     })
   }
-  return new Promise(async (resolve, reject) => {
-    chrome.downloads.download(options, (downloadId) => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError)
-      }
-      if (!waitUntilCompleted) {
-        return resolve("Tải xuống bắt đầu")
-      } else {
-        chrome.downloads.onChanged.addListener(
-          function onDownloadChanged(downloadDelta) {
-            if (downloadDelta.id === downloadId && downloadDelta.state) {
-              if (downloadDelta.state.current === "complete") {
-                resolve("Tải xuống hoàn tất")
-                chrome.downloads.onChanged.removeListener(onDownloadChanged)
-              } else if (downloadDelta.state.current === "interrupted") {
-                reject("Tải xuống bị gián đoạn")
-                chrome.downloads.onChanged.removeListener(onDownloadChanged)
-              }
-            }
+  return downloadFileWithChromeApi({ ...options, ...downloadConfig })
+}
+
+/**
+ * Fallback for media the browser cannot download directly (403 / CORS):
+ * the background fetches it with cookies and saves it as a data URL.
+ */
+const downloadForbiddenMedia = async (
+  mediaUrl: string,
+  filename: string | undefined,
+  config?: IDownloadFileConfig
+): Promise<string> => {
+  if (!chrome.downloads) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: ERemoteMessageType.DOWNLOAD_FORBIDDEN_MEDIA,
+          mediaUrl,
+          filename,
+          config: config ?? {}
+        },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message))
+          } else if (!response || response.error) {
+            reject(new Error(response?.error || "Download failed"))
+          } else {
+            resolve(response.result || "completed")
           }
-        )
-      }
+        }
+      )
     })
-  })
+  }
+  return downloadForbiddenMediaWithChromeApi(mediaUrl, filename, config)
 }
 
 export const chromeUtils = {
@@ -411,6 +441,7 @@ export const chromeUtils = {
   getSessionStorage,
   removeSessionStorage,
   downloadFile,
+  downloadForbiddenMedia,
   openNewTab,
   closeTab,
   queryTabs

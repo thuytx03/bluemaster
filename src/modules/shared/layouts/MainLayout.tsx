@@ -1,20 +1,20 @@
-import { Layout } from "antd"
-import { Outlet } from "react-router-dom"
+import { Outlet, useLocation } from "react-router-dom"
 
-import InitializeApp from "../components/InitializeApp"
-
-const { Content } = Layout
+import InitializeApp from "src/modules/shared/components/InitializeApp"
 
 const MainLayout = () => {
+  const location = useLocation()
   return (
     <InitializeApp>
-      <Layout className="bg-transparent h-full">
-        <Content className="bg-transparent h-full">
-          <div className="p-2 h-full overflow-y-auto">
+      <div className="x-cq-panel bm-h-full bm-w-full bm-overflow-y-auto bm-overflow-x-hidden bm-bg-surface">
+        <div
+          key={location.pathname}
+          className="bm-min-h-full bm-px-4 bm-py-4 bm-animate-fade-up pw-lg:bm-bg-app pw-lg:bm-px-6 pw-lg:bm-py-6">
+          <div className="bm-mx-auto bm-w-full bm-max-w-[1040px]">
             <Outlet />
           </div>
-        </Content>
-      </Layout>
+        </div>
+      </div>
     </InitializeApp>
   )
 }

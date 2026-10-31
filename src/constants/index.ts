@@ -1,13 +1,12 @@
 import packageData from "../../package.json"
-import { API_BASE_URL } from "./api"
+import { GITHUB_RAW_PACKAGE_URL, GITHUB_RELEASES_URL } from "./api.constants"
 export const EXTENSION_INFO = {
     name: packageData.name,
     displayName: packageData.displayName,
     description: packageData.description,
     author: packageData.author,
     version: packageData.version,
-    link_download: API_BASE_URL + '/download',
-    link_info: API_BASE_URL + '/extension.json'
+    link_download: GITHUB_RELEASES_URL,
+    link_info: GITHUB_RAW_PACKAGE_URL
 }
-export const COOKIE_DOMAIN_FCHAT = 'https://fchat.ai'
-export const RUN_FUNC = "xthuy:runFunc"
+export const RUN_FUNC = "bluemaster:runFunc"

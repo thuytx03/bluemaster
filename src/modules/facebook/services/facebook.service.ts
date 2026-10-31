@@ -1,15 +1,27 @@
 import axios from "axios"
-import { fbAxiosInstance } from "../../../configs/axios.config"
-import { ESocialProvider } from "../../../constants/enum"
-import { MAX_RETRY_REQUEST } from "../../../constants/variables"
-import { IFacebookAccount } from "../../accounts/types/account.interface"
-import { IGetListResponse, IMedia } from "../../shared/types/common.interface"
+
+import { fbAxiosInstance } from "src/configs/axios.config"
+import { ESocialProvider } from "src/constants/enum"
+import { SINGLE_DOWNLOAD_URL_PATTERNS } from "src/constants/regex.constants"
+import { MAX_RETRY_REQUEST, REQUEST_ACCEPT_HEADER } from "src/constants/app.constants"
+import useAuthStore from "src/stores/auth.store"
+import { chromeUtils } from "src/utils/chrome.util"
+import { IFacebookAccount } from "src/modules/facebook/types/account.types"
+import { IMediaItem, IPagedResult } from "src/modules/download/types/download.types"
+import { ESingleDownloadType } from "src/constants/enum"
 import {
   IFacebookPost,
-  IFacebookStory
-} from "../types/facebook.interface"
-import useAuthStore from "../../../store/auth"
-import { chromeUtils } from "../../../utils/chrome.util"
+  IFacebookPostInfo,
+  IFacebookPostMediaDetails,
+  IFacebookProfileInfo,
+  IFacebookStory,
+  IFacebookStoryDetails,
+  IFacebookVideoDetails
+} from "src/modules/facebook/types/facebook.types"
+
+/* -------------------------------------------------------------------------- */
+/*                                   Helpers                                  */
+/* -------------------------------------------------------------------------- */
 
 const makeRequestToFb = async (docID: string, query: any) => {
   try {
@@ -27,20 +39,138 @@ const makeRequestToFb = async (docID: string, query: any) => {
     const { data } = await fbAxiosInstance.post("/", formData)
     return data
   } catch (error) {
-    throw new Error("Đã xảy ra lỗi khi gửi yêu cầu đến Facebook")
+    throw new Error("Đã xảy ra lỗi khi gửi yêu cầu đến Facebook", { cause: error })
   }
 }
+
+/** GraphQL sometimes answers with NDJSON; keep only the first JSON line. */
+const parseFirstJsonLine = (data: unknown): any => {
+  if (typeof data !== "string") return data
+  try {
+    return JSON.parse(data.split("\n")[0] ?? "null")
+  } catch {
+    return null
+  }
+}
+
+/** Pick the HD progressive url, falling back to SD. */
+const pickProgressiveUrl = (progressiveUrls: any[] | undefined): string => {
+  if (!Array.isArray(progressiveUrls)) return ""
+  const hd = progressiveUrls.find((u) => u?.metadata?.quality === "HD")?.progressive_url
+  const sd = progressiveUrls.find((u) => u?.metadata?.quality === "SD")?.progressive_url
+  return hd || sd || ""
+}
+
+/**
+ * Extract the JSON object that directly follows `marker` in a page source,
+ * e.g. `"profile_header_renderer":{...}` → the `{...}` part, by brace matching.
+ */
+const extractObjectFromString = (source: string, marker: string): any => {
+  const markerIndex = source.indexOf(marker)
+  if (markerIndex === -1) return null
+  const start = source.indexOf("{", markerIndex + marker.length)
+  if (start === -1) return null
+  let depth = 0
+  let inString = false
+  for (let i = start; i < source.length; i++) {
+    const ch = source[i]
+    if (inString) {
+      if (ch === "\\") i += 1
+      else if (ch === '"') inString = false
+      continue
+    }
+    if (ch === '"') inString = true
+    else if (ch === "{") depth += 1
+    else if (ch === "}") {
+      depth -= 1
+      if (depth === 0) {
+        try {
+          return JSON.parse(source.slice(start, i + 1))
+        } catch {
+          return null
+        }
+      }
+    }
+  }
+  return null
+}
+
+/** Depth-first search for the first `key` whose value satisfies `condition(value, parent)`. */
+const findByKey = (
+  data: any,
+  key: string,
+  condition: (value: any, parent: any) => boolean = () => true
+): any => {
+  const stack: any[] = [data]
+  const seen = new Set<any>()
+  while (stack.length) {
+    const current = stack.pop()
+    if (!current || typeof current !== "object" || seen.has(current)) continue
+    seen.add(current)
+    if (!Array.isArray(current) && key in current && condition(current[key], current)) {
+      return current[key]
+    }
+    const children = Array.isArray(current) ? current : Object.values(current)
+    for (const child of children) stack.push(child)
+  }
+  return undefined
+}
+
+/** Last GraphQL error message seen (surfaced to the user when every attempt fails) */
+let lastGraphqlError = ""
+export const getLastGraphqlError = () => lastGraphqlError
+
+/** Log + remember a GraphQL failure so the UI can show the real reason */
+const noteGraphqlFailure = (docID: string, response: any) => {
+  const errors = response?.errors
+  const message = Array.isArray(errors)
+    ? errors.map((e: any) => e?.message || e?.description || JSON.stringify(e)).join("; ")
+    : typeof response === "string"
+      ? response.slice(0, 200)
+      : ""
+  lastGraphqlError = message
+  console.warn(`[Bluemaster] GraphQL doc ${docID} returned no data`, message || response)
+}
+
+/** Run fetchers in order, returning the first non-null result */
+const firstSuccessful = async <T>(fetchers: (() => Promise<T | null>)[]): Promise<T | null> => {
+  for (const fetcher of fetchers) {
+    try {
+      const result = await fetcher()
+      if (result) {
+        lastGraphqlError = ""
+        return result
+      }
+    } catch (error) {
+      console.warn("[Bluemaster] fetcher failed", error)
+    }
+  }
+  return null
+}
+
+const toPagination = (pageInfo: any) => ({
+  hasNextPage: !!pageInfo?.has_next_page,
+  nextCursor: pageInfo?.end_cursor ?? ""
+})
+
+const unescapeFbText = (text: string) => {
+  try {
+    return JSON.parse(`"${text}"`) as string
+  } catch {
+    return text
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   Account                                  */
+/* -------------------------------------------------------------------------- */
 
 const getFacebookAccountData = async () => {
   try {
     const cookies = await chromeUtils.getChromeCookies("facebook.com")
     const axiosInstance = axios.create({
       baseURL: "https://www.facebook.com",
-      headers: {
-        cookie: cookies,
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
-      }
+      headers: { cookie: cookies, Accept: REQUEST_ACCEPT_HEADER }
     })
     const { data: rawData } = await axiosInstance.get("/")
 
@@ -52,51 +182,42 @@ const getFacebookAccountData = async () => {
       throw new Error()
     }
     const profileInfor = JSON.parse(originalProfileInfor[1])
-    const id = profileInfor.id
-    const fullName = profileInfor.name
-    const avatar = profileInfor.profile_picture.uri
     const fbAccountData: IFacebookAccount = {
-      id,
-      name: fullName,
-      username: fullName,
-      avatar,
+      id: profileInfor.id,
+      name: profileInfor.name,
+      username: profileInfor.name,
+      avatar: profileInfor.profile_picture.uri,
       cookies,
       fbDtsg
     }
-    console.log("fb account data", fbAccountData)
     return fbAccountData
   } catch (error) {
-    console.log("Lỗi khi lấy dữ liệu tài khoản Facebook", error)
     throw new Error(
-      "Không thể lấy dữ liệu tài khoản Facebook. Đảm bảo rằng bạn đã đăng nhập vào Facebook trên trình duyệt"
+      "Không thể lấy dữ liệu tài khoản Facebook. Đảm bảo rằng bạn đã đăng nhập vào Facebook trên trình duyệt", { cause: error }
     )
   }
 }
 
 const getFbIdFromUsername = async (username: string) => {
   try {
-    const { data } = await fbAxiosInstance.get(
-      `https://www.facebook.com/${username}`
-    )
+    const { data } = await fbAxiosInstance.get(`https://www.facebook.com/${username}`)
     const userId = data.match(/"userID":"(\d+)"/)[1]
     return userId as string
   } catch (error) {
-    throw new Error(`Không thể lấy Facebook ID của người dùng ${username}`)
+    throw new Error(`Không thể lấy Facebook ID của người dùng ${username}`, { cause: error })
   }
 }
 
 const getGroupIdFromName = async (groupName: string) => {
   try {
-    const { data } = await fbAxiosInstance.get(
-      `https://www.facebook.com/groups/${groupName}`
-    )
+    const { data } = await fbAxiosInstance.get(`https://www.facebook.com/groups/${groupName}`)
     const groupId = data.match(/"groupID":"(\d+)"/)[1]
     if (!groupId) {
       throw new Error()
     }
     return groupId as string
   } catch (error) {
-    throw new Error(`Không thể lấy Facebook ID của nhóm ${groupName}`)
+    throw new Error(`Không thể lấy Facebook ID của nhóm ${groupName}`, { cause: error })
   }
 }
 
@@ -112,158 +233,270 @@ const getFbIdFromUrl = async (url: string) => {
   return userId as string
 }
 
-const getProfileBulkPhotos = async (
-  userId: string,
-  nextCursor: string = ""
-): Promise<IGetListResponse<IMedia> | null> => {
+/**
+ * Profile page → id, name, active story bucket, delegate page.
+ * `usernameOrId` may be a username or a numeric id.
+ */
+const getProfileInfo = async (usernameOrId: string): Promise<IFacebookProfileInfo> => {
+  const url = /^\d+$/.test(usernameOrId)
+    ? `https://www.facebook.com/profile.php?id=${usernameOrId}`
+    : `https://www.facebook.com/${usernameOrId}`
+  let rawData = ""
   try {
-    const docID = "9464814726967704"
-    const query = {
-      scale: 1,
-      id: btoa(`app_collection:${userId}:2305272732:5`),
-      count: 8,
-      cursor: nextCursor
-    }
-    const responseData = await makeRequestToFb(docID, query)
-    const originalPhotos = responseData?.data?.node?.pageItems?.edges
-    const pageInfor = responseData?.data?.node?.pageItems?.page_info
-    if (!originalPhotos || !pageInfor) {
+    const { data } = await fbAxiosInstance.get(url)
+    rawData = typeof data === "string" ? data : ""
+  } catch {
+    throw new Error(`Không thể tải trang cá nhân ${usernameOrId}`)
+  }
+  const header = extractObjectFromString(rawData, '"profile_header_renderer"')
+  const user = header?.user
+  const id: string | undefined =
+    user?.id ||
+    rawData.match(/"profile_id":"(\d+)"/)?.[1] ||
+    rawData.match(/"userID":"(\d+)"/)?.[1]
+  if (!id) {
+    throw new Error(`Không thể lấy Facebook ID của người dùng ${usernameOrId}`)
+  }
+  const tabKey = (tab: string): string | null =>
+    (user &&
+      findByKey(user, "id", (value, parent) => typeof value === "string" && parent?.tab_key === tab)) ||
+    null
+  const info: IFacebookProfileInfo = {
+    id,
+    name: user?.name || usernameOrId,
+    storyBucketId: user?.story_bucket?.nodes?.[0]?.id || null,
+    delegatePageId: user?.delegate_page?.id || null,
+    photosTabKeyId: tabKey("photos_by"),
+    reelsTabKeyId: tabKey("owner_reels"),
+    albumsTabKeyId: tabKey("photos_albums")
+  }
+  console.info("[Bluemaster] profile info", info)
+  return info
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                Bulk fetchers                               */
+/* -------------------------------------------------------------------------- */
+
+const mapPhotoEdges = (edges: any[]): IMediaItem[] =>
+  edges
+    .map(({ node }: any) => ({
+      id: node?.node?.id as string,
+      downloadUrl: node?.node?.viewer_image?.uri as string,
+      mediaType: "PHOTO" as const
+    }))
+    .filter((item) => !!item.id && !!item.downloadUrl)
+
+const getProfileBulkPhotos = async (
+  profile: Pick<IFacebookProfileInfo, "id" | "photosTabKeyId">,
+  nextCursor: string = ""
+): Promise<IPagedResult<IMediaItem> | null> => {
+  const run = async (docID: string, id: string) => {
+    const responseData = parseFirstJsonLine(await makeRequestToFb(docID, { scale: 1, id, count: 8, cursor: nextCursor }))
+    const pageItems = responseData?.data?.node?.pageItems
+    if (!pageItems?.edges || !pageItems?.page_info) {
+      noteGraphqlFailure(docID, responseData)
       return null
     }
-    const formattedPhotosList: IMedia[] = originalPhotos.map(
-      ({ node }: any) => ({
-        id: node.node.id,
-        downloadUrl: node.node.viewer_image.uri
-      })
-    )
-    return {
-      data: formattedPhotosList,
-      pagination: {
-        hasNextPage: pageInfor.has_next_page,
-        nextCursor: pageInfor.end_cursor
-      }
-    }
-  } catch (error) {
-    return null
+    return { dataItems: mapPhotoEdges(pageItems.edges), pagination: toPagination(pageItems.page_info) }
+  }
+  return firstSuccessful<IPagedResult<IMediaItem>>([
+    // current Facebook query, keyed by the photos tab id found on the profile page
+    ...(profile.photosTabKeyId ? [() => run("24168515422830962", profile.photosTabKeyId as string)] : []),
+    // legacy query built from the user id
+    () => run("9464814726967704", btoa(`app_collection:${profile.id}:2305272732:5`)),
+    () => run("24168515422830962", btoa(`app_collection:${profile.id}:2305272732:5`))
+  ])
+}
+
+const formatReelNode = (creationStory: any): IFacebookVideoDetails | null => {
+  const media = creationStory?.attachments?.[0]?.media
+  if (!media) return null
+  const progressiveUrls =
+    media?.videoDeliveryResponseFragment?.videoDeliveryResponseResult?.progressive_urls
+  const downloadUrl = pickProgressiveUrl(progressiveUrls)
+  if (!downloadUrl) return null
+  return {
+    id: media.id,
+    downloadUrl,
+    mediaType: "VIDEO",
+    title: creationStory?.message?.text || "",
+    createdAt: creationStory?.creation_time || media?.publish_time || undefined,
+    thumbnailUrl: media?.preferred_thumbnail?.image?.uri
   }
 }
 
+const REELS_QUERY_FLAGS = {
+  renderLocation: null,
+  useDefaultActor: false,
+  __relay_internal__pv__FBReels_deprecate_short_form_video_context_gkrelayprovider: true,
+  __relay_internal__pv__FBReels_enable_view_dubbed_audio_type_gkrelayprovider: false,
+  __relay_internal__pv__FBReels_enable_meta_ai_label_gkrelayprovider: true,
+  __relay_internal__pv__FBReelsMediaFooter_comet_enable_reels_ads_gkrelayprovider: true,
+  __relay_internal__pv__FBUnifiedVideoMediaFooter_comet_enable_reels_ads_gkrelayprovider: true,
+  __relay_internal__pv__FBUnifiedVideoMediaFooter_community_notes_reels_fb_web_unified_gkrelayprovider: true,
+  __relay_internal__pv__FBUnifiedVideoMediaFooter_enable_meta_ai_pill_gkrelayprovider: true,
+  __relay_internal__pv__FBUnifiedVideoMediaFooter_enable_ai_info_pill_gkrelayprovider: true
+}
+
 const getProfileBulkReels = async (
-  userId: string,
+  profile: Pick<IFacebookProfileInfo, "id" | "reelsTabKeyId">,
   nextCursor: string = ""
-): Promise<IGetListResponse<IMedia> | null> => {
-  try {
-    const docID = "9608255752564845"
-    const query = {
-      scale: 1,
-      id: btoa(`app_collection:${userId}:168684841768375:260`),
-      renderLocation: null,
-      useDefaultActor: true,
-      __relay_internal__pv__FBReels_deprecate_short_form_video_context_gkrelayprovider:
-        true,
-      __relay_internal__pv__FBReelsMediaFooter_comet_enable_reels_ads_gkrelayprovider:
-        true,
-      count: 10,
-      cursor: nextCursor
-    }
-    const responseTextData = await makeRequestToFb(docID, query)
-    if (typeof responseTextData !== "string") {
+): Promise<IPagedResult<IMediaItem> | null> => {
+  const run = async (docID: string, id: string) => {
+    const raw = await makeRequestToFb(docID, { ...REELS_QUERY_FLAGS, scale: 1, id, count: 10, cursor: nextCursor })
+    const responseData = parseFirstJsonLine(raw)
+    const shorts = responseData?.data?.node?.aggregated_fb_shorts
+    if (!shorts?.edges || !shorts?.page_info) {
+      noteGraphqlFailure(docID, responseData)
       return null
     }
-    const originalData = JSON.parse(responseTextData.split("\n")?.[0] ?? "null")
-      ?.data?.node?.aggregated_fb_shorts
-    const originalReelsData = originalData?.edges
-    const pageInfor = originalData?.page_info
-    if (!originalReelsData || !pageInfor) {
-      return null
-    }
-    const formattedReels: IMedia[] = originalReelsData.map((item: any) => {
-      const reelData = item.profile_reel_node.node.attachments[0].media
-      const id = reelData.id
-      const downloadUrlList =
-        reelData.videoDeliveryResponseFragment.videoDeliveryResponseResult
-          .progressive_urls
-      const hdDownloadUrl = downloadUrlList.find(
-        (url: any) => url.metadata.quality === "HD"
-      )?.progressive_url
-      const sdDownloadUrl = downloadUrlList.find(
-        (url: any) => url.metadata.quality === "SD"
-      )?.progressive_url
-      const downloadUrl = hdDownloadUrl || sdDownloadUrl
-      return { id, downloadUrl }
-    })
-    return {
-      data: formattedReels,
-      pagination: {
-        hasNextPage: pageInfor.has_next_page,
-        nextCursor: pageInfor.end_cursor
-      }
-    }
-  } catch (error) {
-    return null
+    const dataItems = (shorts.edges as any[])
+      .map((item) => formatReelNode(item?.profile_reel_node?.node))
+      .filter((item): item is IFacebookVideoDetails => !!item)
+    return { dataItems, pagination: toPagination(shorts.page_info) }
   }
+  const legacyId = btoa(`app_collection:${profile.id}:168684841768375:260`)
+  return firstSuccessful<IPagedResult<IMediaItem>>([
+    ...(profile.reelsTabKeyId ? [() => run("25443625298595118", profile.reelsTabKeyId as string)] : []),
+    () => run("9608255752564845", legacyId),
+    () => run("25443625298595118", legacyId)
+  ])
 }
 
 const getProfileBulkHighlightsId = async (
   userId: string,
   nextCursor: string = ""
-): Promise<IGetListResponse<string> | null> => {
-  try {
-    const docID = "9516333321764857"
-    const query = {
-      scale: 1,
-      id: btoa(
-        `profile_tile_view:${userId}:intro:intro_featured_highlights_content:hscroll_cards:profile_timeline:3:7`
-      ),
-      count: 9,
-      cursor: nextCursor
-    }
-    const responseData = await makeRequestToFb(docID, query)
-    const originalHighlightsData =
-      responseData?.data.node?.profile_tile_items?.edges
-    const pageInfor = responseData?.data?.node?.profile_tile_items?.page_info
-    if (!originalHighlightsData || !pageInfor) {
+): Promise<IPagedResult<string> | null> => {
+  const run = async (docID: string, section: string) => {
+    const id = btoa(
+      `profile_tile_view:${userId}:${section}:intro_featured_highlights_content:hscroll_cards:profile_timeline:3:7`
+    )
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, { scale: 1, id, count: 9, cursor: nextCursor })
+    )
+    const tileItems = responseData?.data?.node?.profile_tile_items
+    if (!tileItems?.edges || !tileItems?.page_info) {
+      noteGraphqlFailure(docID, responseData)
       return null
     }
-    const highlightsId: string[] = originalHighlightsData.map(
-      ({ node }: any) => node.node.id
+    const dataItems: string[] = (tileItems.edges as any[])
+      .map(({ node }) => node?.node?.id)
+      .filter(Boolean)
+    return { dataItems, pagination: toPagination(tileItems.page_info) }
+  }
+  return firstSuccessful<IPagedResult<string>>([
+    () => run("29865722229740235", "featured_highlights"),
+    () => run("9516333321764857", "intro"),
+    () => run("29865722229740235", "intro")
+  ])
+}
+
+const getPhotoDownloadUrl = async (photoId: string, userId?: string): Promise<string> => {
+  // 1) media viewer query (current): the original-size uri is in prefetch_uris_v2
+  try {
+    const raw = await makeRequestToFb("26823688820652915", {
+      feedbackSource: 65,
+      feedLocation: "COMET_MEDIA_VIEWER",
+      focusCommentID: null,
+      isMediaset: false,
+      nodeID: photoId,
+      privacySelectorRenderLocation: "COMET_MEDIA_VIEWER",
+      renderLocation: "comet_media_viewer",
+      scale: 1,
+      useDefaultActor: false,
+      __relay_internal__pv__GHLShouldChangeSponsoredDataFieldNamerelayprovider: true,
+      __relay_internal__pv__TestPilotShouldIncludeDemoAdUseCaserelayprovider: false,
+      __relay_internal__pv__CometUFIShareActionMigrationrelayprovider: true,
+      __relay_internal__pv__CometUFICommentAutoTranslationTyperelayprovider: "AUTO_TRANSLATE",
+      __relay_internal__pv__CometUFICommentAvatarStickerAnimatedImagerelayprovider: false,
+      __relay_internal__pv__CometUFICommentActionLinksRewriteEnabledrelayprovider: false,
+      __relay_internal__pv__IsWorkUserrelayprovider: false,
+      __relay_internal__pv__CometUFIReactionsEnableShortNamerelayprovider: false,
+      __relay_internal__pv__CometUFISingleLineUFIrelayprovider: true,
+      __relay_internal__pv__CometImmersivePhotoCanUserDisable3DMotionrelayprovider: false
+    })
+    const text = typeof raw === "string" ? raw : JSON.stringify(raw)
+    const uri = text.match(/"prefetch_uris_v2":\[\{"uri":"([^"]+)"/)?.[1]
+    if (uri) return unescapeFbText(uri)
+    const viewerImage = parseFirstJsonLine(raw)?.data?.currMedia?.image?.uri
+    if (viewerImage) return viewerImage
+  } catch (error) {
+    console.warn("[Bluemaster] photo viewer query failed", error)
+  }
+  // 2) legacy download-menu query
+  if (userId) {
+    const docID = "9230003843719229"
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, {
+        feed_location: "COMET_MEDIA_VIEWER",
+        id: btoa(`S:_I${userId}:VK:${photoId}`),
+        scale: 1
+      })
     )
-    return {
-      data: highlightsId,
-      pagination: {
-        hasNextPage: pageInfor.has_next_page,
-        nextCursor: pageInfor.end_cursor
+    const menuItems = responseData?.data?.node?.nfx_action_menu_items
+    const downloadLink = menuItems?.find(
+      (item: any) => item.__typename === "PhotoDownloadMenuItem"
+    )?.story?.attachments?.[0]?.media?.download_link
+    if (downloadLink) return downloadLink as string
+    noteGraphqlFailure(docID, responseData)
+  }
+  throw new Error("Không thể lấy link tải ảnh")
+}
+
+const mapStoryEdges = (edges: any[]): IFacebookStory[] =>
+  edges
+    .map((edge): IFacebookStory | undefined => {
+      const media = edge?.node?.attachments?.[0]?.media
+      if (!media) return undefined
+      if (media.__isMedia === "Video") {
+        return {
+          id: media.id,
+          downloadUrl: pickProgressiveUrl(
+            media?.videoDeliveryResponseFragment?.videoDeliveryResponseResult?.progressive_urls
+          ),
+          mediaType: "VIDEO",
+          thumbnailUrl: media?.previewImage?.uri || media?.preferred_thumbnail?.image?.uri
+        }
+      }
+      return { id: media.id, downloadUrl: media?.image?.uri, mediaType: "PHOTO" }
+    })
+    .filter((story): story is IFacebookStory => !!story && !!story.downloadUrl)
+
+/** Story / highlight bucket: owner + media list */
+const getStoryDetails = async (bucketId: string): Promise<IFacebookStoryDetails> => {
+  // 1) current structured query
+  try {
+    const docID = "25170215872629838"
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, { bucketID: bucketId, focusCommentID: null, scale: 1 })
+    )
+    const bucket = responseData?.data?.bucket
+    const edges = bucket?.unified_stories_with_notes?.edges ?? bucket?.unified_stories?.edges
+    const owner = bucket?.story_bucket_owner
+    if (Array.isArray(edges) && owner?.id) {
+      return {
+        id: bucketId,
+        ownerId: owner.id,
+        ownerName: owner.name || "",
+        title: bucket?.name || owner.name || "",
+        storiesMedia: mapStoryEdges(edges)
       }
     }
+    noteGraphqlFailure(docID, responseData)
   } catch (error) {
-    return null
+    console.warn("[Bluemaster] story query failed", error)
   }
+  // 2) legacy text query parsed with regex
+  return getStoryDetailsLegacy(bucketId)
 }
 
-const getPhotoDownloadUrl = async (photoId: string, userId: string) => {
-  const query = {
-    feed_location: "COMET_MEDIA_VIEWER",
-    id: btoa(`S:_I${userId}:VK:${photoId}`),
-    scale: 1
-  }
-  const docID = "9230003843719229"
-  const { data: responseData } = await makeRequestToFb(docID, query)
-  const menuItems = responseData.node.nfx_action_menu_items
-  const downloadMenuItem = menuItems.find(
-    (item: any) => item.__typename === "PhotoDownloadMenuItem"
-  )?.story?.attachments?.[0]?.media?.download_link
-  if (!downloadMenuItem) {
-    throw new Error("Không thể lấy link tải ảnh")
-  }
-  return downloadMenuItem as string
-}
-
-const getStoryMedia = async (storyId: string) => {
+const getStoryDetailsLegacy = async (bucketId: string): Promise<IFacebookStoryDetails> => {
   try {
     let retryCount = 0
     while (true) {
       const data = await makeRequestToFb("8367440913325249", {
-        bucketID: storyId,
+        bucketID: bucketId,
         focusCommentID: null,
         scale: 1
       })
@@ -275,332 +508,387 @@ const getStoryMedia = async (storyId: string) => {
         continue
       }
 
-      const storiesDataString = data.match(
-        /"unified_stories":\{"edges":(.*?)\},"owner":\{/
-      )
-      const storyOwnerIdString = data.match(
-        /"__isNode":"User","id":"(.*?)","name":/
-      )
+      const storiesDataString = data.match(/"unified_stories":\{"edges":(.*?)\},"owner":\{/)
+      const ownerMatch = data.match(/"__isNode":"User","id":"(.*?)","name":"(.*?)"/)
+      const bucketNameMatch = data.match(/"bucket":\{[^{}]*?"name":"(.*?)"/)
 
-      if (
-        storiesDataString &&
-        storiesDataString[1] &&
-        storyOwnerIdString &&
-        storyOwnerIdString[1]
-      ) {
-        const storyOwnerId = storyOwnerIdString[1]
+      if (storiesDataString?.[1] && ownerMatch?.[1]) {
+        const ownerId = ownerMatch[1]
+        const ownerName = unescapeFbText(ownerMatch[2] || "")
         const storiesData: any[] = JSON.parse(storiesDataString[1])
 
-        const stories: IFacebookStory[] = storiesData
-          .map((story) => {
-            const storyData = story?.node?.attachments?.[0]?.media
-            if (!storyData) {
-              return undefined
-            }
-            const id = storyData.id
-            const isVideo = storyData.__isMedia === "Video"
+        const storiesMedia = storiesData
+          .map((story): IFacebookStory | undefined => {
+            const media = story?.node?.attachments?.[0]?.media
+            if (!media) return undefined
+            const isVideo = media.__isMedia === "Video"
             if (isVideo) {
-              const videoDataList =
-                storyData.videoDeliveryResponseFragment
-                  .videoDeliveryResponseResult.progressive_urls
-              const hdVideoUrl = videoDataList.find(
-                (videoData: any) => videoData.metadata.quality === "HD"
-              )?.progressive_url
-              const sdVideoUrl = videoDataList.find(
-                (videoData: any) => videoData.metadata.quality === "SD"
-              )?.progressive_url
-              const videoThumbnailUrl =
-                storyData.previewImage.uri ||
-                storyData.preferred_thumbnail.image.uri
+              const downloadUrl = pickProgressiveUrl(
+                media?.videoDeliveryResponseFragment?.videoDeliveryResponseResult
+                  ?.progressive_urls
+              )
               return {
-                id,
-                downloadUrl: hdVideoUrl || sdVideoUrl,
-                isVideo,
-                thumbnailUrl: videoThumbnailUrl
+                id: media.id,
+                downloadUrl,
+                mediaType: "VIDEO",
+                thumbnailUrl:
+                  media?.previewImage?.uri || media?.preferred_thumbnail?.image?.uri
               }
             }
-
             return {
-              id,
-              downloadUrl: storyData.image.uri,
-              isVideo,
-              thumbnailUrl: undefined
+              id: media.id,
+              downloadUrl: media?.image?.uri,
+              mediaType: "PHOTO"
             }
           })
-          .filter((story) => !!story)
-        return { ownerId: storyOwnerId, stories }
+          .filter((story): story is IFacebookStory => !!story && !!story.downloadUrl)
+        return {
+          id: bucketId,
+          ownerId,
+          ownerName,
+          title: bucketNameMatch?.[1] ? unescapeFbText(bucketNameMatch[1]) : ownerName,
+          storiesMedia
+        }
+      }
+      retryCount += 1
+      if (retryCount > MAX_RETRY_REQUEST) {
+        throw new Error()
       }
     }
   } catch (error) {
-    throw new Error("Đã xảy ra lỗi khi lấy dữ liệu story")
+    throw new Error("Đã xảy ra lỗi khi lấy dữ liệu story", { cause: error })
   }
 }
 
-const getVideoDownloadUrl = async (videoIdOrUrl: string) => {
-  try {
-    let responseData = ""
-    if (URL.canParse(videoIdOrUrl)) {
-      const { data } = await fbAxiosInstance.get(videoIdOrUrl)
-      responseData = data
-    } else {
-      const docID = "28794956770150840"
-      const query = { scale: 1, videoID: videoIdOrUrl }
-      const data = await makeRequestToFb(docID, query)
-      responseData = data
+const getVideoDetails = async (videoIdOrUrl: string): Promise<IFacebookVideoDetails> => {
+  let videoId = videoIdOrUrl
+  if (URL.canParse(videoIdOrUrl)) {
+    for (const pattern of SINGLE_DOWNLOAD_URL_PATTERNS[ESingleDownloadType.FACEBOOK_VIDEO]) {
+      const m = videoIdOrUrl.match(pattern)
+      if (m?.[1]) {
+        videoId = m[1]
+        break
+      }
     }
-    const regex = /"progressive_urls":(.*?),"hls_playlist_urls":/
-    const match = responseData.match(regex)
-    if (!match) {
-      throw new Error()
-    }
-    const videoDownloadUris = JSON.parse(match[1])
-    const hdUri = videoDownloadUris.find(
-      (v: any) => v.metadata.quality === "HD"
-    )
-    const sdUri = videoDownloadUris.find(
-      (v: any) => v.metadata.quality === "SD"
-    )
-    return (hdUri.progressive_url || sdUri.progressive_url) as string
-  } catch (error) {
-    throw new Error("Đã xảy ra lỗi khi lấy link tải video")
   }
+
+  // 1) GraphQL reel/video root query (returns title + creation time)
+  if (/^\d+$/.test(videoId)) {
+    try {
+      const raw = await makeRequestToFb("25333743559590947", {
+        count: 1,
+        initial_node_id: videoId,
+        isAggregationProfileViewerOrShouldShowReelsForPage: false,
+        page_id: "",
+        scale: 1,
+        should_use_stream: false,
+        shouldIncludeInitialNodeFetch: true,
+        shouldShowReelsForPage: false,
+        stream_initial_count: 1,
+        useDefaultActor: false,
+        __relay_internal__pv__FBUnifiedVideoMediaFooter_comet_enable_reels_ads_gkrelayprovider: true,
+        __relay_internal__pv__FBUnifiedVideoMediaFooter_community_notes_reels_fb_web_unified_gkrelayprovider: true,
+        __relay_internal__pv__FBReels_enable_view_dubbed_audio_type_gkrelayprovider: false,
+        __relay_internal__pv__FBUnifiedVideoMediaFooter_enable_meta_ai_pill_gkrelayprovider: true,
+        __relay_internal__pv__FBUnifiedVideoMediaFooter_enable_ai_info_pill_gkrelayprovider: true
+      })
+      const video = parseFirstJsonLine(raw)?.data?.video
+      const details = formatReelNode(video?.creation_story)
+      if (details) return { ...details, id: details.id || videoId }
+    } catch {
+      // fall through to page scraping
+    }
+  }
+
+  // 2) Page source scraping (legacy path)
+  try {
+    const pageUrl = URL.canParse(videoIdOrUrl)
+      ? videoIdOrUrl
+      : `https://www.facebook.com/watch/?v=${videoId}`
+    const { data } = await fbAxiosInstance.get(pageUrl)
+    const html: string = typeof data === "string" ? data : ""
+    const match = html.match(/"progressive_urls":(.*?),"hls_playlist_urls":/)
+    if (!match) throw new Error()
+    const downloadUrl = pickProgressiveUrl(JSON.parse(match[1]))
+    if (!downloadUrl) throw new Error()
+    const title =
+      html.match(/"savable_title":\{"text":"(.*?)"\}/)?.[1] ??
+      html.match(/"title":\{"text":"(.*?)"\}/)?.[1] ??
+      ""
+    const createdAt = Number(
+      html.match(/"publish_time":(\d+)/)?.[1] ?? html.match(/"creation_time":(\d+)/)?.[1] ?? 0
+    )
+    return {
+      id: videoId,
+      downloadUrl,
+      mediaType: "VIDEO",
+      title: title ? unescapeFbText(title) : "",
+      createdAt: createdAt || undefined
+    }
+  } catch (error) {
+    throw new Error("Đã xảy ra lỗi khi lấy link tải video", { cause: error })
+  }
+}
+
+const getVideoDownloadUrl = async (videoIdOrUrl: string) =>
+  (await getVideoDetails(videoIdOrUrl)).downloadUrl
+
+/** Per-item detail resolution that tolerates individual failures */
+const resolveVideoItems = async (videoIds: string[]) => {
+  const settled = await Promise.allSettled(videoIds.map((id) => getVideoDetails(id)))
+  return settled
+    .filter((r): r is PromiseFulfilledResult<IFacebookVideoDetails> => r.status === "fulfilled")
+    .map((r) => r.value)
 }
 
 const getProfileBulkVideos = async (
-  userId: string,
+  profile: Pick<IFacebookProfileInfo, "id" | "delegatePageId">,
   nextCursor: string = ""
-): Promise<IGetListResponse<IMedia> | null> => {
-  try {
-    const docID = "27205790585732100"
-    const query = {
-      scale: 1,
-      id: btoa(`app_collection:${userId}:1560653304174514:133`),
-      count: 8,
-      cursor: nextCursor
-    }
-    const responseData = await facebookService.makeRequestToFb(docID, query)
-    const originalVideosId = responseData?.data?.node?.pageItems?.edges
-    const pageInfor = responseData?.data?.node?.pageItems?.page_info
-    if (!originalVideosId || !pageInfor) {
-      return null
-    }
-    const formattedVideos: IMedia[] = await Promise.all(
-      originalVideosId.map(async ({ node }: any) => {
-        const id = node.node.id
-        const videoUrl = node.url
-        const downloadUrl = await getVideoDownloadUrl(videoUrl)
-        return { id, downloadUrl }
+): Promise<IPagedResult<IMediaItem> | null> => {
+  const runCollection = async (docID: string) => {
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, {
+        scale: 1,
+        id: btoa(`app_collection:${profile.id}:1560653304174514:133`),
+        count: 8,
+        cursor: nextCursor
       })
     )
-    return {
-      data: formattedVideos,
-      pagination: {
-        hasNextPage: pageInfor.has_next_page,
-        nextCursor: pageInfor.end_cursor
-      }
+    const pageItems = responseData?.data?.node?.pageItems
+    if (!pageItems?.edges || !pageItems?.page_info) {
+      noteGraphqlFailure(docID, responseData)
+      return null
     }
-  } catch (error) {
-    return null
+    const videoIds: string[] = (pageItems.edges as any[]).map(({ node }) => node?.node?.id).filter(Boolean)
+    return { dataItems: await resolveVideoItems(videoIds), pagination: toPagination(pageItems.page_info) }
   }
+  // Professional profiles expose their videos through the backing page
+  const runPage = async () => {
+    const pageId = profile.delegatePageId as string
+    const docID = "26070921649175153"
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, {
+        alwaysIncludeAudioRooms: true,
+        count: 6,
+        ...(nextCursor && { cursor: nextCursor }),
+        pageID: pageId,
+        scale: 4,
+        showReactions: true,
+        useDefaultActor: false,
+        id: pageId
+      })
+    )
+    const allVideos = responseData?.data?.node?.all_videos
+    if (!allVideos?.edges || !allVideos?.page_info) {
+      noteGraphqlFailure(docID, responseData)
+      return null
+    }
+    const videoIds: string[] = (allVideos.edges as any[]).map(({ node }) => node?.id).filter(Boolean)
+    return { dataItems: await resolveVideoItems(videoIds), pagination: toPagination(allVideos.page_info) }
+  }
+  return firstSuccessful<IPagedResult<IMediaItem>>([
+    () => runCollection("27205790585732100"),
+    ...(profile.delegatePageId ? [runPage] : [])
+  ])
 }
 
 const getGroupBulkVideos = async (
   groupID: string,
   nextCursor: string = ""
-): Promise<IGetListResponse<IMedia> | null> => {
-  try {
-    const docID = "9767488053296437"
-    const query = {
-      count: 8,
-      cursor: nextCursor,
-      scale: 1,
-      id: groupID
-    }
-    const responseData = await facebookService.makeRequestToFb(docID, query)
-    const originalVideosData =
-      responseData?.data?.node?.group_mediaset?.media?.edges
-    const pageInfor = responseData?.data?.node?.group_mediaset?.media?.page_info
-    if (!originalVideosData || !pageInfor) {
+): Promise<IPagedResult<IMediaItem> | null> => {
+  const run = async (docID: string) => {
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, { count: 8, cursor: nextCursor, scale: 1, id: groupID })
+    )
+    const media = responseData?.data?.node?.group_mediaset?.media
+    if (!media?.edges || !media?.page_info) {
+      noteGraphqlFailure(docID, responseData)
       return null
     }
-    const videosInfor: { videoId: string; url: string }[] =
-      originalVideosData.map(({ node }: any) => ({
-        videoId: node.id,
-        url: node.url
-      }))
-    const formattedVideos: IMedia[] = await Promise.all(
-      videosInfor.map(async ({ videoId, url }) => {
-        const downloadUrl = await getVideoDownloadUrl(url)
-        return { id: videoId, downloadUrl }
-      })
-    )
-    return {
-      data: formattedVideos,
-      pagination: {
-        hasNextPage: pageInfor.has_next_page,
-        nextCursor: pageInfor.end_cursor
-      }
-    }
-  } catch (error) {
-    return null
+    const videoIds: string[] = (media.edges as any[]).map(({ node }) => node?.id).filter(Boolean)
+    return { dataItems: await resolveVideoItems(videoIds), pagination: toPagination(media.page_info) }
   }
-}
-
-const getPostMedia = async (postUrl: string) => {
-  try {
-    const { data: rawData } = await fbAxiosInstance.get(postUrl)
-    const postMediaRegex =
-      /"all_subattachments":(.*?),"comet_product_tag_feed_overlay_renderer"/
-    const postMediaMatch = rawData.match(postMediaRegex)
-    if (!postMediaMatch) {
-      throw new Error("Không thể lấy dữ liệu media của bài viết")
-    }
-    const postMediaData = JSON.parse(postMediaMatch[1])
-    const postMedia: IFacebookPost[] = postMediaData.nodes.map(
-      ({ media }: any) => {
-        const isVideo = media.__isMedia === "Video"
-        const id = media.id
-        let downloadUrl = media.viewer_image.uri
-        if (isVideo) {
-          const videoDataList =
-            media.video_grid_renderer.video.videoDeliveryResponseFragment
-              .videoDeliveryResponseResult.progressive_urls
-          const hdVideoUrl = videoDataList.find(
-            (videoData: any) => videoData.metadata.quality === "HD"
-          )?.progressive_url
-          const sdVideoUrl = videoDataList.find(
-            (videoData: any) => videoData.metadata.quality === "SD"
-          )?.progressive_url
-          downloadUrl = hdVideoUrl || sdVideoUrl
-        }
-        return {
-          id,
-          downloadUrl,
-          isVideo
-        }
-      }
-    )
-    return postMedia
-  } catch (error) {
-    throw error || new Error("Đã xảy ra lỗi khi lấy dữ liệu của bài viết")
-  }
-}
-
-const getFbDownloadReelUrl = async (reelUrl: string) => {
-  try {
-    const { data: rawData } = await fbAxiosInstance.get(reelUrl)
-    const reelDataRegex = /"progressive_urls":(.*?),"hls_playlist_urls":/
-    const reelDataMatch = rawData.match(reelDataRegex)
-    if (!reelDataMatch) {
-      throw new Error()
-    }
-    const reelData = JSON.parse(reelDataMatch[1])
-    const hdUri = reelData.find((v: any) => v.metadata.quality === "HD")
-    const sdUri = reelData.find((v: any) => v.metadata.quality === "SD")
-    return (hdUri.progressive_url || sdUri.progressive_url) as string
-  } catch (error) {
-    throw new Error("Đã xảy ra lỗi khi lấy link tải reel")
-  }
-}
-
-const getBulkAlbumMediaById = async (
-  albumId: string,
-  nextCursor: string
-): Promise<IGetListResponse<IFacebookPost> | null> => {
-  try {
-    const docID = "9026124860850231"
-    const query = {
-      count: 14,
-      cursor: nextCursor,
-      scale: 1,
-      id: albumId
-    }
-    const responseData = await makeRequestToFb(docID, query)
-    const originalAlbumPhotosData = responseData?.data?.node?.grid_media?.edges
-    const pageInfor = responseData?.data?.node?.grid_media?.page_info
-    if (!originalAlbumPhotosData || !pageInfor) {
-      return null
-    }
-    const albumMediaDetail: {
-      id: string
-      ownerId: string
-      isVideo: boolean
-    }[] = originalAlbumPhotosData.map(({ node }: any) => ({
-      id: node.id,
-      ownerId: node.owner.id,
-      isVideo: node.__isMedia === "Video"
-    }))
-
-    const result: IFacebookPost[] = await Promise.all(
-      albumMediaDetail.map(async ({ id, isVideo, ownerId }) => {
-        const downloadUrl = await (isVideo
-          ? facebookService.getVideoDownloadUrl(
-              `https://www.facebook.com/${ownerId}/videos/${id}`
-            )
-          : facebookService.getPhotoDownloadUrl(id, ownerId))
-        return { id, downloadUrl, isVideo }
-      })
-    )
-    return {
-      data: result,
-      pagination: {
-        hasNextPage: pageInfor.has_next_page,
-        nextCursor: pageInfor.end_cursor
-      }
-    }
-  } catch (error) {
-    return null
-  }
+  return firstSuccessful<IPagedResult<IMediaItem>>([
+    () => run("9767488053296437"),
+    () => run("9352040021563569")
+  ])
 }
 
 const getGroupBulkPhotos = async (
   groupID: string,
-  nextCursor: string
-): Promise<IGetListResponse<IMedia> | null> => {
-  try {
-    const docID = "8943995049039923"
-    const query = {
-      count: 8,
-      cursor: nextCursor,
-      scale: 1,
-      id: groupID
-    }
-    const responseData = await makeRequestToFb(docID, query)
-    const originalGroupPhotosData: any[] =
-      responseData?.data?.node?.group_mediaset?.media?.edges
-    const pageInfor = responseData?.data?.node?.group_mediaset?.media?.page_info
-    if (!originalGroupPhotosData || !pageInfor) {
+  nextCursor: string = ""
+): Promise<IPagedResult<IMediaItem> | null> => {
+  const run = async (docID: string) => {
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, { count: 8, cursor: nextCursor, scale: 1, id: groupID })
+    )
+    const media = responseData?.data?.node?.group_mediaset?.media
+    if (!media?.edges || !media?.page_info) {
+      noteGraphqlFailure(docID, responseData)
       return null
     }
-    const photosDetailList: { photoId: string; ownerId: string }[] =
-      originalGroupPhotosData.map(({ node }) => ({
-        photoId: node.id,
-        ownerId: node.owner.id
+    const photos = (media.edges as any[])
+      .map(({ node }) => ({ photoId: node?.id as string, ownerId: node?.owner?.id as string | undefined }))
+      .filter((p) => !!p.photoId)
+    const settled = await Promise.allSettled(
+      photos.map(async ({ photoId, ownerId }): Promise<IMediaItem> => ({
+        id: photoId,
+        downloadUrl: await getPhotoDownloadUrl(photoId, ownerId),
+        mediaType: "PHOTO"
       }))
-    const result: IMedia[] = await Promise.all(
-      photosDetailList.map(async ({ photoId, ownerId }) => {
-        const downloadUrl = await getPhotoDownloadUrl(photoId, ownerId)
-        return { id: photoId, downloadUrl }
+    )
+    return {
+      dataItems: settled
+        .filter((r): r is PromiseFulfilledResult<IMediaItem> => r.status === "fulfilled")
+        .map((r) => r.value),
+      pagination: toPagination(media.page_info)
+    }
+  }
+  return firstSuccessful<IPagedResult<IMediaItem>>([
+    () => run("8943995049039923"),
+    () => run("30127100086888552")
+  ])
+}
+
+const getBulkAlbumMediaById = async (
+  albumId: string,
+  nextCursor: string = ""
+): Promise<IPagedResult<IFacebookPost> | null> => {
+  const run = async (docID: string) => {
+    const responseData = parseFirstJsonLine(
+      await makeRequestToFb(docID, { count: 14, cursor: nextCursor, scale: 1, id: albumId })
+    )
+    const gridMedia = responseData?.data?.node?.grid_media
+    if (!gridMedia?.edges || !gridMedia?.page_info) {
+      noteGraphqlFailure(docID, responseData)
+      return null
+    }
+    const items = (gridMedia.edges as any[]).map(({ node }) => ({
+      id: node?.id as string,
+      ownerId: node?.owner?.id as string | undefined,
+      isVideo: node?.__isMedia === "Video"
+    }))
+    const settled = await Promise.allSettled(
+      items.map(async ({ id, isVideo, ownerId }): Promise<IFacebookPost> => {
+        if (isVideo) {
+          const details = await getVideoDetails(id)
+          return { ...details, id }
+        }
+        return { id, downloadUrl: await getPhotoDownloadUrl(id, ownerId), mediaType: "PHOTO" }
       })
     )
     return {
-      data: result,
-      pagination: {
-        hasNextPage: pageInfor.has_next_page,
-        nextCursor: pageInfor.end_cursor
-      }
+      dataItems: settled
+        .filter((r): r is PromiseFulfilledResult<IFacebookPost> => r.status === "fulfilled")
+        .map((r) => r.value),
+      pagination: toPagination(gridMedia.page_info)
     }
-  } catch (error) {
-    return null
+  }
+  return firstSuccessful<IPagedResult<IFacebookPost>>([
+    () => run("9026124860850231"),
+    () => run("9790988340981785")
+  ])
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 Post media                                 */
+/* -------------------------------------------------------------------------- */
+
+/** Post page → media set token, first media id, count, caption, time */
+const getPostInfo = async (postUrl: string): Promise<IFacebookPostInfo> => {
+  const { data: rawData } = await fbAxiosInstance.get(postUrl)
+  const html: string = typeof rawData === "string" ? rawData : ""
+  const attachmentsJson =
+    html.match(/"frame_sublayout_subattachments":(.*?),"mediaset_token"/)?.[1] ||
+    html.match(/"all_subattachments":(.*?),"comet_product_tag_feed_overlay_renderer"/)?.[1]
+  const mediasetToken = html.match(/"mediaset_token":"(.*?)"/)?.[1]
+  if (!attachmentsJson || !mediasetToken) {
+    throw new Error("Không thể lấy dữ liệu media của bài viết")
+  }
+  let attachments: any
+  try {
+    attachments = JSON.parse(attachmentsJson)
+  } catch {
+    throw new Error("Không thể lấy dữ liệu media của bài viết")
+  }
+  const firstMediaId = attachments?.nodes?.[0]?.media?.id
+  if (!firstMediaId) {
+    throw new Error("Không thể lấy dữ liệu media của bài viết")
+  }
+  const postId =
+    html.match(/"post_id":"(\d+)"/)?.[1] ??
+    html.match(/"storyID":"(.*?)"/)?.[1] ??
+    mediasetToken
+  const title = html.match(/"message":\{"text":"(.*?)"(?:,|\})/)?.[1]
+  const createdAt = Number(html.match(/"creation_time":(\d+)/)?.[1] ?? 0)
+  return {
+    postId,
+    title: title ? unescapeFbText(title) : "",
+    createdAt,
+    totalMedia: Number(attachments?.count ?? attachments?.nodes?.length ?? 1),
+    firstMediaId,
+    mediasetToken
   }
 }
+
+/** One media of a post + the id of the next one (media viewer pagination) */
+const getPostMediaDetails = async (
+  mediaId: string,
+  mediasetToken: string
+): Promise<IFacebookPostMediaDetails> => {
+  const docID = "9478994358856279"
+  const query = {
+    isMediaset: true,
+    renderLocation: "comet_media_viewer",
+    mediasetToken,
+    scale: 1,
+    feedLocation: "COMET_MEDIA_VIEWER",
+    nodeID: mediaId
+  }
+  let retryCount = 0
+  while (true) {
+    const responseData = await makeRequestToFb(docID, query)
+    if (typeof responseData === "string") {
+      const mediaData = parseFirstJsonLine(responseData)?.data?.mediaset?.currMedia?.edges?.[0]?.node
+      const nextRaw = responseData.match(/"nextMediaAfterNodeId":(.*?)\},"extensions":/)?.[1]
+      if (mediaData) {
+        let nextMediaId: string | null = null
+        try {
+          nextMediaId = nextRaw ? (JSON.parse(nextRaw)?.id ?? null) : null
+        } catch {
+          nextMediaId = null
+        }
+        const isVideo = mediaData.__isMedia === "Video"
+        const downloadUrl = isVideo
+          ? pickProgressiveUrl(
+              mediaData?.videoDeliveryResponseFragment?.videoDeliveryResponseResult
+                ?.progressive_urls
+            )
+          : mediaData?.image?.uri
+        if (!downloadUrl) throw new Error("Không thể lấy link tải media của bài viết")
+        return {
+          id: mediaData.id ?? mediaId,
+          downloadUrl,
+          mediaType: isVideo ? "VIDEO" : "PHOTO",
+          nextMediaId
+        }
+      }
+    }
+    retryCount += 1
+    if (retryCount >= MAX_RETRY_REQUEST) {
+      throw new Error("Không thể lấy dữ liệu media của bài viết")
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Comment videos                               */
+/* -------------------------------------------------------------------------- */
 
 const getCommentData = async (commentUrl: string) => {
   try {
     const { data: rawData } = await fbAxiosInstance.get(commentUrl)
-    const postIdRegex = /"post_id":"(.*?)"/
-    const postIdMatch = rawData.match(postIdRegex)
-    const postId = postIdMatch?.[1]
+    const postId = rawData.match(/"post_id":"(.*?)"/)?.[1]
     if (!postId) {
       throw new Error()
     }
@@ -621,21 +909,13 @@ const getCommentData = async (commentUrl: string) => {
     let retryCount = 0
     let nextCursor = ""
     let hasNextPage = true
-    do {
-      const query = {
-        ...baseQuery,
-        ...(nextCursor && { commentsAfterCursor: nextCursor })
-      }
-      let responseData = await makeRequestToFb(docID, query)
-      if (typeof responseData === "string") {
-        responseData = JSON.parse(responseData.split("\n")?.[0] ?? "null")
-      }
+    while (true) {
+      const query = { ...baseQuery, ...(nextCursor && { commentsAfterCursor: nextCursor }) }
+      const responseData = parseFirstJsonLine(await makeRequestToFb(docID, query))
       const originalCommentDataList =
-        responseData?.data?.node?.comment_rendering_instance_for_feed_location
-          ?.comments?.edges
+        responseData?.data?.node?.comment_rendering_instance_for_feed_location?.comments?.edges
       const pageInfor =
-        responseData?.data?.node?.comment_rendering_instance_for_feed_location
-          ?.comments?.page_info
+        responseData?.data?.node?.comment_rendering_instance_for_feed_location?.comments?.page_info
       if (!originalCommentDataList || !pageInfor) {
         retryCount += 1
         if (retryCount > MAX_RETRY_REQUEST) {
@@ -650,33 +930,19 @@ const getCommentData = async (commentUrl: string) => {
         ({ node }: any) => node.legacy_fbid === commentId
       )
       if (!commentData) {
+        if (!hasNextPage) return null
         continue
       }
-      const expansionToken =
-        commentData.node.feedback.expansion_info.expansion_token
+      const expansionToken = commentData.node.feedback.expansion_info.expansion_token
       const haveReply = !!commentData.node.feedback.replies_fields.total_count
-      const videoList =
+      const downloadUrl = pickProgressiveUrl(
         commentData.node.attachments[0].style_type_renderer.attachment.media
-          .videoDeliveryResponseFragment.videoDeliveryResponseResult
-          .progressive_urls
-      const hdVideoUrl = videoList.find(
-        (videoData: any) => videoData.metadata.quality === "HD"
-      )?.progressive_url
-      const sdVideoUrl = videoList.find(
-        (videoData: any) => videoData.metadata.quality === "SD"
-      )?.progressive_url
-      const downloadUrl = hdVideoUrl || sdVideoUrl
-      return {
-        commentId,
-        postId,
-        expansionToken,
-        haveReply,
-        videoDownloadUrl: downloadUrl
-      }
-    } while (hasNextPage)
-    return null
+          .videoDeliveryResponseFragment.videoDeliveryResponseResult.progressive_urls
+      )
+      return { commentId, postId, expansionToken, haveReply, videoDownloadUrl: downloadUrl }
+    }
   } catch (error) {
-    throw new Error("Đã xảy ra lỗi khi lấy dữ liệu bình luận")
+    throw new Error("Đã xảy ra lỗi khi lấy dữ liệu bình luận", { cause: error })
   }
 }
 
@@ -686,11 +952,7 @@ const getReplyCommentData = async (
     expansionToken,
     postId,
     parentCommentId
-  }: {
-    postId: string
-    expansionToken: string
-    parentCommentId: string
-  }
+  }: { postId: string; expansionToken: string; parentCommentId: string }
 ) => {
   try {
     let retryCount = 0
@@ -711,17 +973,10 @@ const getReplyCommentData = async (
       id: btoa(`feedback:${postId}_${parentCommentId}`),
       __relay_internal__pv__IsWorkUserrelayprovider: false
     }
-    do {
-      const query = {
-        ...baseQuery,
-        ...(nextCursor && { repliesAfterCursor: nextCursor })
-      }
-      let responseData = await makeRequestToFb(docID, query)
-      if (typeof responseData === "string") {
-        responseData = JSON.parse(responseData.split("\n")?.[0] ?? "null")
-      }
-      const originalCommentDataList =
-        responseData?.data?.node?.replies_connection?.edges
+    while (true) {
+      const query = { ...baseQuery, ...(nextCursor && { repliesAfterCursor: nextCursor }) }
+      const responseData = parseFirstJsonLine(await makeRequestToFb(docID, query))
+      const originalCommentDataList = responseData?.data?.node?.replies_connection?.edges
       const pageInfor = responseData?.data?.node?.replies_connection?.page_info
       if (!originalCommentDataList || !pageInfor) {
         retryCount += 1
@@ -737,27 +992,68 @@ const getReplyCommentData = async (
         ({ node }: any) => node.legacy_fbid === commentId
       )
       if (!commentData) {
+        if (!hasNextPage) return null
         continue
       }
-      const videoList =
+      const downloadUrl = pickProgressiveUrl(
         commentData.node.attachments[0].style_type_renderer.attachment.media
-          .videoDeliveryResponseFragment.videoDeliveryResponseResult
-          .progressive_urls
-      const hdVideoUrl = videoList.find(
-        (videoData: any) => videoData.metadata.quality === "HD"
-      )?.progressive_url
-      const sdVideoUrl = videoList.find(
-        (videoData: any) => videoData.metadata.quality === "SD"
-      )?.progressive_url
-      const downloadUrl = hdVideoUrl || sdVideoUrl
-      return {
-        videoDownloadUrl: downloadUrl
-      }
-    } while (hasNextPage)
-    return null
+          .videoDeliveryResponseFragment.videoDeliveryResponseResult.progressive_urls
+      )
+      return { videoDownloadUrl: downloadUrl }
+    }
   } catch (error) {
-    throw new Error("Đã xảy ra lỗi khi lấy dữ liệu bình luận trả lời")
+    throw new Error("Đã xảy ra lỗi khi lấy dữ liệu bình luận trả lời", { cause: error })
   }
+}
+
+/** Resolve the video attached to a comment (or reply) URL */
+const getCommentVideoDownloadUrl = async (commentUrl: string): Promise<{ id: string; downloadUrl: string }> => {
+  const parsed = new URL(commentUrl)
+  const parentCommentId = parsed.searchParams.get("comment_id")
+  const replyCommentId = parsed.searchParams.get("reply_comment_id")
+  const commentId = replyCommentId || parentCommentId
+  if (!commentId) {
+    throw new Error("URL bình luận không hợp lệ")
+  }
+
+  // Fast path: the video is inlined in the page source
+  try {
+    const { data: rawData } = await fbAxiosInstance.get(commentUrl)
+    const videoDataRegex = new RegExp(
+      `"legacy_fbid":"${commentId}".*?"attachments":(\\[.*?\\])(?=,"is_markdown_enabled")`
+    )
+    const videoDataMatch = (rawData as string).match(videoDataRegex)
+    if (videoDataMatch) {
+      const videoData = JSON.parse(videoDataMatch[1])
+      const downloadUrl = pickProgressiveUrl(
+        videoData[0].style_type_renderer.attachment.media.videoDeliveryResponseFragment
+          .videoDeliveryResponseResult.progressive_urls
+      )
+      if (downloadUrl) return { id: commentId, downloadUrl }
+    }
+  } catch {
+    // fall back to GraphQL paging below
+  }
+
+  const parentCommentData = await getCommentData(commentUrl)
+  if (!parentCommentData) {
+    throw new Error("Không tìm thấy video trong bình luận")
+  }
+  if (!replyCommentId) {
+    return { id: parentCommentData.commentId, downloadUrl: parentCommentData.videoDownloadUrl }
+  }
+  if (!parentCommentData.haveReply) {
+    throw new Error("Không tìm thấy video trong bình luận trả lời")
+  }
+  const childCommentData = await getReplyCommentData(replyCommentId, {
+    parentCommentId: parentCommentData.commentId,
+    expansionToken: parentCommentData.expansionToken,
+    postId: parentCommentData.postId
+  })
+  if (!childCommentData?.videoDownloadUrl) {
+    throw new Error("Không tìm thấy video trong bình luận trả lời")
+  }
+  return { id: replyCommentId, downloadUrl: childCommentData.videoDownloadUrl }
 }
 
 const facebookService = {
@@ -765,11 +1061,13 @@ const facebookService = {
   getFacebookAccountData,
   getFbIdFromUsername,
   getGroupIdFromName,
-  getStoryMedia,
-  getVideoDownloadUrl,
-  getPostMedia,
-  getFbDownloadReelUrl,
   getFbIdFromUrl,
+  getProfileInfo,
+  getStoryDetails,
+  getVideoDetails,
+  getVideoDownloadUrl,
+  getPostInfo,
+  getPostMediaDetails,
   getPhotoDownloadUrl,
   getProfileBulkPhotos,
   getGroupBulkPhotos,
@@ -779,7 +1077,8 @@ const facebookService = {
   getProfileBulkHighlightsId,
   getBulkAlbumMediaById,
   getCommentData,
-  getReplyCommentData
+  getReplyCommentData,
+  getCommentVideoDownloadUrl
 }
 
 export default facebookService

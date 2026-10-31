@@ -1,208 +1,184 @@
-import { Alert, Button, Card, Dropdown, Input } from 'antd'
-import React, { useState } from 'react'
-import { toast } from 'sonner';
-import { CopyOutlined, CheckOutlined, ExportOutlined } from "@ant-design/icons";
-import PageContainer from '../../shared/components/PageContainer'
-import { EXTENSION_INFO } from '../../../constants';
-import { copyTextToClipboard } from '../../../utils/common.util';
-import { exportToJson, exportToTXT } from '../../../utils/export.util';
-import { useTranslation } from 'react-i18next';
-import { chromeUtils } from '../../../utils/chrome.util';
-import { ERemoteMessageType } from '../../../constants/enum';
+import { Braces, Cookie, Download, FileDown, FileJson, FileText, Globe } from "lucide-react"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 
+import { EXTENSION_INFO } from "src/constants"
+import PageContainer from "src/modules/shared/components/PageContainer"
+import {
+  Button,
+  Callout,
+  CopyButton,
+  Dropdown,
+  DropdownItem,
+  Field,
+  Input,
+  Surface,
+  Textarea
+} from "src/modules/shared/ui"
+import { chromeUtils } from "src/utils/chrome.util"
+import { exportToJson, exportToTXT } from "src/utils/export.util"
+
+const OutputBlock = ({
+  title,
+  icon,
+  value,
+  exportMenu,
+  downloadLabel,
+  placeholder
+}: {
+  title: string
+  icon: JSX.Element
+  value: string
+  exportMenu: DropdownItem[]
+  downloadLabel: string
+  placeholder: string
+}) => (
+  <Surface
+    title={title}
+    icon={icon}
+    padding="sm"
+    extra={
+      <>
+        <CopyButton text={value} size="xs" />
+        <Dropdown items={exportMenu} placement="bottom-end">
+          <Button size="xs" variant="primary" icon={<Download size={13} />} disabled={!value}>
+            {downloadLabel}
+          </Button>
+        </Dropdown>
+      </>
+    }>
+    <Textarea
+      placeholder={placeholder}
+      value={value}
+      readOnly
+      mono
+      rows={value ? 7 : 3}
+      className="bm-max-h-60"
+    />
+  </Surface>
+)
 
 const ExportCookiesPage = () => {
-    const { t } = useTranslation();
-    const [url, setUrl] = useState<string>(window.location.origin);
-    const [cookies, setCookies] = useState<string>('');
-    const [cookieString, setCookieString] = useState<string>('');
-    const [isCopy, setIsCopy] = useState<boolean>(false);
-    const [zaloData, setZaloData] = useState<{ imei: string | null, cookies: any[] | null, userAgent: string | null } | null>(null);
-    const cleanUrl = url.replace(/^https?:\/\//i, '');
-    const fileName = `${cleanUrl}_${new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')}`;
-    const handleCopyCookies = (cookies: string) => {
-        copyTextToClipboard(cookies);
-        setIsCopy(true);
-        setTimeout(() => setIsCopy(false), 2000);
-    };
+  const { t } = useTranslation()
+  const [url, setUrl] = useState<string>(window.location.origin)
+  const [cookies, setCookies] = useState<string>("")
+  const [cookieString, setCookieString] = useState<string>("")
+  const [loading, setLoading] = useState(false)
+  const cleanUrl = url.replace(/^https?:\/\//i, "")
+  const fileName = `${cleanUrl}_${new Date().toLocaleDateString("vi-VN").replace(/\//g, "-")}`
 
-    const getCookiesByUrl = async () => {
-        let validUrl = url;
-        if (!/^https?:\/\//i.test(validUrl)) {
-            validUrl = 'https://' + validUrl;
-        }
-        // check nếu url là của zalo thì open tab
-        if (url.includes("chat.zalo.me")) {
-            chromeUtils.openNewTab({ url: "https://chat.zalo.me/" });
-            chrome.runtime.sendMessage({ action: "GET_ZALO_INFO" }, (response) => {
-                setZaloData(response);
-            });
-        }
-
-        return toast.promise(
-            (async () => {
-                const cookiesArray = await chromeUtils.getChromeCookiesList(validUrl)
-
-                const cookieJson = JSON.stringify({
-                    url: validUrl,
-                    cookies: cookiesArray
-                }, null, 2);
-                
-                setCookies(cookieJson);
-                setCookieString(cookiesArray.map((cookie: {name:string, value:string}) => `${cookie.name}=${cookie.value}`).join('; '));
-            })(),
-            {
-                loading: t('loading_get_cookies', { url: validUrl }),
-                success: t('success_get_cookies', { url: validUrl }),
-                error: t('error_get_cookies', { url: validUrl })
-            }
-        )
+  const getCookiesByUrl = async () => {
+    let validUrl = url
+    if (!/^https?:\/\//i.test(validUrl)) {
+      validUrl = "https://" + validUrl
     }
+    setLoading(true)
+    return toast
+      .promise(
+        (async () => {
+          const cookiesArray = await chromeUtils.getChromeCookiesList(validUrl)
 
+          const cookieJson = JSON.stringify(
+            {
+              url: validUrl,
+              cookies: cookiesArray
+            },
+            null,
+            2
+          )
 
-    return (
-        <PageContainer
-            title={t('export_cookies')}
-            className="flex flex-col">
-            <Card className="flex-1  shadow border rounded-xl">
-                <div className="space-y-2">
-                    <Alert message={t('cookies_info')} type="info" showIcon />
-                    <Alert
-                        message={
-                            <div>
-                                <div>🔒 {t('cookies_safe', { ext: EXTENSION_INFO.displayName })}<span className="underline"> {t('cookies_safe_highlight')}</span>.</div>
-                                <div>📌 {t('cookies_local')}<span className="underline"> {t('cookies_local_highlight')}</span>, {t('cookies_local_extra')}.</div>
-                                <div>✅ {t('cookies_privacy')}<span className="underline"> {t('cookies_privacy_highlight')}</span>.</div>
-                            </div>
-                        }
-                        type="success"
-                    />
-                </div>
-                <div className="space-y-2 mt-3">
+          setCookies(cookieJson)
+          setCookieString(
+            cookiesArray
+              .map((cookie: { name: string; value: string }) => `${cookie.name}=${cookie.value}`)
+              .join("; ")
+          )
+        })(),
+        {
+          loading: t("loading_get_cookies", { url: validUrl }),
+          success: t("success_get_cookies", { url: validUrl }),
+          error: t("error_get_cookies", { url: validUrl })
+        }
+      )
+      .unwrap()
+      .catch(() => undefined)
+      .finally(() => setLoading(false))
+  }
 
-                    <div className='flex items-center gap-2'>
-                        <Input
-                            placeholder={t('input_url_placeholder')}
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                        />
-                        <Button
-                            type="primary"
-                            onClick={getCookiesByUrl}
-                        >
-                            {t('get_cookies')}
-                        </Button>
-                    </div>
-                    {(zaloData && url.includes("chat.zalo.me")) && (
-                        <Card size="small" className="mb-2">
-                            <div><b>IMEI:</b> {zaloData.imei || "Không có dữ liệu"}</div>
-                            <div><b>UserAgent:</b> {zaloData.userAgent || "Không có dữ liệu"}</div>
-                            <div><b>Cookies:</b></div>
-                            <Input.TextArea
-                                value={zaloData.cookies ? JSON.stringify(zaloData.cookies, null, 2) : "Không có dữ liệu"}
-                                autoSize={{ minRows: 2, maxRows: 10 }}
-                                readOnly
-                            />
-                        </Card>
-                    )}
-                    <div>{t('extract_cookies_from_json', { url })}</div>
-                    <Input.TextArea
-                        placeholder={t('cookies_placeholder')}
-                        value={cookies}
-                        autoSize={{ minRows: 2, maxRows: 10 }}
-                        readOnly
-                    />
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            icon={isCopy ? <CheckOutlined /> : <CopyOutlined />}
-                            type={isCopy ? "primary" : "default"}
-                            onClick={() => handleCopyCookies(cookies)}
-                        >
-                            {isCopy ? t('copied') : t('copy')}
-                        </Button>
-                        <Dropdown.Button
-                            icon={<ExportOutlined />}
-                            type={"primary"}
-                            menu={{
-                                items: [
-                                    {
-                                        key: '1',
-                                        label: (
-                                            <div
-                                                onClick={() => exportToTXT(cookies, fileName)}
-                                            >
-                                                {t('download_txt')}
-                                            </div>
-                                        ),
-                                    },
-                                    {
-                                        key: '2',
-                                        label: (
-                                            <div
-                                                onClick={() => exportToJson(cookies, fileName)}
-                                            >
-                                                {t('download_json')}
-                                            </div>
-                                        ),
-                                    },
-                                ],
-                            }}
-                        >
-                            {t('download_file')}
-                        </Dropdown.Button>
+  const exportMenu = (data: string) => [
+    {
+      key: "txt",
+      label: t("download_txt"),
+      icon: <FileText size={14} />,
+      onClick: () => exportToTXT(data, fileName)
+    },
+    {
+      key: "json",
+      label: t("download_json"),
+      icon: <FileJson size={14} />,
+      onClick: () => exportToJson(data, fileName)
+    }
+  ]
 
-                    </div>
-                    <div>{t('extract_cookies_from_string', { url })}</div>
-                    <Input.TextArea
-                        placeholder={t('cookies_placeholder')}
-                        value={cookieString}
-                        autoSize={{ minRows: 2, maxRows: 10 }}
-                        readOnly
-                    />
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            icon={isCopy ? <CheckOutlined /> : <CopyOutlined />}
-                            type={isCopy ? "primary" : "default"}
-                            onClick={() => handleCopyCookies(cookieString)}
-                        >
-                            {isCopy ? t('copied') : t('copy')}
-                        </Button>
-                        <Dropdown.Button
-                            icon={<ExportOutlined />}
-                            type={"primary"}
-                            menu={{
-                                items: [
-                                    {
-                                        key: '1',
-                                        label: (
-                                            <div
-                                                onClick={() => exportToTXT(cookieString, fileName)}
-                                            >
-                                                {t('download_txt')}
-                                            </div>
-                                        ),
-                                    },
-                                    {
-                                        key: '2',
-                                        label: (
-                                            <div
-                                                onClick={() => exportToJson(cookieString, fileName)}
-                                            >
-                                                {t('download_json')}
-                                            </div>
-                                        ),
-                                    },
-                                ],
-                            }}
-                        >
-                            {t('download_file')}
-                        </Dropdown.Button>
+  return (
+    <PageContainer
+      title={t("export_cookies")}
+      description={t("cookies_info")}
+      icon={<Cookie size={20} />}
+      accent="bm-bg-amber-500/12 bm-text-amber-600 dark:bm-text-amber-400">
+      <Callout tone="secure" compact>
+        <div className="bm-flex bm-flex-col bm-gap-0.5">
+          <span>
+            🔒 {t("cookies_safe", { ext: EXTENSION_INFO.displayName })}{" "}
+            <span className="bm-font-medium">{t("cookies_safe_highlight")}</span>.
+          </span>
+          <span>
+            📌 {t("cookies_local")} <span className="bm-font-medium">{t("cookies_local_highlight")}</span>,{" "}
+            {t("cookies_local_extra")}.
+          </span>
+          <span>
+            ✅ {t("cookies_privacy")} <span className="bm-font-medium">{t("cookies_privacy_highlight")}</span>.
+          </span>
+        </div>
+      </Callout>
 
-                    </div>
-                </div>
-            </Card>
-        </PageContainer >
-    )
+      <Surface padding="sm">
+        <Field label={t("target_url")}>
+          <div className="bm-flex bm-gap-2">
+            <Input
+              prefix={<Globe size={14} />}
+              placeholder={t("input_url_placeholder")}
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && getCookiesByUrl()}
+              className="bm-flex-1"
+            />
+            <Button variant="primary" loading={loading} icon={<FileDown size={14} />} onClick={getCookiesByUrl}>
+              {t("get_cookies")}
+            </Button>
+          </div>
+        </Field>
+      </Surface>
+
+      <OutputBlock
+        title={t("extract_cookies_from_json", { url: cleanUrl })}
+        icon={<Braces size={14} />}
+        value={cookies}
+        exportMenu={exportMenu(cookies)}
+        downloadLabel={t("download_file")}
+        placeholder={t("cookies_placeholder")}
+      />
+      <OutputBlock
+        title={t("extract_cookies_from_string", { url: cleanUrl })}
+        icon={<FileText size={14} />}
+        value={cookieString}
+        exportMenu={exportMenu(cookieString)}
+        downloadLabel={t("download_file")}
+        placeholder={t("cookies_placeholder")}
+      />
+    </PageContainer>
+  )
 }
 
 export default ExportCookiesPage

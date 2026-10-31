@@ -1,2 +1,3 @@
-declare module "*.css";
-declare module "*.scss";
+/// <reference types="chrome" />
+
+declare module "*.css"

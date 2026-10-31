@@ -1,6 +1,6 @@
 import $ from "jquery"
 import { useEffect, useRef, useState } from "react"
-import { ExportState, FormatType, Member } from "src/modules/facebook/types/facebook.interface"
+import { ExportState, FormatType, Member } from "src/modules/facebook/types/facebook.types"
 import { chromeUtils } from "src/utils/chrome.util"
 import { getUserID } from "src/modules/facebook/utils/facebook.util"
 import { EStorageKey } from "src/constants/enum"
@@ -67,7 +67,10 @@ export const useFacebookUIDScraper = () => {
 
   const getIdUrl = (url: string): string => {
     const parts = url.split("/")
-    return parts.filter((item) => item !== "").pop() || ""
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (parts[i]) return parts[i]
+    }
+    return ""
   }
 
   const checkUidPost = (url: string) => {
@@ -790,6 +793,8 @@ export const useFacebookUIDScraper = () => {
       }
     })()
     return () => { ignore = true }
+    // Restore an in-progress scrape once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return {

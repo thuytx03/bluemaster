@@ -1,133 +1,147 @@
-import { Button, Card, Spin } from "antd";
-import { useNavigate } from "react-router-dom";
-import { copyTextToClipboard } from "src/utils/common.util";
-import IconLoading from "src/modules/shared/components/IconLoading";
-import ExportMemberToExcel from "../components/export/ExportMemberToExcel";
-import { exportToTXT } from "src/utils/export.util";
-import { useFacebookUIDScraper } from "../hooks/useFacebookUIDScraper";
-import PageContainer from "../../shared/components/PageContainer";
-import { useTranslation } from "react-i18next";
-import { APP_ROUTES } from "src/constants/route";
-import { Select, Space } from 'antd';
-import type { SelectProps } from 'antd';
-import { FileText } from "lucide-react";
+import { CheckCircle2, FileText, Pause, Pickaxe, Play, Users, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router-dom"
 
-const options: SelectProps['options'] = [
-  {
-    value: 'uid',
-    label: 'UID',
-  },
-  {
-    value: 'name',
-    label: 'Tên',
-  },
+import { APP_ROUTES } from "src/constants/route.constants"
+import { FormatType } from "src/modules/facebook/types/facebook.types"
+import PageContainer from "src/modules/shared/components/PageContainer"
+import {
+  Badge,
+  Button,
+  Callout,
+  CopyButton,
+  Segmented,
+  Spinner,
+  StatTile,
+  Surface
+} from "src/modules/shared/ui"
+import { exportToTXT } from "src/utils/export.util"
 
-];
+import ExportMemberToExcel from "src/modules/facebook/components/ExportMemberToExcel"
+import { useFacebookUIDScraper } from "src/modules/facebook/hooks/useFacebookUIDScraper"
 
 const ExportUIDPage = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const { t } = useTranslation()
+  const navigate = useNavigate()
   const {
     state,
     textAreaRef,
-    isCopy,
-    setIsCopy,
     cleanup,
     handleStop,
     handleContinue,
-    fileName
-  } = useFacebookUIDScraper();
+    fileName,
+    format,
+    handleFormatChange
+  } = useFacebookUIDScraper()
+
+  const isScanning = state.status === "continue"
 
   const handleClose = () => {
-    cleanup();
-    navigate(APP_ROUTES.FACEBOOK.EXTRACT_UID);
-  };
-  const handleChange = (value: string | string[]) => {
-    console.log(`Selected: ${value}`);
-  };
+    cleanup()
+    navigate(APP_ROUTES.FACEBOOK.EXTRACT_UID)
+  }
+
   return (
-    <PageContainer title={t("extract_uid_title")} className="flex flex-col">
-      <Card className="flex-1 shadow border rounded-xl dark:bg-gray-800 dark:border-gray-700">
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col items-center justify-between gap-4">
-            {/* Status Section */}
-            <div className="w-full ">
-              <div className={`flex items-center justify-center md:justify-start gap-3 px-4 py-1.5 rounded-md border whitespace-nowrap ${state.status === "continue" ? "bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800" : "bg-gray-50 border-gray-100 dark:bg-gray-700/50 dark:border-gray-600"}`}>
-                {state.status === "continue" ? (
-                  <>
-                    <Spin size={"small"} className="text-blue-500" />
-                    <span className="text-sm font-semibold dark:text-gray-200">
-                      Đang quét: <span className="text-blue-600 dark:text-blue-400 text-sm">{state.count}</span>
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-sm font-semibold dark:text-gray-200">
-                    Trạng thái: <span className="text-green-600 dark:text-green-400 text-sm">Đã quét {state.count}</span>
-                  </span>
-                )}
-              </div>
+    <PageContainer
+      title={t("extract_uid_title")}
+      description={t("nav_scan_uid_desc")}
+      icon={<Pickaxe size={20} />}
+      accent="bm-bg-[#1877F2]/12 bm-text-[#1877F2]"
+      actions={
+        <Button variant="ghost" size="sm" icon={<X size={14} />} onClick={handleClose}>
+          {t("cancel")}
+        </Button>
+      }>
+      {/* Status */}
+      <div className="bm-grid bm-grid-cols-2 bm-gap-3">
+        <StatTile
+          label={isScanning ? t("scanning") : t("scanned")}
+          value={state.count.toLocaleString()}
+          hint={t("uid").replace(":", "")}
+          tone={isScanning ? "info" : "success"}
+          icon={isScanning ? <Spinner size={18} /> : <Users size={18} />}
+        />
+        <Surface padding="sm" className="bm-flex bm-items-center bm-justify-between bm-gap-3">
+          <div className="bm-min-w-0">
+            <div className="bm-text-[11px] bm-font-medium bm-uppercase bm-tracking-wider bm-text-fg-subtle">
+              {t("status")}
             </div>
-
-            {/* Controls Section */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-              <div className="flex items-center justify-between  gap-2 w-full sm:w-auto">
-                <Select
-                  mode="multiple"
-
-                  placeholder="Chọn trường"
-                  defaultValue={['uid', 'name']}
-                  onChange={handleChange}
-                  className="flex-1 sm:min-w-[180px]"
-                  options={options}
-                />
-              </div>
-              <div className="flex items-center gap-2 w-full">
-                {state.status === "continue" ? (
-                  <Button danger type="primary" onClick={handleStop} className="flex-1 sm:flex-none">Dừng lại</Button>
-                ) : (
-                  <Button type="primary" onClick={handleContinue} className="flex-1 sm:flex-none">Tiếp tục quét</Button>
-                )}
-                <Button onClick={handleClose} className="flex-1 sm:flex-none">Hủy bỏ</Button>
-              </div>
+            <div className="bm-mt-1">
+              {isScanning ? (
+                <Badge tone="info" dot pulse>
+                  {t("scanning")}…
+                </Badge>
+              ) : state.success ? (
+                <Badge tone="success" icon={<CheckCircle2 size={12} />}>
+                  {t("completed_text")}
+                </Badge>
+              ) : (
+                <Badge tone="warning" dot>
+                  {t("pause")}
+                </Badge>
+              )}
             </div>
           </div>
-        </div>
+          {isScanning ? (
+            <Button variant="danger" size="sm" icon={<Pause size={14} />} onClick={handleStop}>
+              {t("stop")}
+            </Button>
+          ) : (
+            <Button variant="primary" size="sm" icon={<Play size={14} />} onClick={handleContinue}>
+              {t("continue_scan")}
+            </Button>
+          )}
+        </Surface>
+      </div>
 
+      {state.success && (
+        <Callout tone="success" compact>
+          {t("scan_complete")}
+        </Callout>
+      )}
+
+      {/* Results */}
+      <Surface
+        padding="none"
+        title={t("results")}
+        icon={<FileText size={14} />}
+        extra={
+          <Segmented<FormatType>
+            size="sm"
+            value={format}
+            onChange={handleFormatChange}
+            options={[
+              { value: "uid", label: t("format_uid_only") },
+              { value: "uid_name", label: t("format_uid_name") }
+            ]}
+          />
+        }>
         <textarea
           ref={textAreaRef}
-          rows={18}
-          className="w-full p-2 resize-none rounded border outline-none focus:border-blue-500 font-mono text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-gray-200"
+          rows={16}
+          spellCheck={false}
+          className="bm-block bm-w-full bm-resize-y bm-bg-transparent bm-px-4 bm-py-3 bm-font-mono bm-text-[12px] bm-leading-relaxed bm-text-fg bm-outline-none placeholder:bm-text-fg-subtle"
+          placeholder="uid|name"
         />
-
-        {state.success && (
-          <div className="text-green-500 text-sm mt-2">Đã quét hết danh sách!</div>
-        )}
-
-        <div className="flex items-center gap-2 mt-3">
-          <ExportMemberToExcel data={state.arrUID} />
+        <div className="bm-flex bm-flex-wrap bm-items-center bm-justify-end bm-gap-2 bm-border-t bm-border-line bm-bg-surface-2/50 bm-px-3 bm-py-2">
+          <ExportMemberToExcel data={state.arrUID} disabled={state.arrUID.length === 0} />
           <Button
+            size="sm"
+            variant="primary"
             icon={<FileText size={14} />}
-            type="primary"
-            onClick={() => exportToTXT(textAreaRef.current?.value || "", fileName)}
-          >
-
-            Export TXT
+            disabled={state.count === 0}
+            onClick={() => exportToTXT(textAreaRef.current?.value || "", fileName)}>
+            {t("export_txt")}
           </Button>
-          <Button
-            type={isCopy ? "primary" : "default"}
-            onClick={() => {
-              copyTextToClipboard(textAreaRef.current?.value || "");
-              setIsCopy(true);
-              setTimeout(() => setIsCopy(false), 2000);
-            }}
-            className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-          >
-            {isCopy ? "Copied!" : "Copy"}
-          </Button>
+          <CopyButton
+            size="sm"
+            getText={() => textAreaRef.current?.value || ""}
+            disabled={state.count === 0}
+          />
         </div>
-      </Card>
+      </Surface>
     </PageContainer>
-  );
-};
+  )
+}
 
-export default ExportUIDPage;
+export default ExportUIDPage

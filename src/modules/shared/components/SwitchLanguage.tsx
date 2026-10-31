@@ -1,47 +1,44 @@
-import React from 'react'
-import type { MenuProps } from 'antd';
-import { Button, Dropdown } from 'antd';
-import { FlagEnglish, FlagVietNam } from '../../../assets/icons';
-import i18n from '../../../i18n';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next"
 
-const items: MenuProps['items'] = [
-    {
-        key: 'vi',
-        icon: FlagVietNam ? <FlagVietNam className='w-4 h-4' /> : null,
-        label: (
-            <span>Tiếng Việt</span>
-        ),
-    },
-    {
-        key: 'en',
-        icon: FlagEnglish ? <FlagEnglish className='w-4 h-4' /> : null,
-        label: (
-            <span>English</span>
-        ),
-    }
-];
+import { FlagEnglish, FlagVietNam } from "src/assets/icons"
+import i18n from "src/i18n"
+import { Dropdown, IconButton } from "src/modules/shared/ui"
+
+export const LANGUAGES = [
+  { key: "vi", label: "Tiếng Việt", Flag: FlagVietNam },
+  { key: "en", label: "English", Flag: FlagEnglish }
+]
 
 const setLanguageCookie = (lang: string) => {
-    document.cookie = `language=${lang}; path=/; max-age=31536000`; // lưu 1 năm
-};
+  document.cookie = `language=${lang}; path=/; max-age=31536000` // lưu 1 năm
+}
 
-const handleMenuClick: MenuProps['onClick'] = (e) => {
-    i18n.changeLanguage(e.key);
-    setLanguageCookie(e.key);
-};
+export const changeLanguage = (lang: string) => {
+  i18n.changeLanguage(lang)
+  setLanguageCookie(lang)
+}
 
 const SwitchLanguage = () => {
-    const { i18n: i18next } = useTranslation();
-    const currentFlag =
-        i18next.language === 'en'
-            ? (FlagEnglish ? <FlagEnglish className="w-5 h-5" /> : <span>EN</span>)
-            : (FlagVietNam ? <FlagVietNam className="w-5 h-5" /> : <span>VI</span>);
-    return (
-        <Dropdown menu={{ items, onClick: handleMenuClick }} placement="bottom" arrow >
-            <Button type='text' className='w-auto'>{currentFlag}</Button>
-        </Dropdown>
-    )
+  const { t, i18n: i18next } = useTranslation()
+  const current =
+    LANGUAGES.find((l) => l.key === i18next.language) ?? LANGUAGES[0]
+  const Flag = current.Flag
+
+  return (
+    <Dropdown
+      placement="bottom-end"
+      minWidth={160}
+      items={LANGUAGES.map((l) => ({
+        key: l.key,
+        label: l.label,
+        icon: <l.Flag className="bm-h-4 bm-w-4 bm-rounded-sm" />,
+        onClick: () => changeLanguage(l.key)
+      }))}>
+      <IconButton label={t("language")}>
+        <Flag className="bm-h-[18px] bm-w-[18px] bm-rounded-sm bm-shadow-sm" />
+      </IconButton>
+    </Dropdown>
+  )
 }
 
 export default SwitchLanguage
