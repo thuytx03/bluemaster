@@ -152,6 +152,8 @@
     "overlay_mode": "Chế độ phủ lên trang",
     "push_mode": "Chế độ đẩy trang",
     "close_panel": "Đóng bảng điều khiển",
+    "hide_launcher": "Ẩn thanh công cụ",
+    "hide_launcher_hint": "đến khi tải lại trang",
     "open_panel": "Mở bảng công cụ",
     "appearance": "Giao diện",
     "appearance_desc": "Chọn chế độ sáng hoặc tối cho bảng điều khiển.",

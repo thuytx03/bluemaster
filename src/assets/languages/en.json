@@ -152,6 +152,8 @@
     "overlay_mode": "Overlay mode",
     "push_mode": "Push mode",
     "close_panel": "Close panel",
+    "hide_launcher": "Hide launcher",
+    "hide_launcher_hint": "until page reload",
     "open_panel": "Open toolkit",
     "appearance": "Appearance",
     "appearance_desc": "Choose light or dark mode for the panel.",

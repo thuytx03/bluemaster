@@ -24,11 +24,13 @@ interface DockButtonProps {
   left: boolean
   /** Larger hero button with the mascot */
   primary?: boolean
+  /** Compact secondary action (e.g. hide launcher) */
+  small?: boolean
   hint?: string
 }
 
 /* One dock item: circular button + label that slides in from the side on hover. */
-const DockButton = ({ label, onClick, children, left, primary, hint }: DockButtonProps) => (
+const DockButton = ({ label, onClick, children, left, primary, small, hint }: DockButtonProps) => (
   <div className={cn("bm-group/item bm-relative bm-flex bm-items-center", left && "bm-flex-row-reverse")}>
     <span
       className={cn(
@@ -45,10 +47,13 @@ const DockButton = ({ label, onClick, children, left, primary, hint }: DockButto
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "bm-relative bm-inline-flex bm-h-10 bm-w-10 bm-shrink-0 bm-items-center bm-justify-center bm-overflow-hidden bm-rounded-full bm-transition-all bm-duration-200 focus-visible:bm-outline-none focus-visible:bm-shadow-glow active:bm-scale-95",
+        "bm-relative bm-inline-flex bm-shrink-0 bm-items-center bm-justify-center bm-overflow-hidden bm-rounded-full bm-transition-all bm-duration-200 focus-visible:bm-outline-none focus-visible:bm-shadow-glow active:bm-scale-95",
+        small ? "bm-h-7 bm-w-7" : "bm-h-10 bm-w-10",
         primary
           ? "bm-ring-1 bm-ring-white/80 bm-shadow-[0_6px_18px_rgba(24,119,242,0.45)] hover:bm-shadow-[0_8px_24px_rgba(24,119,242,0.6)]"
-          : "bm-bg-surface bm-text-fg-muted bm-shadow-card bm-ring-1 bm-ring-line hover:bm-bg-brand hover:bm-text-brand-fg hover:bm-ring-brand"
+          : small
+            ? "bm-bg-surface bm-text-fg-subtle bm-shadow-card bm-ring-1 bm-ring-line hover:bm-bg-danger hover:bm-text-white hover:bm-ring-danger"
+            : "bm-bg-surface bm-text-fg-muted bm-shadow-card bm-ring-1 bm-ring-line hover:bm-bg-brand hover:bm-text-brand-fg hover:bm-ring-brand"
       )}>
       {children}
     </button>
@@ -98,27 +103,22 @@ const FloatingBar = ({ isOpen, onOpen, theme, side = "right" }: FloatingBarProps
       </DockButton>
 
       {/* Mascot: opens the panel */}
-      <div className="bm-relative">
-        <DockButton label={t("open_panel")} hint={TOGGLE_SHORTCUT_LABEL} onClick={onOpen} left={left} primary>
-          <img src={iconUrl} alt="Bluemaster" className="bm-h-full bm-w-full bm-object-cover" draggable={false} />
-        </DockButton>
-        <button
-          type="button"
-          title={t("close_panel")}
-          aria-label={t("close_panel")}
-          onClick={() => setDismissed(true)}
-          className={cn(
-            "bm-absolute -bm-top-1 bm-inline-flex bm-h-5 bm-w-5 bm-scale-75 bm-items-center bm-justify-center bm-rounded-full bm-bg-surface bm-text-fg-muted bm-opacity-0 bm-pointer-events-none bm-shadow-card bm-ring-1 bm-ring-line bm-transition-all bm-duration-200 hover:bm-bg-danger hover:bm-text-white hover:bm-ring-danger group-hover/bar:bm-pointer-events-auto group-hover/bar:bm-scale-100 group-hover/bar:bm-opacity-100",
-            left ? "-bm-right-1" : "-bm-left-1"
-          )}>
-          <X size={11} />
-        </button>
-      </div>
+      <DockButton label={t("open_panel")} hint={TOGGLE_SHORTCUT_LABEL} onClick={onOpen} left={left} primary>
+        <img src={iconUrl} alt="Bluemaster" className="bm-h-full bm-w-full bm-object-cover" draggable={false} />
+      </DockButton>
 
-      {/* Settings, revealed on hover */}
-      <div className={cn(reveal, "-bm-translate-y-2")}>
+      {/* Settings + hide launcher, revealed on hover */}
+      <div className={cn(reveal, "-bm-translate-y-2 bm-items-center")}>
         <DockButton label={t("settings")} onClick={() => go(APP_ROUTES.SETTINGS)} left={left}>
           <Settings size={16} />
+        </DockButton>
+        <DockButton
+          label={t("hide_launcher")}
+          hint={t("hide_launcher_hint")}
+          onClick={() => setDismissed(true)}
+          left={left}
+          small>
+          <X size={13} />
         </DockButton>
       </div>
     </div>
