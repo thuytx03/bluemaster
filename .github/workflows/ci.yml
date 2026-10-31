@@ -39,7 +39,7 @@ jobs:
         run: pnpm build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bluemaster-chrome-mv3-${{ github.sha }}
           path: build/chrome-mv3-prod.zip
