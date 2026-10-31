@@ -50,6 +50,8 @@ export interface ICustomer {
   id: string
   name: string
   time: string
+  /** Unix ms of the thread's last update; drives incremental re-scans */
+  updatedAt?: number
   xung?: string
   goi?: string
   gender?: 'male' | 'female' | 'unknown'
@@ -58,6 +60,39 @@ export interface ICustomer {
   senderType?: 'customer' | 'page' | 'unknown'
   tags?: string[]
   isBlocked?: boolean
+}
+
+/** Options for scanning a page's inbox */
+export interface IInboxScanOptions {
+  /** Called after every page of threads with the number of customers found so far */
+  onProgress?: (count: number) => void
+  /** Polled before every request; returning true ends the scan with the partial result */
+  shouldStop?: () => boolean
+  /** Parallel lanes (1–4) */
+  concurrency?: number
+  /** Only collect threads updated after this unix ms (incremental re-scan) */
+  since?: number
+}
+
+export interface IInboxScanResult {
+  customers: ICustomer[]
+  total: number
+  /** True when every thread in range was visited (not stopped, no permanent error) */
+  complete: boolean
+  stopped: boolean
+  /** Newest thread update time seen, unix ms */
+  newestUpdatedAt: number
+  requests: number
+  warning?: string
+}
+
+/** Per-page scan result persisted so the next scan only fetches newer threads */
+export interface IInboxScanCache {
+  pageId: string
+  customers: ICustomer[]
+  newestUpdatedAt: number
+  complete: boolean
+  scannedAt: number
 }
 
 export interface IInboxThread {

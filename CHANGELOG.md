@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Auto inbox: customer scan runs up to 4 parallel time-sliced lanes with work stealing, asks for larger pages, drops the fixed 20-second wait at the end of every scan and backs off faster on errors.
+- Auto inbox: scan results are cached per page for 7 days; re-scanning only fetches threads updated since, with a "Quét lại từ đầu" option for a full pass.
+- Auto inbox: the stop button now ends the scan and keeps what was found; progress shows elapsed time and rate instead of a fixed 100%.
+- Auto inbox: page list cached for 15 minutes with a refresh button; readable template tokens (`{name}`, `{me}`, `{you}`, `{emoji}`); native emoji picker.
+- Manifest: `unlimitedStorage` so large inboxes and download history fit in extension storage.
+
 ## [1.0.0] - 2026-10-31
 
 First public release under the Bluemaster name.

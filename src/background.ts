@@ -215,8 +215,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === "INBOX_GET_THREADS") {
-    const { page_id, before_call } = message.payload ?? {}
-    fetchUsersInboxBg(page_id, before_call ?? null).then(sendResponse)
+    const { page_id, before_call, limit } = message.payload ?? {}
+    fetchUsersInboxBg(page_id, before_call ?? null, limit).then(sendResponse)
     return true
   }
 

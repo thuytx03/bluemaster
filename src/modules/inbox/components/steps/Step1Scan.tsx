@@ -1,4 +1,4 @@
-import { MessageSquare, RefreshCw, Search, Users } from "lucide-react"
+import { Clock, MessageSquare, RefreshCw, RotateCcw, Search, Square, Users, Zap } from "lucide-react"
 import React, { useEffect, useMemo, useState } from "react"
 
 import {
@@ -11,8 +11,10 @@ import {
   Input,
   Progress,
   SectionLabel,
+  Segmented,
   Spinner,
-  Surface
+  Surface,
+  Tooltip
 } from "src/modules/shared/ui"
 
 import useInboxScan from "src/modules/inbox/hooks/useInboxScan"
@@ -20,28 +22,62 @@ import useInboxStore from "src/modules/inbox/stores/inbox.store"
 import { IFanpage } from "src/modules/inbox/types/inbox.types"
 import StepFooter from "src/modules/inbox/components/StepFooter"
 
+const CONCURRENCY_OPTIONS = [1, 2, 3, 4].map((n) => ({ value: n, label: String(n) }))
+
+const formatDuration = (ms: number) => {
+  const s = Math.max(0, Math.round(ms / 1000))
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60)
+  return `${m}m ${String(s % 60).padStart(2, "0")}s`
+}
+
+const formatTime = (ts: number) =>
+  new Date(ts).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+
+/** Ticks once a second while `active` so elapsed time can be rendered */
+const useNow = (active: boolean) => {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!active) return
+    setNow(Date.now())
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [active])
+  return now
+}
+
 const Step1Scan: React.FC = () => {
   const { pages, campaign, nextStep } = useInboxStore()
   const {
     loadingPages,
     scanningInbox,
     scanProgress,
-    scanTotal,
+    scanStartedAt,
     pageLoadError,
     scanError,
+    scanInfo,
+    concurrency,
+    setConcurrency,
     fetchPages,
     pagesFetchedAt,
-    startScan
+    startScan,
+    stopScan
   } = useInboxScan()
 
   const [search, setSearch] = useState("")
   const [selectedPage, setSelectedPage] = useState<IFanpage | null>(null)
+  const [stopping, setStopping] = useState(false)
+  const now = useNow(scanningInbox)
 
   useEffect(() => {
     if (pages.length === 0) fetchPages()
     // Load the page list once when entering step 1
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!scanningInbox) setStopping(false)
+  }, [scanningInbox])
 
   const filteredPages = useMemo(() => {
     if (!search.trim()) return pages
@@ -53,11 +89,25 @@ const Step1Scan: React.FC = () => {
     await startScan(page)
   }
 
+  const handleRescan = (mode: "auto" | "full") => {
+    const page = selectedPage ?? pages.find((p) => p.id === campaign.fanpageId)
+    if (page) {
+      setSelectedPage(page)
+      startScan(page, mode)
+    }
+  }
+
+  const handleStop = () => {
+    setStopping(true)
+    stopScan()
+  }
+
   const handleNext = () => {
     if (campaign.totalCustomers > 0) nextStep()
   }
 
-  const scanPercent = scanTotal > 0 ? Math.round((scanProgress / scanTotal) * 100) : 0
+  const elapsedMs = scanStartedAt ? now - scanStartedAt : 0
+  const rate = elapsedMs > 2000 ? Math.round((scanProgress / elapsedMs) * 60000) : 0
 
   return (
     <div className="bm-flex bm-flex-col bm-gap-4">
@@ -67,7 +117,7 @@ const Step1Scan: React.FC = () => {
             Chọn Fanpage hoặc Profile để quét khách hàng
           </div>
           <div className="bm-text-[12px] bm-text-fg-muted">
-            Nhấn vào một trang để bắt đầu quét hộp thư.
+            Nhấn vào một trang để bắt đầu quét hộp thư. Lần quét sau chỉ lấy thêm hội thoại mới.
           </div>
         </div>
         <div className="bm-flex bm-flex-col bm-items-end bm-gap-1">
@@ -76,12 +126,13 @@ const Step1Scan: React.FC = () => {
             variant="outline"
             icon={<RefreshCw size={13} className={cn(loadingPages && "bm-animate-spin")} />}
             onClick={() => fetchPages(true)}
-            loading={loadingPages}>
+            loading={loadingPages}
+            disabled={scanningInbox}>
             Làm mới
           </Button>
           {pagesFetchedAt && (
             <span className="bm-text-[11px] bm-text-fg-subtle">
-              Cập nhật lúc {new Date(pagesFetchedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} · tự làm mới sau 15 phút
+              Cập nhật lúc {formatTime(pagesFetchedAt)} · tự làm mới sau 15 phút
             </span>
           )}
         </div>
@@ -90,12 +141,28 @@ const Step1Scan: React.FC = () => {
       {pageLoadError && <Callout tone="danger" compact>{pageLoadError}</Callout>}
       {scanError && <Callout tone="danger" compact>{scanError}</Callout>}
 
-      <Input
-        prefix={<Search size={14} />}
-        placeholder="Tìm kiếm Fanpage..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="bm-flex bm-items-center bm-gap-3">
+        <Input
+          className="bm-flex-1"
+          prefix={<Search size={14} />}
+          placeholder="Tìm kiếm Fanpage..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Tooltip content="Số luồng quét song song. Nhiều luồng nhanh hơn nhưng dễ bị Facebook giới hạn tạm thời; 3 là mức cân bằng.">
+          <div className="bm-flex bm-items-center bm-gap-2">
+            <span className="bm-inline-flex bm-items-center bm-gap-1 bm-text-[12px] bm-text-fg-muted">
+              <Zap size={13} /> Luồng
+            </span>
+            <Segmented
+              size="sm"
+              value={concurrency}
+              onChange={setConcurrency}
+              options={scanningInbox ? CONCURRENCY_OPTIONS.map((o) => ({ ...o, disabled: true })) : CONCURRENCY_OPTIONS}
+            />
+          </div>
+        </Tooltip>
+      </div>
 
       {/* Page list */}
       <div>
@@ -163,34 +230,75 @@ const Step1Scan: React.FC = () => {
       {scanningInbox && (
         <Surface tone="info" padding="sm" className="bm-animate-fade-in">
           <div className="bm-flex bm-flex-col bm-gap-2">
-            <div className="bm-flex bm-items-center bm-justify-between bm-text-[12.5px]">
-              <span className="bm-text-fg">
-                Đang quét inbox của <strong>{selectedPage?.name}</strong>…
+            <div className="bm-flex bm-items-center bm-justify-between bm-gap-3 bm-text-[12.5px]">
+              <span className="bm-min-w-0 bm-truncate bm-text-fg">
+                {stopping ? "Đang dừng, giữ lại kết quả đã quét…" : (
+                  <>Đang quét inbox của <strong>{selectedPage?.name}</strong>…</>
+                )}
               </span>
-              <span className="bm-font-semibold bm-tabular-nums bm-text-info">
-                {scanProgress.toLocaleString()}
-              </span>
+              <Button size="xs" variant="outline" icon={<Square size={11} />} onClick={handleStop} disabled={stopping}>
+                Dừng &amp; dùng kết quả
+              </Button>
             </div>
-            <Progress value={scanPercent} tone="info" striped label />
-            <span className="bm-text-[11.5px] bm-text-fg-muted">
-              Đã tìm thấy {scanProgress.toLocaleString()} khách hàng
-            </span>
+            <Progress value={100} tone="info" striped />
+            <div className="bm-flex bm-flex-wrap bm-items-center bm-gap-x-4 bm-gap-y-1 bm-text-[11.5px] bm-text-fg-muted">
+              <span>
+                Đã tìm thấy <strong className="bm-tabular-nums bm-text-fg">{scanProgress.toLocaleString()}</strong> khách hàng
+              </span>
+              <span className="bm-inline-flex bm-items-center bm-gap-1 bm-tabular-nums">
+                <Clock size={11} /> {formatDuration(elapsedMs)}
+              </span>
+              {rate > 0 && <span className="bm-tabular-nums">~{rate.toLocaleString()} khách/phút</span>}
+              <span>{concurrency} luồng</span>
+            </div>
           </div>
         </Surface>
       )}
 
       {/* Result summary */}
       {!scanningInbox && campaign.totalCustomers > 0 && (
-        <Surface tone="success" padding="sm" className="bm-animate-fade-in">
+        <Surface tone={scanInfo && !scanInfo.complete ? "warning" : "success"} padding="sm" className="bm-animate-fade-in">
           <div className="bm-flex bm-items-center bm-gap-3">
-            <span className="bm-inline-flex bm-h-10 bm-w-10 bm-items-center bm-justify-center bm-rounded-xl bm-bg-success/15 bm-text-success">
+            <span
+              className={cn(
+                "bm-inline-flex bm-h-10 bm-w-10 bm-shrink-0 bm-items-center bm-justify-center bm-rounded-xl",
+                scanInfo && !scanInfo.complete ? "bm-bg-warning/15 bm-text-warning" : "bm-bg-success/15 bm-text-success"
+              )}>
               <Users size={18} />
             </span>
-            <div className="bm-min-w-0">
+            <div className="bm-min-w-0 bm-flex-1">
               <div className="bm-text-[13px] bm-font-semibold bm-text-fg">
-                Quét hoàn tất! Tìm thấy {campaign.totalCustomers.toLocaleString()} khách hàng
+                {scanInfo && !scanInfo.complete ? "Đã dừng sớm. " : "Quét hoàn tất! "}
+                Có {campaign.totalCustomers.toLocaleString()} khách hàng
               </div>
-              <div className="bm-truncate bm-text-[11.5px] bm-text-fg-muted">Fanpage: {campaign.fanpageName}</div>
+              <div className="bm-truncate bm-text-[11.5px] bm-text-fg-muted">
+                {campaign.fanpageName}
+                {scanInfo && (
+                  <>
+                    {" · "}
+                    {scanInfo.fromCache
+                      ? `${scanInfo.changed.toLocaleString()} mới/cập nhật`
+                      : `${scanInfo.requests} lượt gọi`}
+                    {" · "}
+                    {formatDuration(scanInfo.elapsedMs)} · lúc {formatTime(scanInfo.scannedAt)}
+                  </>
+                )}
+              </div>
+              {scanInfo?.warning && (
+                <div className="bm-truncate bm-text-[11.5px] bm-text-warning">{scanInfo.warning}</div>
+              )}
+            </div>
+            <div className="bm-flex bm-shrink-0 bm-items-center bm-gap-1.5">
+              <Tooltip content="Chỉ lấy thêm hội thoại mới kể từ lần quét trước">
+                <Button size="xs" variant="outline" icon={<RefreshCw size={12} />} onClick={() => handleRescan("auto")}>
+                  Cập nhật
+                </Button>
+              </Tooltip>
+              <Tooltip content="Bỏ kết quả đã lưu và quét lại toàn bộ hộp thư">
+                <Button size="xs" variant="ghost" icon={<RotateCcw size={12} />} onClick={() => handleRescan("full")}>
+                  Quét lại từ đầu
+                </Button>
+              </Tooltip>
             </div>
           </div>
         </Surface>
@@ -198,7 +306,7 @@ const Step1Scan: React.FC = () => {
 
       <StepFooter
         onNext={handleNext}
-        nextDisabled={campaign.totalCustomers === 0}
+        nextDisabled={campaign.totalCustomers === 0 || scanningInbox}
         nextIcon={<MessageSquare size={14} />}
         nextLabel={`Tiếp theo: Lọc đối tượng (${campaign.totalCustomers.toLocaleString()})`}
       />

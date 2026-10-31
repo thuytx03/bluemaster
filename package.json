@@ -91,6 +91,7 @@
       "activeTab",
       "tabs",
       "storage",
+      "unlimitedStorage",
       "notifications"
     ],
     "host_permissions": [

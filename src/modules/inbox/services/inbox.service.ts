@@ -4,14 +4,12 @@ import {
   IApiResponse,
   ICustomer,
   IFanpage,
+  IFbApiError,
   IFbRequestConfig,
+  IInboxScanOptions,
+  IInboxScanResult,
   IUserInfo
 } from "src/modules/inbox/types/inbox.types"
-
-const SCAN_RETRY_CONFIG = {
-  requestError: { maxAttempts: 5, delayMs: 30000 },
-  emptyThreads: { maxAttempts: 3, delayMs: 10000 }
-}
 
 function sendBgMessage<T = any>(message: Record<string, any>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -102,74 +100,180 @@ export async function getPageList(
 
 // ==================== INBOX THREADS ====================
 
+/** Threads per request. Facebook silently caps this, so a larger ask costs nothing. */
+const PREFERRED_PAGE_SIZE = 200
+/** Used when a large page is rejected */
+const FALLBACK_PAGE_SIZE = 50
+const MAX_REQUEST_ATTEMPTS = 5
+const RETRY_BASE_DELAY_MS = 5000
+/** Do not split a lane whose remaining time range is shorter than this */
+const MIN_SPLIT_SPAN_MS = 60 * 60 * 1000
+/** No Facebook thread can be older than this; keeps the first splits useful */
+const EARLIEST_THREAD_TIME = Date.UTC(2008, 0, 1)
+const DEFAULT_CONCURRENCY = 3
+
+/**
+ * A lane walks the thread list backwards in time and covers `(floor, before]`.
+ * `before === null` means "start from the newest thread".
+ */
+interface ILane {
+  before: number | null
+  floor: number
+}
+
+const describeError = (error: unknown): string => {
+  if (!error) return "Không quét được inbox"
+  if (typeof error === "string") return error
+  const e = error as IFbApiError
+  return e.errorDescription || e.errorSummary || JSON.stringify(error)
+}
+
+/**
+ * Collect every customer that has a thread with `pageId`.
+ *
+ * Facebook pages the thread list by `updated_time`, so the range can be cut into
+ * time slices that are fetched in parallel. A lane that still has work splits its
+ * remaining range whenever another worker is idle (work stealing), so all lanes
+ * stay busy regardless of how threads are distributed over time.
+ */
 export async function scanInboxThreads(
   pageId: string,
-  onProgress?: (customers: ICustomer[], total: number) => void
-): Promise<IApiResponse<{ customers: ICustomer[]; total: number }>> {
-  const allCustomers: ICustomer[] = []
-  const processedIds = new Set<string>()
+  options: IInboxScanOptions = {}
+): Promise<IApiResponse<IInboxScanResult>> {
+  const concurrency = Math.min(4, Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY))
+  const shouldStop = options.shouldStop ?? (() => false)
+  const baseFloor = Math.max(options.since ?? 0, EARLIEST_THREAD_TIME)
 
-  let beforeCall: string | null = null
-  let requestErrorAttempts = 0
-  let emptyThreadAttempts = 0
+  const customers = new Map<string, ICustomer>()
+  const queue: ILane[] = [{ before: null, floor: baseFloor }]
+  let active = 0
+  // Shared between lanes; mutated from async callbacks
+  const state = { pageSize: PREFERRED_PAGE_SIZE, stopped: false, failure: null as string | null }
+  let newestUpdatedAt = 0
+  let requests = 0
+  let finish: () => void = () => {}
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const res = await sendBgMessage<{
-      success: boolean
-      data?: any
-      error?: any
-    }>({
-      action: "INBOX_GET_THREADS",
-      payload: { page_id: pageId, before_call: beforeCall }
-    })
-    if (!res.success) {
-      requestErrorAttempts++
-      if (requestErrorAttempts >= SCAN_RETRY_CONFIG.requestError.maxAttempts) {
-        if (allCustomers.length > 0) break
-        return {
-          success: false,
-          error:
-            typeof res.error === "string"
-              ? res.error
-              : JSON.stringify(res.error)
-        }
-      }
-      await delay(SCAN_RETRY_CONFIG.requestError.delayMs)
-      continue
+  const addCustomer = (customer: ICustomer) => {
+    const existing = customers.get(customer.id)
+    if (!existing || (customer.updatedAt ?? 0) >= (existing.updatedAt ?? 0)) {
+      customers.set(customer.id, customer)
     }
-
-    requestErrorAttempts = 0
-
-    const threads = extractThreads(res.data)
-    if (!threads || threads.length === 0) {
-      emptyThreadAttempts++
-      if (emptyThreadAttempts >= SCAN_RETRY_CONFIG.emptyThreads.maxAttempts)
-        break
-      await delay(SCAN_RETRY_CONFIG.emptyThreads.delayMs)
-      continue
-    }
-
-    emptyThreadAttempts = 0
-
-    threads.forEach((thread: any) => {
-      const customer = parseCustomerFromThread(thread, pageId)
-      if (customer && !processedIds.has(customer.id)) {
-        processedIds.add(customer.id)
-        allCustomers.push(customer)
-      }
-    })
-
-    if (onProgress) onProgress([...allCustomers], allCustomers.length)
-
-    const cursor = extractCursor(threads)
-    if (!cursor) break
-    beforeCall = cursor
   }
+
+  /** One page of threads, with page-size fallback and backoff on errors. `null` = stop requested. */
+  const fetchPage = async (before: number | null): Promise<any[] | null> => {
+    let attempts = 0
+    for (;;) {
+      if (state.stopped || shouldStop()) return null
+      requests++
+      const res = await sendBgMessage<{ success: boolean; data?: any; error?: any }>({
+        action: "INBOX_GET_THREADS",
+        payload: {
+          page_id: pageId,
+          before_call: before === null ? null : String(before),
+          limit: state.pageSize
+        }
+      })
+      if (res.success) return extractThreads(res.data)
+
+      if (state.pageSize !== FALLBACK_PAGE_SIZE) {
+        // The large page may be the problem; drop to the known-good size at once
+        state.pageSize = FALLBACK_PAGE_SIZE
+        continue
+      }
+      attempts++
+      if (attempts >= MAX_REQUEST_ATTEMPTS) throw new Error(describeError(res.error))
+      await delay(RETRY_BASE_DELAY_MS * attempts)
+    }
+  }
+
+  const runLane = async (lane: ILane) => {
+    let { before, floor } = lane
+    let retriedEmpty = false
+
+    while (!state.stopped && !state.failure) {
+      const threads = await fetchPage(before)
+      if (threads === null) {
+        state.stopped = true
+        return
+      }
+      if (threads.length === 0) {
+        // The head of the list is occasionally empty on a transient glitch; one quick retry
+        if (before === null && !retriedEmpty) {
+          retriedEmpty = true
+          await delay(1500)
+          continue
+        }
+        return
+      }
+
+      let reachedFloor = false
+      for (const thread of threads) {
+        const updatedAt = Number(thread?.updated_time_precise)
+        if (Number.isFinite(updatedAt)) {
+          if (updatedAt <= floor) {
+            reachedFloor = true
+            continue
+          }
+          if (updatedAt > newestUpdatedAt) newestUpdatedAt = updatedAt
+        }
+        const customer = parseCustomerFromThread(thread, pageId)
+        if (customer) addCustomer(customer)
+      }
+      options.onProgress?.(customers.size)
+
+      const lastUpdatedAt = Number(threads[threads.length - 1]?.updated_time_precise)
+      if (reachedFloor || !Number.isFinite(lastUpdatedAt) || lastUpdatedAt - 1 <= floor) return
+      before = lastUpdatedAt - 1
+
+      // Hand half of what is left to an idle worker
+      if (queue.length === 0 && active < concurrency && before - floor > MIN_SPLIT_SPAN_MS) {
+        const mid = Math.floor((before + floor) / 2)
+        queue.push({ before: mid, floor })
+        floor = mid
+        pump()
+      }
+    }
+  }
+
+  const pump = () => {
+    while (queue.length > 0 && active < concurrency && !state.stopped && !state.failure) {
+      const lane = queue.shift() as ILane
+      active++
+      runLane(lane)
+        .catch((e: any) => {
+          state.failure = e?.message ?? String(e)
+        })
+        .finally(() => {
+          active--
+          if (queue.length > 0 && !state.stopped && !state.failure) pump()
+          if (active === 0) finish()
+        })
+    }
+    if (active === 0 && queue.length === 0) finish()
+  }
+
+  await new Promise<void>((resolve) => {
+    finish = resolve
+    pump()
+  })
+
+  const list = Array.from(customers.values()).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+
+  const { stopped, failure } = state
+  if (failure && list.length === 0) return { success: false, error: failure }
 
   return {
     success: true,
-    data: { customers: allCustomers, total: allCustomers.length }
+    data: {
+      customers: list,
+      total: list.length,
+      complete: !stopped && !failure,
+      stopped,
+      newestUpdatedAt,
+      requests,
+      warning: failure ? `Dừng sớm vì lỗi: ${failure}` : undefined
+    }
   }
 }
 
@@ -229,19 +333,6 @@ function extractThreads(data: any): any[] {
   }
 }
 
-function extractCursor(threads: any[]): string | null {
-  try {
-    if (!threads || threads.length === 0) return null
-    const lastUpdated = parseInt(
-      threads[threads.length - 1]?.updated_time_precise
-    )
-    const cursor = lastUpdated - 1
-    return isNaN(cursor) || cursor <= 0 ? null : String(cursor)
-  } catch {
-    return null
-  }
-}
-
 function parseCustomerFromThread(
   thread: any,
   pageId: string
@@ -263,9 +354,12 @@ function parseCustomerFromThread(
       return null
 
     const lastMsg = thread?.last_message?.nodes?.[0]
+    const updatedAt = Number(thread?.updated_time_precise)
     const lastMsgTime = lastMsg?.timestamp_precise
       ? new Date(Number(lastMsg.timestamp_precise)).toISOString()
-      : ""
+      : Number.isFinite(updatedAt)
+        ? new Date(updatedAt).toISOString()
+        : ""
 
     const senderType: "customer" | "page" =
       actor.__typename === "Page" || actor.__isMessagingActor === "Page"
@@ -281,6 +375,7 @@ function parseCustomerFromThread(
       id,
       name,
       time: lastMsgTime,
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : undefined,
       gender: normalizeGender(actor.gender),
       hasPhone: !!actor.all_phones?.length,
       isFriend: actor.is_viewer_friend ?? false,

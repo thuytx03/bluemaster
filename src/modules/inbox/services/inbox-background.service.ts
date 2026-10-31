@@ -210,7 +210,8 @@ export async function fetchPageListInbox(
 
 export async function fetchUsersInboxBg(
   pageId: string,
-  beforeCall: string | null
+  beforeCall: string | null,
+  limit = 50
 ): Promise<{ success: boolean; data?: any; error?: any }> {
   inboxRequestConfig.__req = generateRequest()
 
@@ -220,7 +221,7 @@ export async function fetchUsersInboxBg(
     queries: JSON.stringify({
       __q0__: {
         doc_id: "5947328892029037",
-        query_params: { limit: 50, before: beforeCall }
+        query_params: { limit, before: beforeCall }
       }
     }),
     cquick_token: inboxRequestConfig.cquick_token,
