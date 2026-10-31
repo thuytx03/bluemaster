@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-31
+
 ### Added
 - Auto inbox: scheduled sending now works. The campaign runs in the service worker, is persisted in extension storage and is driven by `chrome.alarms`, so it starts at the chosen time and keeps going after the panel is closed, the page is reloaded or Chrome stops the worker. Optional end time stops it ("Hết giờ gửi"); "Gửi ngay" skips the wait. Reopening Auto Inbox shows the running campaign.
 
@@ -44,3 +46,4 @@ First public release under the Bluemaster name.
 
 [1.0.0]: https://github.com/thuytx03/bluemaster/releases/tag/v1.0.0
 [1.0.1]: https://github.com/thuytx03/bluemaster/compare/v1.0.0...v1.0.1
+[1.0.2]: https://github.com/thuytx03/bluemaster/compare/v1.0.1...v1.0.2
