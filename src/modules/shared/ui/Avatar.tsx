@@ -11,7 +11,7 @@ interface AvatarProps {
 }
 
 const COLORS = [
-  "bm-from-indigo-500 bm-to-violet-500",
+  "bm-from-blue-500 bm-to-sky-500",
   "bm-from-sky-500 bm-to-cyan-500",
   "bm-from-emerald-500 bm-to-teal-500",
   "bm-from-amber-500 bm-to-orange-500",

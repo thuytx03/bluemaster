@@ -19,11 +19,12 @@
     --x-fg-muted: 226 12% 42%;
     --x-fg-subtle: 226 10% 60%;
 
-    --x-brand: 243 75% 59%;
-    --x-brand-hover: 243 70% 52%;
+    /* Brand = Facebook blue (#1877F2) so the UI matches the mascot */
+    --x-brand: 214 89% 52%;
+    --x-brand-hover: 214 90% 44%;
     --x-brand-fg: 0 0% 100%;
-    --x-brand-ink: 243 70% 50%;
-    --x-brand-soft: 240 100% 96%;
+    --x-brand-ink: 214 85% 42%;
+    --x-brand-soft: 214 100% 96%;
 
     --x-success: 152 69% 36%;
     --x-success-soft: 150 70% 95%;
@@ -31,13 +32,13 @@
     --x-warning-soft: 40 100% 94%;
     --x-danger: 0 72% 51%;
     --x-danger-soft: 0 86% 96%;
-    --x-info: 210 90% 48%;
-    --x-info-soft: 210 100% 95%;
+    --x-info: 199 89% 42%;
+    --x-info-soft: 199 100% 95%;
 
     --x-shadow: 230 40% 12%;
-    --x-grad-from: #6366f1;
-    --x-grad-via: #8b5cf6;
-    --x-grad-to: #ec4899;
+    --x-grad-from: #0b5ed7;
+    --x-grad-via: #1877f2;
+    --x-grad-to: #38bdf8;
     color-scheme: light;
   }
 
@@ -52,11 +53,11 @@
     --x-fg-muted: 225 12% 64%;
     --x-fg-subtle: 225 10% 46%;
 
-    --x-brand: 239 84% 67%;
-    --x-brand-hover: 239 84% 73%;
+    --x-brand: 214 95% 62%;
+    --x-brand-hover: 214 95% 68%;
     --x-brand-fg: 0 0% 100%;
-    --x-brand-ink: 234 89% 80%;
-    --x-brand-soft: 243 40% 17%;
+    --x-brand-ink: 214 100% 78%;
+    --x-brand-soft: 214 45% 16%;
 
     --x-success: 152 60% 55%;
     --x-success-soft: 152 40% 13%;
@@ -64,13 +65,13 @@
     --x-warning-soft: 36 50% 13%;
     --x-danger: 0 85% 68%;
     --x-danger-soft: 0 40% 14%;
-    --x-info: 210 95% 68%;
-    --x-info-soft: 212 45% 14%;
+    --x-info: 199 95% 66%;
+    --x-info-soft: 199 45% 14%;
 
     --x-shadow: 230 60% 2%;
-    --x-grad-from: #818cf8;
-    --x-grad-via: #a78bfa;
-    --x-grad-to: #f472b6;
+    --x-grad-from: #4c9bff;
+    --x-grad-via: #60a5fa;
+    --x-grad-to: #67e8f9;
     color-scheme: dark;
   }
 }
