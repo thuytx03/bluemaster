@@ -1,10 +1,9 @@
-import { Download, Inbox, Pickaxe, Plus, Settings, X } from "lucide-react"
+import { Download, Home, Inbox, Pickaxe, Settings, X } from "lucide-react"
 import { ReactNode, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import iconUrl from "url:assets/icon.png"
 
-import { FacebookIcon } from "src/assets/icons"
 import { APP_ROUTES } from "src/constants/route.constants"
 import { cn } from "src/modules/shared/ui"
 
@@ -18,44 +17,46 @@ interface FloatingBarProps {
 export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform)
 export const TOGGLE_SHORTCUT_LABEL = IS_MAC ? "⌥X" : "Alt+X"
 
-const RoundButton = ({
-  label,
-  onClick,
-  children,
-  badge,
-  className
-}: {
+interface DockButtonProps {
   label: string
   onClick: () => void
   children: ReactNode
-  badge?: ReactNode
-  className?: string
-}) => (
-  <button
-    type="button"
-    title={label}
-    aria-label={label}
-    onClick={onClick}
-    className={cn(
-      "bm-relative bm-inline-flex bm-h-8 bm-w-8 bm-items-center bm-justify-center bm-rounded-full bm-bg-white bm-text-zinc-600 bm-shadow-[0_1px_6px_rgba(0,0,0,0.14)] bm-ring-1 bm-ring-black/5 bm-transition-all bm-duration-200 hover:-bm-translate-x-0.5 hover:bm-text-[#5B4BDB] hover:bm-shadow-[0_4px_12px_rgba(0,0,0,0.18)]",
-      className
-    )}>
-    {children}
-    {badge && (
-      <span className="bm-absolute -bm-bottom-0.5 -bm-right-0.5 bm-inline-flex bm-h-3.5 bm-w-3.5 bm-items-center bm-justify-center bm-rounded-full bm-bg-white bm-shadow-sm bm-ring-1 bm-ring-black/5">
-        {badge}
-      </span>
-    )}
-  </button>
+  left: boolean
+  /** Larger hero button with the mascot */
+  primary?: boolean
+  hint?: string
+}
+
+/* One dock item: circular button + label that slides in from the side on hover. */
+const DockButton = ({ label, onClick, children, left, primary, hint }: DockButtonProps) => (
+  <div className={cn("bm-group/item bm-relative bm-flex bm-items-center", left && "bm-flex-row-reverse")}>
+    <span
+      className={cn(
+        "bm-pointer-events-none bm-absolute bm-top-1/2 -bm-translate-y-1/2 bm-whitespace-nowrap bm-rounded-lg bm-bg-fg bm-px-2.5 bm-py-1.5 bm-text-[12px] bm-font-medium bm-text-app bm-opacity-0 bm-shadow-pop bm-transition-all bm-duration-150 group-hover/item:bm-opacity-100",
+        left
+          ? "bm-left-full bm-ml-3 -bm-translate-x-1 group-hover/item:bm-translate-x-0"
+          : "bm-right-full bm-mr-3 bm-translate-x-1 group-hover/item:bm-translate-x-0"
+      )}>
+      {label}
+      {hint && <span className="bm-ml-1.5 bm-opacity-60">{hint}</span>}
+    </span>
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className={cn(
+        "bm-relative bm-inline-flex bm-shrink-0 bm-items-center bm-justify-center bm-overflow-hidden bm-rounded-full bm-transition-all bm-duration-200 focus-visible:bm-outline-none focus-visible:bm-shadow-glow",
+        primary
+          ? "bm-h-12 bm-w-12 bm-ring-2 bm-ring-white/90 bm-shadow-[0_8px_24px_rgba(24,119,242,0.45)] hover:bm-scale-105 hover:bm-shadow-[0_10px_30px_rgba(24,119,242,0.6)] active:bm-scale-95"
+          : "bm-h-9 bm-w-9 bm-bg-surface bm-text-fg-muted bm-shadow-card bm-ring-1 bm-ring-line hover:bm-bg-brand hover:bm-text-brand-fg hover:bm-ring-brand active:bm-scale-95"
+      )}>
+      {children}
+    </button>
+  </div>
 )
 
-/* Launcher docked to the right edge while the panel is closed. */
-const FloatingBar = ({
-  isOpen,
-  onOpen,
-  theme,
-  side = "right"
-}: FloatingBarProps) => {
+/* Launcher docked to the screen edge while the panel is closed. */
+const FloatingBar = ({ isOpen, onOpen, theme, side = "right" }: FloatingBarProps) => {
   const left = side === "left"
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -68,86 +69,57 @@ const FloatingBar = ({
     onOpen()
   }
 
+  const reveal =
+    "bm-flex bm-flex-col bm-gap-2 bm-opacity-0 bm-pointer-events-none bm-transition-all bm-duration-200 group-hover/bar:bm-pointer-events-auto group-hover/bar:bm-translate-y-0 group-hover/bar:bm-opacity-100"
+
   return (
     <div
       data-bluemaster-theme={theme || "light"}
       className={cn(
-        "bm-group/bar bm-fixed bm-bottom-20 bm-z-[2147483647] bm-flex bm-flex-col bm-gap-2 bm-pointer-events-auto bm-animate-slide-in-right",
-        left ? "bm-left-1.5 bm-items-start" : "bm-right-1.5 bm-items-end"
+        "bm-group/bar bm-fixed bm-bottom-20 bm-z-[2147483647] bm-flex bm-flex-col bm-items-center bm-gap-2 bm-pointer-events-auto bm-animate-slide-in-right",
+        left ? "bm-left-3" : "bm-right-3"
       )}>
-      {/* Revealed on hover */}
-      <div
-        className={cn(
-          "bm-flex bm-translate-y-2 bm-flex-col bm-gap-2 bm-opacity-0 bm-pointer-events-none bm-transition-all bm-duration-200 group-hover/bar:bm-pointer-events-auto group-hover/bar:bm-translate-y-0 group-hover/bar:bm-opacity-100",
-          left ? "bm-items-start" : "bm-items-end"
-        )}>
-        <RoundButton
-          label={t("nav_home")}
-          onClick={() => go(APP_ROUTES.HOME)}
-          className="bm-bg-[#ECE8FF] bm-text-[#5B4BDB] bm-ring-[#5B4BDB]/10 hover:bm-text-[#4338CA]">
-          <Plus size={16} />
-        </RoundButton>
+      {/* Extra shortcuts, revealed on hover */}
+      <div className={cn(reveal, "bm-translate-y-2")}>
+        <DockButton label={t("nav_home")} onClick={() => go(APP_ROUTES.HOME)} left={left}>
+          <Home size={16} />
+        </DockButton>
       </div>
 
       {/* Quick actions */}
-      <RoundButton label={t("auto_inbox")} onClick={() => go(APP_ROUTES.INBOX)}>
-        <Inbox size={15} />
-      </RoundButton>
-      <RoundButton
-        label={t("scan_uid")}
-        onClick={() => go(APP_ROUTES.FACEBOOK.EXTRACT_UID)}>
-        <Pickaxe size={15} />
-      </RoundButton>
-      <RoundButton
-        label={t("batch_download")}
-        onClick={() => go(APP_ROUTES.DOWNLOAD_ALL.FACEBOOK)}
-        badge={<FacebookIcon className="bm-h-2.5 bm-w-2.5" />}>
-        <Download size={15} />
-      </RoundButton>
+      <DockButton label={t("auto_inbox")} onClick={() => go(APP_ROUTES.INBOX)} left={left}>
+        <Inbox size={16} />
+      </DockButton>
+      <DockButton label={t("scan_uid")} onClick={() => go(APP_ROUTES.FACEBOOK.EXTRACT_UID)} left={left}>
+        <Pickaxe size={16} />
+      </DockButton>
+      <DockButton label={t("batch_download")} onClick={() => go(APP_ROUTES.DOWNLOAD_ALL.FACEBOOK)} left={left}>
+        <Download size={16} />
+      </DockButton>
 
-      {/* Main pill */}
-      <div className={cn("bm-relative", left ? "-bm-ml-2" : "-bm-mr-2")}>
-        <button
-          type="button"
-          title={`${t("open_panel")} (${TOGGLE_SHORTCUT_LABEL})`}
-          onClick={onOpen}
-          className={cn(
-            "bm-group/pill bm-flex bm-h-9 bm-items-center bm-bg-[#ECE8FF] bm-py-1 bm-text-[#5B4BDB] bm-shadow-[0_2px_10px_rgba(91,75,219,0.22)] bm-ring-1 bm-ring-[#5B4BDB]/10 bm-transition-all bm-duration-200 hover:bm-bg-[#E3DEFF]",
-            left
-              ? "bm-flex-row-reverse bm-rounded-r-full bm-pr-1 bm-pl-1.5 hover:bm-pl-3"
-              : "bm-rounded-l-full bm-pl-1 bm-pr-1.5 hover:bm-pr-3"
-          )}>
-          <span className="bm-relative bm-inline-flex bm-h-7 bm-w-7 bm-shrink-0 bm-overflow-hidden bm-rounded-full bm-ring-2 bm-ring-white/80">
-            <img
-              src={iconUrl}
-              alt="logo"
-              className="bm-h-full bm-w-full bm-object-cover"
-            />
-          </span>
-          <span className="bm-max-w-0 bm-overflow-hidden bm-whitespace-nowrap bm-text-[12px] bm-font-semibold bm-tracking-wide bm-opacity-0 bm-transition-all bm-duration-200 group-hover/pill:bm-mx-1.5 group-hover/pill:bm-max-w-[60px] group-hover/pill:bm-opacity-100">
-            {TOGGLE_SHORTCUT_LABEL}
-          </span>
-        </button>
+      {/* Mascot: opens the panel */}
+      <div className="bm-relative bm-mt-1">
+        <DockButton label={t("open_panel")} hint={TOGGLE_SHORTCUT_LABEL} onClick={onOpen} left={left} primary>
+          <img src={iconUrl} alt="Bluemaster" className="bm-h-full bm-w-full bm-object-cover" draggable={false} />
+        </DockButton>
         <button
           type="button"
           title={t("close_panel")}
           aria-label={t("close_panel")}
           onClick={() => setDismissed(true)}
           className={cn(
-            "bm-absolute -bm-top-1.5 bm-inline-flex bm-h-4 bm-w-4 bm-scale-75 bm-items-center bm-justify-center bm-rounded-full bm-bg-white bm-text-zinc-500 bm-opacity-0 bm-pointer-events-none bm-shadow-md bm-ring-1 bm-ring-black/10 bm-transition-all bm-duration-200 hover:bm-bg-zinc-100 hover:bm-text-zinc-900 group-hover/bar:bm-pointer-events-auto group-hover/bar:bm-scale-100 group-hover/bar:bm-opacity-100",
-            left ? "-bm-right-1.5" : "-bm-left-1.5"
+            "bm-absolute -bm-top-1 bm-inline-flex bm-h-5 bm-w-5 bm-scale-75 bm-items-center bm-justify-center bm-rounded-full bm-bg-surface bm-text-fg-muted bm-opacity-0 bm-pointer-events-none bm-shadow-card bm-ring-1 bm-ring-line bm-transition-all bm-duration-200 hover:bm-bg-danger hover:bm-text-white hover:bm-ring-danger group-hover/bar:bm-pointer-events-auto group-hover/bar:bm-scale-100 group-hover/bar:bm-opacity-100",
+            left ? "-bm-right-1" : "-bm-left-1"
           )}>
-          <X size={10} />
+          <X size={11} />
         </button>
       </div>
 
       {/* Settings, revealed on hover */}
-      <div className="bm-translate-y-[-8px] bm-opacity-0 bm-pointer-events-none bm-transition-all bm-duration-200 group-hover/bar:bm-pointer-events-auto group-hover/bar:bm-translate-y-0 group-hover/bar:bm-opacity-100">
-        <RoundButton
-          label={t("settings")}
-          onClick={() => go(APP_ROUTES.SETTINGS)}>
-          <Settings size={15} />
-        </RoundButton>
+      <div className={cn(reveal, "-bm-translate-y-2")}>
+        <DockButton label={t("settings")} onClick={() => go(APP_ROUTES.SETTINGS)} left={left}>
+          <Settings size={16} />
+        </DockButton>
       </div>
     </div>
   )
