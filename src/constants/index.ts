@@ -1,5 +1,5 @@
 import packageData from "../../package.json"
-import { GITHUB_RAW_PACKAGE_URL, GITHUB_RELEASES_URL } from "./api.constants"
+import { GITHUB_LATEST_RELEASE_API, GITHUB_RELEASES_URL } from "./api.constants"
 export const EXTENSION_INFO = {
     name: packageData.name,
     displayName: packageData.displayName,
@@ -7,6 +7,6 @@ export const EXTENSION_INFO = {
     author: packageData.author,
     version: packageData.version,
     link_download: GITHUB_RELEASES_URL,
-    link_info: GITHUB_RAW_PACKAGE_URL
+    link_info: GITHUB_LATEST_RELEASE_API
 }
 export const RUN_FUNC = "bluemaster:runFunc"

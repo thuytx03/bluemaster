@@ -5,6 +5,7 @@ import { ERemoteMessageType, ESocialProvider, EStorageKey } from "src/constants/
 import useAuthStore from "src/stores/auth.store"
 import { chromeUtils } from "src/utils/chrome.util"
 import { EXTENSION_INFO } from "src/constants"
+import { GITHUB_ICON_URL, GITHUB_LATEST_RELEASE_API, GITHUB_REPO_URL, versionFromTag } from "src/constants/api.constants"
 
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms))
@@ -25,9 +26,10 @@ export const checkExtensionVersion = async () => {
   const notificationId = "update-notification"
   const { version: currentVersion } = chrome.runtime.getManifest()
   const { data } = await axios.get(
-    "https://raw.githubusercontent.com/thuytx03/bluemaster/main/package.json"
+    GITHUB_LATEST_RELEASE_API
   )
-  const latestVersion = data.version
+  const latestVersion = versionFromTag(data?.tag_name)
+  if (!latestVersion) return
   const notifyLatestExtensionVersion = await chromeUtils.getStorage(
     EStorageKey.NOTIFY_LATEST_EXTENSION_VERSION
   )
@@ -41,7 +43,7 @@ export const checkExtensionVersion = async () => {
     )
     chrome.notifications.create(notificationId, {
       type: "basic",
-      iconUrl: "https://raw.githubusercontent.com/thuytx03/bluemaster/main/assets/icon.png",
+      iconUrl: GITHUB_ICON_URL,
       title: `🎉 ${EXTENSION_INFO.displayName} đã có phiên bản mới!`,
       message: `Vui lòng cập nhật để tận hưởng các tính năng và cải tiến mới nhất.`
     })
@@ -53,7 +55,7 @@ export const checkExtensionVersion = async () => {
   chrome.notifications.onClicked.addListener((clickedId) => {
     if (clickedId === notificationId) {
       chrome.tabs.create({
-        url: "https://github.com/thuytx03/bluemaster/"
+        url: GITHUB_REPO_URL
       })
     }
   })

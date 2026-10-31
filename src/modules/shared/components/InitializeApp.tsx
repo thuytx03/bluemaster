@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import iconUrl from "url:assets/icon.png"
 
 import { EXTENSION_INFO } from "src/constants"
+import { versionFromTag } from "src/constants/api.constants"
 import { ESocialProvider, EStorageKey } from "src/constants/enum"
 import { IAccounts } from "src/modules/facebook/types/account.types"
 import useDownloadProcesses from "src/stores/download-process.store"
@@ -40,7 +41,7 @@ const InitializeApp: FC<PropsWithChildren> = ({ children }) => {
         const { data } = await axios.get(
           `${EXTENSION_INFO.link_info}?t=${new Date().getTime()}`
         )
-        extensionLatestVersion = data.version
+        extensionLatestVersion = versionFromTag(data?.tag_name) || extensionLatestVersion
         const { version: currentVersion } = chrome.runtime.getManifest()
         isUpdateAvailable = currentVersion !== extensionLatestVersion
       } catch (e) {
