@@ -45,10 +45,10 @@ const DockButton = ({ label, onClick, children, left, primary, hint }: DockButto
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "bm-relative bm-inline-flex bm-shrink-0 bm-items-center bm-justify-center bm-overflow-hidden bm-rounded-full bm-transition-all bm-duration-200 focus-visible:bm-outline-none focus-visible:bm-shadow-glow",
+        "bm-relative bm-inline-flex bm-h-10 bm-w-10 bm-shrink-0 bm-items-center bm-justify-center bm-overflow-hidden bm-rounded-full bm-transition-all bm-duration-200 focus-visible:bm-outline-none focus-visible:bm-shadow-glow active:bm-scale-95",
         primary
-          ? "bm-h-12 bm-w-12 bm-ring-2 bm-ring-white/90 bm-shadow-[0_8px_24px_rgba(24,119,242,0.45)] hover:bm-scale-105 hover:bm-shadow-[0_10px_30px_rgba(24,119,242,0.6)] active:bm-scale-95"
-          : "bm-h-9 bm-w-9 bm-bg-surface bm-text-fg-muted bm-shadow-card bm-ring-1 bm-ring-line hover:bm-bg-brand hover:bm-text-brand-fg hover:bm-ring-brand active:bm-scale-95"
+          ? "bm-ring-1 bm-ring-white/80 bm-shadow-[0_6px_18px_rgba(24,119,242,0.45)] hover:bm-shadow-[0_8px_24px_rgba(24,119,242,0.6)]"
+          : "bm-bg-surface bm-text-fg-muted bm-shadow-card bm-ring-1 bm-ring-line hover:bm-bg-brand hover:bm-text-brand-fg hover:bm-ring-brand"
       )}>
       {children}
     </button>
@@ -98,7 +98,7 @@ const FloatingBar = ({ isOpen, onOpen, theme, side = "right" }: FloatingBarProps
       </DockButton>
 
       {/* Mascot: opens the panel */}
-      <div className="bm-relative bm-mt-1">
+      <div className="bm-relative">
         <DockButton label={t("open_panel")} hint={TOGGLE_SHORTCUT_LABEL} onClick={onOpen} left={left} primary>
           <img src={iconUrl} alt="Bluemaster" className="bm-h-full bm-w-full bm-object-cover" draggable={false} />
         </DockButton>
