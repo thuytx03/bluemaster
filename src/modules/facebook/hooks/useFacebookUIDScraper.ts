@@ -2,7 +2,8 @@ import $ from "jquery"
 import { useEffect, useRef, useState } from "react"
 import { ExportState, FormatType, Member } from "src/modules/facebook/types/facebook.types"
 import { chromeUtils } from "src/utils/chrome.util"
-import { getUserID } from "src/modules/facebook/utils/facebook.util"
+import facebookService from "src/modules/facebook/services/facebook.service"
+import { showErrorToast } from "src/utils/toast.util"
 import { EStorageKey } from "src/constants/enum"
 
 export const onStartExtension = async (data: any) => {
@@ -71,11 +72,6 @@ export const useFacebookUIDScraper = () => {
       if (parts[i]) return parts[i]
     }
     return ""
-  }
-
-  const checkUidPost = (url: string) => {
-    const id = getIdUrl(url)
-    return id.startsWith("pfbid")
   }
 
   const getCookie = (name: string): string => {
@@ -649,32 +645,17 @@ export const useFacebookUIDScraper = () => {
 
   const fetchUidPost = async (url: string, apiUrl: string) => {
     try {
-      if (checkUidPost(url)) {
-        await getUserID(url).then((response: any) => {
-          if (response?.status === 200) {
-            configRef.current.postId = response?.data?.id
-            getUidInPost(
-              apiUrl,
-              configRef.current.postId,
-              configRef.current.options[configRef.current.indexOption],
-              configRef.current.cursorEnd
-            )
-          } else {
-            alert("Thao tác quá nhanh, vui lòng thử lại sau 5 giây")
-            stopSearchUid()
-          }
-        })
-      } else {
-        configRef.current.postId = getIdUrl(url)
-        getUidInPost(
-          apiUrl,
-          configRef.current.postId,
-          configRef.current.options[configRef.current.indexOption],
-          configRef.current.cursorEnd
-        )
-      }
+      // Works for /posts/<id>, permalink, story.php?story_fbid= and pfbid links
+      configRef.current.postId = await facebookService.getPostIdFromUrl(url)
+      getUidInPost(
+        apiUrl,
+        configRef.current.postId,
+        configRef.current.options[configRef.current.indexOption],
+        configRef.current.cursorEnd
+      )
     } catch (e) {
-      console.log("Error fetching UID", e)
+      showErrorToast((e as Error).message || "Không lấy được ID bài viết")
+      stopSearchUid()
     }
   }
 

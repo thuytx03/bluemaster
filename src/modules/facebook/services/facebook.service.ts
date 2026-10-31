@@ -1007,6 +1007,38 @@ const getReplyCommentData = async (
 }
 
 /** Resolve the video attached to a comment (or reply) URL */
+/**
+ * Numeric post id from any post URL: query params (story_fbid, multi_permalinks, fbid),
+ * a numeric path segment (/posts/123, /permalink/123), or, for pfbid links, the page
+ * source fetched with the logged-in session.
+ */
+const getPostIdFromUrl = async (postUrl: string): Promise<string> => {
+  const normalized = postUrl.startsWith("http") ? postUrl : `https://${postUrl}`
+  try {
+    const u = new URL(normalized)
+    for (const key of ["story_fbid", "multi_permalinks", "fbid"]) {
+      const v = u.searchParams.get(key)
+      if (v && /^\d+$/.test(v)) return v
+    }
+    const segments = u.pathname.split("/").filter(Boolean)
+    const numeric = [...segments].reverse().find((seg) => /^\d{6,}$/.test(seg))
+    if (numeric) return numeric
+  } catch {
+    // fall through to page scraping
+  }
+  const { data } = await fbAxiosInstance.get(normalized)
+  const html: string = typeof data === "string" ? data : ""
+  const id =
+    html.match(/"post_id":"(\d+)"/)?.[1] ??
+    html.match(/"storyID":"(\d+)"/)?.[1] ??
+    html.match(/"story_fbid":"(\d+)"/)?.[1] ??
+    html.match(/"subscription_target_id":"(\d+)"/)?.[1]
+  if (!id) {
+    throw new Error("Không lấy được ID bài viết từ đường dẫn")
+  }
+  return id
+}
+
 const getCommentVideoDownloadUrl = async (commentUrl: string): Promise<{ id: string; downloadUrl: string }> => {
   const parsed = new URL(commentUrl)
   const parentCommentId = parsed.searchParams.get("comment_id")
@@ -1067,6 +1099,7 @@ const facebookService = {
   getVideoDetails,
   getVideoDownloadUrl,
   getPostInfo,
+  getPostIdFromUrl,
   getPostMediaDetails,
   getPhotoDownloadUrl,
   getProfileBulkPhotos,
