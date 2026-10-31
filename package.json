@@ -5,6 +5,7 @@
   "description": "Open-source browser extension toolkit for Facebook: bulk photo/video/reel/story downloads, multi-URL downloads, UID scraping, bulk inbox messaging, access tokens and cookie tools.",
   "author": "Trịnh Xuân Thuỷ",
   "license": "MIT",
+  "packageManager": "pnpm@10.34.5",
   "homepage": "https://github.com/thuytx03/bluemaster",
   "repository": {
     "type": "git",

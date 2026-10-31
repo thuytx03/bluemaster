@@ -10,10 +10,19 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/thuytx03/bluemaster/actions/workflows/ci.yml"><img src="https://github.com/thuytx03/bluemaster/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/thuytx03/bluemaster/releases/latest"><img src="https://img.shields.io/github/v/release/thuytx03/bluemaster?label=release" alt="Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/manifest-v3-green" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/built%20with-Plasmo-7c3aed" alt="Plasmo" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/thuytx03/bluemaster/releases/latest/download/bluemaster-latest.zip"><img src="https://img.shields.io/badge/Download-Chrome%20%2F%20Edge%20%2F%20Brave-1877F2?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Download for Chrome, Edge, Brave" /></a>
+  &nbsp;
+  <a href="https://github.com/thuytx03/bluemaster/releases"><img src="https://img.shields.io/badge/All%20releases-changelog-555?style=for-the-badge&logo=github&logoColor=white" alt="All releases" /></a>
+  &nbsp;
+  <a href="#install"><img src="https://img.shields.io/badge/Install%20guide-3%20steps-0B5ED7?style=for-the-badge&logo=bookstack&logoColor=white" alt="Install guide" /></a>
 </p>
 
 > Bluemaster is an independent project. It is not affiliated with, endorsed by, or sponsored by Meta Platforms, Inc. "Facebook" is a trademark of Meta Platforms, Inc.
@@ -36,11 +45,12 @@ All tools run inside a sidebar injected on `facebook.com`, so you work on the pa
 
 Download history, file-name presets and UI preferences persist across sessions. Light and dark themes, Vietnamese and English.
 
+<a id="install"></a>
 ## Install
 
 ### From a release
 
-1. Download the latest `bluemaster-<version>.zip` from the [releases page](https://github.com/thuytx03/bluemaster/releases/latest) and unzip it.
+1. Click the **Download** button above (or grab `bluemaster-<version>.zip` from the [releases page](https://github.com/thuytx03/bluemaster/releases/latest)) and unzip it.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and select the unzipped folder.
 3. Open `facebook.com`. The floating button on the right edge opens the sidebar.
 
@@ -100,9 +110,17 @@ Bluemaster talks only to `facebook.com` and to GitHub (to check for a newer rele
 
 This extension automates actions on your own Facebook account. You are responsible for complying with Facebook's Terms of Service and with the law in your jurisdiction, including copyright and privacy rules for any content you download or any people you message. Use reasonable rate limits; aggressive automation can get an account restricted.
 
+## Releasing
+
+CI runs type-check, lint and build on every push and pull request. To publish a version: bump `version` in `package.json`, commit, then push a matching tag. The release workflow builds the extension, attaches `bluemaster-<version>.zip` (plus a SHA-256 checksum) to a GitHub Release, and the extension's update check picks it up.
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a PR run `pnpm check` and make sure `pnpm build` succeeds. Keep the naming rules above and the single 8 px border radius used across the UI kit in `src/modules/shared/ui`.
+Issues and pull requests are welcome. Before opening a PR run `pnpm check` and make sure `pnpm build` succeeds; CI enforces the same checks. Keep the naming rules above and the single 8 px border radius used across the UI kit in `src/modules/shared/ui`.
 
 ## License
 
