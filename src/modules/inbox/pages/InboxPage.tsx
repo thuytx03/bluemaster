@@ -1,5 +1,5 @@
 import { Check, Filter, Inbox, MessageSquare, Send, Settings, ShieldCheck, Users } from "lucide-react"
-import React from "react"
+import React, { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
 import PageContainer from "src/modules/shared/components/PageContainer"
@@ -11,7 +11,9 @@ import Step3Compose from "src/modules/inbox/components/steps/Step3Compose"
 import Step4Config from "src/modules/inbox/components/steps/Step4Config"
 import Step5Confirm from "src/modules/inbox/components/steps/Step5Confirm"
 import Step6Send from "src/modules/inbox/components/steps/Step6Send"
+import { getStoredCampaign } from "src/modules/inbox/hooks/useMessageSender"
 import useInboxStore from "src/modules/inbox/stores/inbox.store"
+import { isCampaignDone } from "src/modules/inbox/utils/campaign.util"
 
 const STEP_META = [
   { title: "Quét khách", description: "Chọn Fanpage/Profile", icon: <Users size={15} /> },
@@ -24,8 +26,20 @@ const STEP_META = [
 
 const InboxPage: React.FC = () => {
   const { t } = useTranslation()
-  const { currentStep, campaign, setStep } = useInboxStore()
-  const isSending = currentStep === 6 && campaign.sendProgress.status !== "idle" && campaign.sendProgress.status !== "finished" && campaign.sendProgress.status !== "stopped"
+  const { currentStep, campaign, setStep, hydrateFromJob } = useInboxStore()
+  const isSending = currentStep === 6 && campaign.sendProgress.status !== "idle" && !isCampaignDone(campaign.sendProgress.status)
+
+  // A campaign the service worker is running or has scheduled outlives this page: show it
+  useEffect(() => {
+    if (campaign.sendProgress.status !== "idle") return
+    getStoredCampaign()
+      .then((job) => {
+        if (job && job.status !== "idle") hydrateFromJob(job)
+      })
+      .catch(() => {})
+    // Mount-only: later updates arrive through the sender hook
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const renderStep = () => {
     switch (currentStep) {

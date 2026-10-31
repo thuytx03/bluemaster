@@ -1,6 +1,19 @@
 import dayjs from "dayjs"
-import { CheckCircle2, Coffee, Download, Pause, Play, RotateCcw, SkipForward, Square, XCircle } from "lucide-react"
-import React, { useEffect, useMemo, useRef } from "react"
+import {
+  CalendarClock,
+  CheckCircle2,
+  Coffee,
+  Download,
+  Pause,
+  Play,
+  RotateCcw,
+  Send,
+  SkipForward,
+  Square,
+  TimerOff,
+  XCircle
+} from "lucide-react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 
 import {
   Badge,
@@ -18,6 +31,7 @@ import {
 import useMessageSender from "src/modules/inbox/hooks/useMessageSender"
 import useInboxStore from "src/modules/inbox/stores/inbox.store"
 import { ISendLogEntry } from "src/modules/inbox/types/inbox.types"
+import { isCampaignDone } from "src/modules/inbox/utils/campaign.util"
 import { formatNumber } from "src/modules/inbox/utils/inbox-filter.util"
 
 const STATUS_TONE: Record<string, TBadgeTone> = {
@@ -32,12 +46,33 @@ const STATUS_LABEL: Record<string, string> = {
   skipped: "Bỏ qua"
 }
 
+const formatAt = (ts: number) =>
+  new Date(ts).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+
+const formatCountdown = (ms: number) => {
+  const s = Math.max(0, Math.ceil(ms / 1000))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0) return `${h}g ${String(m).padStart(2, "0")}p ${String(sec).padStart(2, "0")}s`
+  if (m > 0) return `${m}p ${String(sec).padStart(2, "0")}s`
+  return `${sec}s`
+}
+
 const Step6Send: React.FC = () => {
   const { campaign, resetCampaign, setStep } = useInboxStore()
-  const { sendProgress, startError, startSending, pauseSending, resumeSending, stopSending } =
+  const { sendProgress, startError, startSending, pauseSending, resumeSending, stopSending, sendNow, clearCampaign } =
     useMessageSender()
 
   const hasStarted = useRef(false)
+  // Re-render every second so countdowns move while the worker is between messages
+  const [now, setNow] = useState(() => Date.now())
+  const ticking = !isCampaignDone(sendProgress.status) && sendProgress.status !== "idle"
+  useEffect(() => {
+    if (!ticking) return
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [ticking])
 
   // Auto-start khi vào step 6 lần đầu
   useEffect(() => {
@@ -59,15 +94,19 @@ const Step6Send: React.FC = () => {
     percent,
     currentCustomer,
     restUntil,
-    logs
+    logs,
+    scheduledStartAt,
+    scheduledEndAt,
+    error
   } = sendProgress
 
+  const isScheduled = status === "scheduled"
   const isRunning = status === "running"
   const isPaused = status === "paused"
   const isResting = status === "resting"
-  const isDone = status === "finished" || status === "stopped"
+  const isDone = isCampaignDone(status)
 
-  const restSecondsLeft = restUntil > Date.now() ? Math.ceil((restUntil - Date.now()) / 1000) : 0
+  const restSecondsLeft = restUntil > now ? Math.ceil((restUntil - now) / 1000) : 0
 
   const handleExportReport = () => {
     const csvRows = [
@@ -144,10 +183,25 @@ const Step6Send: React.FC = () => {
           Đang nghỉ… ({restSecondsLeft}s)
         </Badge>
       )
+    if (isRunning)
+      return (
+        <span className="bm-flex bm-items-center bm-gap-2">
+          <Spinner size={14} className="bm-text-brand-ink" />
+          Chờ gửi tin tiếp theo…
+        </span>
+      )
+    if (isScheduled) return <Badge tone="warning" icon={<CalendarClock size={12} />}>Đã hẹn giờ</Badge>
     if (status === "finished") return <Badge tone="success" icon={<CheckCircle2 size={12} />}>Hoàn thành!</Badge>
     if (status === "stopped") return <Badge tone="danger" icon={<Square size={12} />}>Đã dừng</Badge>
+    if (status === "expired") return <Badge tone="warning" icon={<TimerOff size={12} />}>Hết giờ gửi</Badge>
     return <span className="bm-text-fg-subtle">Đang khởi động...</span>
   })()
+
+  const handleNewCampaign = async () => {
+    await clearCampaign()
+    resetCampaign()
+    setStep(1)
+  }
 
   const successRate = total > 0 ? Math.round((successCount / total) * 100) : 0
 
@@ -163,10 +217,7 @@ const Step6Send: React.FC = () => {
             size="sm"
             variant="outline"
             icon={<RotateCcw size={13} />}
-            onClick={() => {
-              resetCampaign()
-              setStep(1)
-            }}>
+            onClick={handleNewCampaign}>
             Chiến dịch mới
           </Button>
         )}
@@ -176,6 +227,42 @@ const Step6Send: React.FC = () => {
         <Callout tone="danger" compact>
           {startError}
         </Callout>
+      )}
+      {error && (
+        <Callout tone="danger" compact>
+          {error}
+        </Callout>
+      )}
+
+      {/* Waiting for the scheduled start */}
+      {isScheduled && scheduledStartAt && (
+        <Surface tone="warning" padding="sm" className="bm-animate-fade-in">
+          <div className="bm-flex bm-items-center bm-gap-3">
+            <span className="bm-inline-flex bm-h-10 bm-w-10 bm-shrink-0 bm-items-center bm-justify-center bm-rounded-xl bm-bg-warning/15 bm-text-warning">
+              <CalendarClock size={18} />
+            </span>
+            <div className="bm-min-w-0 bm-flex-1">
+              <div className="bm-text-[13px] bm-font-semibold bm-text-fg">
+                Sẽ gửi {formatNumber(total)} tin lúc {formatAt(scheduledStartAt)}
+                <span className="bm-ml-2 bm-font-mono bm-text-[12px] bm-font-normal bm-text-fg-muted">
+                  còn {formatCountdown(scheduledStartAt - now)}
+                </span>
+              </div>
+              <div className="bm-text-[11.5px] bm-text-fg-muted">
+                Chạy nền trong Chrome: có thể đóng bảng này hoặc chuyển trang. Giữ Chrome mở và còn đăng nhập Facebook.
+                {scheduledEndAt && <> Tự dừng lúc {formatAt(scheduledEndAt)}.</>}
+              </div>
+            </div>
+            <div className="bm-flex bm-shrink-0 bm-items-center bm-gap-1.5">
+              <Button size="xs" variant="primary" icon={<Send size={12} />} onClick={sendNow}>
+                Gửi ngay
+              </Button>
+              <Button size="xs" variant="outline" icon={<Square size={12} />} onClick={stopSending}>
+                Huỷ hẹn giờ
+              </Button>
+            </div>
+          </div>
+        </Surface>
       )}
 
       {/* Progress */}
@@ -190,10 +277,16 @@ const Step6Send: React.FC = () => {
           <Progress
             value={percent}
             size="md"
-            striped={!isDone}
-            tone={isDone ? (status === "finished" ? "success" : "danger") : isResting ? "info" : "brand"}
+            striped={!isDone && !isScheduled}
+            tone={isDone ? (status === "finished" ? "success" : status === "expired" ? "warning" : "danger") : isResting ? "info" : "brand"}
             label
           />
+          {!isDone && !isScheduled && (
+            <div className="bm-text-[11.5px] bm-text-fg-subtle">
+              Chiến dịch chạy nền trong Chrome, có thể đóng bảng này. Giữ Chrome mở và còn đăng nhập Facebook.
+              {scheduledEndAt && <> Tự dừng lúc {formatAt(scheduledEndAt)}.</>}
+            </div>
+          )}
         </div>
       </Surface>
 
@@ -217,7 +310,7 @@ const Step6Send: React.FC = () => {
             Tiếp tục
           </Button>
         )}
-        {!isDone && (
+        {!isDone && !isScheduled && (
           <Button variant="danger" icon={<Square size={14} />} onClick={stopSending}>
             Dừng chiến dịch
           </Button>

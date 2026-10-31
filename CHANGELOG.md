@@ -4,7 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Auto inbox: scheduled sending now works. The campaign runs in the service worker, is persisted in extension storage and is driven by `chrome.alarms`, so it starts at the chosen time and keeps going after the panel is closed, the page is reloaded or Chrome stops the worker. Optional end time stops it ("Hết giờ gửi"); "Gửi ngay" skips the wait. Reopening Auto Inbox shows the running campaign.
+
 ## [1.0.1] - 2026-10-31
+
+### Fixed
+- Auto inbox: the request config was lost whenever the service worker restarted, so scans and sends failed with "đóng và mở lại cửa sổ trình duyệt"; it is now reloaded on demand and refreshed once on stale-token errors.
+- Sidebar: no more white flash on page load when the saved panel position is "center" or "full".
 
 ### Changed
 - Auto inbox: customer scan runs up to 4 parallel time-sliced lanes with work stealing, asks for larger pages, drops the fixed 20-second wait at the end of every scan and backs off faster on errors.

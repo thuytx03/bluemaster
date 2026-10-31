@@ -1,9 +1,29 @@
 import { generateRequestId, generateS, makeId } from 'src/modules/facebook/utils/payload.util'
-import { ICustomer, IFbRequestConfig, ISendConfig, ISendLogEntry } from 'src/modules/inbox/types/inbox.types'
+import { ICustomer, IFbRequestConfig, ISendLogEntry } from 'src/modules/inbox/types/inbox.types'
 import { processMessageTemplate } from 'src/modules/inbox/utils/message-template.util'
 
 const UPLOAD_URL = 'https://upload.facebook.com/ajax/mercury/upload.php'
 const SEND_URL = 'https://www.facebook.com/messaging/send'
+
+/** Facebook answers with these when fb_dtsg / session tokens are stale */
+const STALE_CONFIG_ERROR_CODES = new Set([1357001, 1357004, 1357005, 1348020])
+
+interface ISendResponse {
+  ok: boolean
+  code?: number
+}
+
+async function postMessage(body: URLSearchParams): Promise<ISendResponse> {
+  const res = await fetch(SEND_URL, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  })
+  const json = JSON.parse((await res.text()).replace('for (;;);', ''))
+  if (json.error) return { ok: false, code: Number(json.error) || undefined }
+  return { ok: !!json.payload }
+}
 
 export type TSendResult = 'success' | 'failure' | 'skipped'
 
@@ -12,10 +32,6 @@ export interface ISendOneResult {
   log: ISendLogEntry
 }
 
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
 
 // ==================== UPLOAD MEDIA ====================
 
@@ -85,32 +101,28 @@ export async function uploadMedia(
 
 // ==================== DOWNLOAD IMAGE AS FILE ====================
 
-function sendBgMessage<T = any>(message: Record<string, any>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(message, (response) => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message))
-      resolve(response)
-    })
-  })
-}
-
+/** Fetch a remote image into a File. Runs in the service worker, so no CORS limits apply. */
 export async function downloadImageAsFile(url: string): Promise<File | null> {
-  try {
-    const res = await sendBgMessage<{ success: boolean; base64?: string }>({
-      action: 'INBOX_FETCH_IMAGE_BASE64',
-      url,
-    })
-    if (!res?.success || !res.base64) return null
-    // base64 is a data URL: "data:image/jpeg;base64,..."
-    const [header, data] = res.base64.split(',')
-    const mime = header.match(/:(.*?);/)?.[1] ?? 'image/jpeg'
-    const ext = mime.split('/')[1] ?? 'jpg'
-    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
-    const blob = new Blob([bytes], { type: mime })
-    return new File([blob], `image_${Date.now()}.${ext}`, { type: mime })
-  } catch {
-    return null
+  const candidates = [url]
+  if (url.includes('scontent')) {
+    const large = url.replace(/\/s\d+x\d+\//g, '/s200x200/').replace(/\/p\d+x\d+\//g, '/p200x200/')
+    if (large !== url) candidates.unshift(large)
   }
+  for (const u of candidates) {
+    try {
+      const res = await fetch(u, { redirect: 'follow' })
+      if (!res.ok) continue
+      const mime = res.headers.get('Content-Type') ?? ''
+      if (!mime.includes('image')) continue
+      const blob = await res.blob()
+      if (blob.size < 100) continue
+      const ext = mime.split('/')[1]?.split(';')[0] ?? 'jpg'
+      return new File([blob], `image_${Date.now()}.${ext}`, { type: mime })
+    } catch {
+      continue
+    }
+  }
+  return null
 }
 
 // ==================== BUILD BASE REQUEST BODY ====================
@@ -161,19 +173,11 @@ async function sendText(
   pageId: string,
   text: string,
   config: IFbRequestConfig
-): Promise<boolean> {
+): Promise<ISendResponse> {
   const body = buildBaseBody(customerId, pageId, config)
   body.set('has_attachment', 'false')
   body.set('body', text)
-
-  const res = await fetch(SEND_URL, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  })
-  const json = JSON.parse((await res.text()).replace('for (;;);', ''))
-  return !json.error && !!json.payload
+  return postMessage(body)
 }
 
 // ==================== SEND ATTACHMENT ====================
@@ -184,7 +188,7 @@ async function sendAttachment(
   mediaIds: Record<string, string>,
   type: 'image' | 'video' | 'audio' | 'file',
   config: IFbRequestConfig
-): Promise<boolean> {
+): Promise<ISendResponse> {
   const body = buildBaseBody(customerId, pageId, config)
   body.set('has_attachment', 'true')
 
@@ -193,15 +197,7 @@ async function sendAttachment(
   for (const [key, val] of Object.entries(mediaIds)) {
     body.append(`${fieldPrefix}[${key}]`, val)
   }
-
-  const res = await fetch(SEND_URL, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  })
-  const json = JSON.parse((await res.text()).replace('for (;;);', ''))
-  return !json.error && !!json.payload
+  return postMessage(body)
 }
 
 // ==================== SEND ONE MESSAGE ====================
@@ -216,11 +212,28 @@ export async function sendOneMessage(params: {
   attachmentType?: string
   attachmentPosition?: 'before' | 'after'
   config: IFbRequestConfig
+  /** Called once when Facebook rejects the session tokens; return a fresh config to retry with */
+  refreshConfig?: () => Promise<IFbRequestConfig | null>
 }): Promise<ISendOneResult> {
   const {
     customer, pageId, category, messageTemplate,
-    imageUrl, attachmentFiles, attachmentType, attachmentPosition, config,
+    imageUrl, attachmentFiles, attachmentType, attachmentPosition, refreshConfig,
   } = params
+  let config = params.config
+  let refreshed = false
+
+  /** Run a send step; on a stale-token error reload the config and try once more */
+  const withFreshConfig = async (step: (cfg: IFbRequestConfig) => Promise<ISendResponse>): Promise<boolean> => {
+    const first = await step(config)
+    if (first.ok || refreshed || !refreshConfig || !first.code || !STALE_CONFIG_ERROR_CODES.has(first.code)) {
+      return first.ok
+    }
+    refreshed = true
+    const fresh = await refreshConfig()
+    if (!fresh) return false
+    config = fresh
+    return (await step(config)).ok
+  }
 
   const processedMessage = processMessageTemplate(
     messageTemplate, customer.name, customer.xung ?? '', customer.goi ?? '', category
@@ -253,7 +266,7 @@ export async function sendOneMessage(params: {
         log.error = 'Không có nội dung để gửi'
         return { result: 'failure', log }
       }
-      const ok = await sendText(customer.id, pageId, processedMessage, config)
+      const ok = await withFreshConfig((cfg) => sendText(customer.id, pageId, processedMessage, cfg))
       log.status = ok ? 'success' : 'failure'
       if (!ok) log.error = 'Gửi thất bại'
       return { result: ok ? 'success' : 'failure', log }
@@ -272,16 +285,16 @@ export async function sendOneMessage(params: {
 
     if (attachmentPosition === 'before') {
       // Attachment first, then text
-      attachOk = await sendAttachment(customer.id, pageId, mediaIds, attachmentType as any, config)
+      attachOk = await withFreshConfig((cfg) => sendAttachment(customer.id, pageId, mediaIds, attachmentType as any, cfg))
       if (processedMessage) {
-        textOk = await sendText(customer.id, pageId, processedMessage, config)
+        textOk = await withFreshConfig((cfg) => sendText(customer.id, pageId, processedMessage, cfg))
       }
     } else {
       // Text first (if any), then attachment
       if (processedMessage) {
-        textOk = await sendText(customer.id, pageId, processedMessage, config)
+        textOk = await withFreshConfig((cfg) => sendText(customer.id, pageId, processedMessage, cfg))
       }
-      attachOk = await sendAttachment(customer.id, pageId, mediaIds, attachmentType as any, config)
+      attachOk = await withFreshConfig((cfg) => sendAttachment(customer.id, pageId, mediaIds, attachmentType as any, cfg))
     }
 
     const success = attachOk && textOk
@@ -297,110 +310,8 @@ export async function sendOneMessage(params: {
   }
 }
 
-// ==================== BATCH SENDER ====================
-
-export interface IBatchSendParams {
-  customers: ICustomer[]
-  pageId: string
-  category: 'fanpage' | 'profile'
-  messageTemplate: string
-  imageUrl?: string
-  attachmentFiles?: File[]
-  attachmentType?: string
-  attachmentPosition?: 'before' | 'after'
-  sendConfig: ISendConfig
-  config: IFbRequestConfig
-  isStopped: () => boolean
-  isPaused: () => boolean
-  onProgress: (params: {
-    currentIndex: number
-    successCount: number
-    failureCount: number
-    skippedCount: number
-    percent: number
-    currentCustomer: ICustomer
-    log: ISendLogEntry
-  }) => void
-  onRest: (restUntil: number) => void
-  onFinish: () => void
-}
-
-export async function batchSendMessages(params: IBatchSendParams): Promise<void> {
-  const {
-    customers, pageId, category, messageTemplate,
-    imageUrl, attachmentFiles, attachmentType, attachmentPosition,
-    sendConfig, config, isStopped, isPaused,
-    onProgress, onRest, onFinish,
-  } = params
-
-  let successCount = 0
-  let failureCount = 0
-  let skippedCount = 0
-  const total = sendConfig.limitMessage > 0 ? Math.min(sendConfig.limitMessage, customers.length) : customers.length
-
-  let list = [...customers]
-  if (sendConfig.sendingOrder === '3') {
-    list = shuffleArray(list)
-  } else if (sendConfig.sendingOrder === '2') {
-    list.reverse()
-  }
-
-  for (let i = 0; i < total; i++) {
-    if (isStopped()) break
-
-    while (isPaused() && !isStopped()) {
-      await sleep(500)
-    }
-    if (isStopped()) break
-
-    const customer = list[i]
-
-    const result = await sendOneMessage({
-      customer, pageId, category, messageTemplate,
-      imageUrl, attachmentFiles, attachmentType, attachmentPosition, config,
-    })
-
-    if (result.result === 'success') successCount++
-    else if (result.result === 'failure') failureCount++
-    else skippedCount++
-
-    const percent = Math.round(((i + 1) / total) * 100)
-    onProgress({ currentIndex: i + 1, successCount, failureCount, skippedCount, percent, currentCustomer: customer, log: result.log })
-
-    const needRest = sendConfig.restAfterMessages > 0 && (i + 1) % sendConfig.restAfterMessages === 0 && i + 1 < total
-    if (needRest && !isStopped()) {
-      const restMs = sendConfig.restDuration * 1000
-      const restUntil = Date.now() + restMs
-      onRest(restUntil)
-      await sleep(restMs)
-    }
-
-    if (i + 1 < total && !isStopped()) {
-      const delay = randomInRange(sendConfig.timeFrom, sendConfig.timeTo) * 1000
-      await sleep(delay)
-    }
-  }
-
-  onFinish()
-}
-
-function shuffleArray<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-function randomInRange(min: number, max: number): number {
-  if (min > max) return min
-  return Math.floor(Math.random() * (max - min + 1)) + min
-}
-
 export default {
   sendOneMessage,
-  batchSendMessages,
   uploadMedia,
   downloadImageAsFile,
 }

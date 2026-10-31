@@ -4,6 +4,7 @@ import {
   ICustomer,
   IFanpage,
   IFilterStats,
+  IInboxCampaignJob,
   IInboxFilter,
   IMessageTemplate,
   ISendConfig,
@@ -11,6 +12,7 @@ import {
   ISendProgress,
   TSendStatus,
 } from 'src/modules/inbox/types/inbox.types'
+import { jobToProgress } from 'src/modules/inbox/utils/campaign.util'
 
 const DEFAULT_FILTER: IInboxFilter = {
   gender: 'all',
@@ -62,6 +64,8 @@ const DEFAULT_SEND_PROGRESS: ISendProgress = {
   currentCustomer: null,
   restUntil: 0,
   logs: [],
+  scheduledStartAt: null,
+  scheduledEndAt: null,
 }
 
 interface IInboxStore {
@@ -100,6 +104,8 @@ interface IInboxStore {
   updateSendProgress: (progress: Partial<ISendProgress>) => void
   addSendLog: (log: ISendLogEntry) => void
   resetSendProgress: () => void
+  /** Rebuild the campaign view from the record the service worker owns and jump to step 6 */
+  hydrateFromJob: (job: IInboxCampaignJob) => void
 
   // Reset all
   resetCampaign: () => void
@@ -252,6 +258,34 @@ const useInboxStore = create<IInboxStore>((set) => ({
       campaign: {
         ...s.campaign,
         sendProgress: { ...DEFAULT_SEND_PROGRESS },
+      },
+    })),
+
+  hydrateFromJob: (job) =>
+    set((s) => ({
+      currentStep: 6,
+      campaign: {
+        ...s.campaign,
+        fanpageId: job.pageId,
+        fanpageName: job.pageName,
+        fanpageAvatar: job.pageAvatar,
+        category: job.category,
+        customers: job.customers,
+        totalCustomers: job.customers.length,
+        filteredCustomers: job.customers,
+        filteredCount: job.customers.length,
+        filteredPercent: 100,
+        excludedCustomerIds: [],
+        messageTemplate: {
+          ...s.campaign.messageTemplate,
+          content: job.messageTemplate,
+          attachmentType: job.attachmentType,
+          attachmentPosition: job.attachmentPosition,
+          attachmentFile: null,
+          imageUrl: job.imageUrl ?? '',
+        },
+        sendConfig: job.sendConfig,
+        sendProgress: jobToProgress(job),
       },
     })),
 

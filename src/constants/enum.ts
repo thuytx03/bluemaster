@@ -16,6 +16,8 @@ export enum EStorageKey {
   /** Prefix; the page id is appended */
   INBOX_SCAN_CACHE = "INBOX_SCAN_CACHE",
   INBOX_SCAN_CONCURRENCY = "INBOX_SCAN_CONCURRENCY",
+  /** The one bulk-messaging campaign the service worker is running or has scheduled */
+  INBOX_CAMPAIGN = "INBOX_CAMPAIGN",
 
   // Auto-run features
   PINNED_TOOLS = "PINNED_TOOLS",

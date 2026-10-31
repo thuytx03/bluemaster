@@ -10,6 +10,17 @@ import {
 } from "src/modules/inbox/services/inbox-background.service"
 import facebookService from "src/modules/facebook/services/facebook.service"
 import {
+  clearCampaign,
+  getCampaign,
+  handleCampaignAlarm,
+  pauseCampaign,
+  resumeCampaign,
+  resumeCampaignAfterRestart,
+  sendCampaignNow,
+  startCampaign,
+  stopCampaign
+} from "src/modules/inbox/services/campaign-runner.service"
+import {
   isUpdateNotification,
   openDownloadPage,
   runVersionCheck,
@@ -208,8 +219,51 @@ chrome.notifications.onClicked.addListener((notificationId) => {
   openDownloadPage()
 })
 
+// ==================== INBOX CAMPAIGN (runs in this worker) ====================
+chrome.alarms.onAlarm.addListener((alarm) => {
+  handleCampaignAlarm(alarm).catch((e) => console.error("campaign alarm:", e))
+})
+chrome.runtime.onStartup.addListener(() => {
+  resumeCampaignAfterRestart().catch((e) => console.error("campaign resume:", e))
+})
+// The worker may also be restarted without a browser start
+resumeCampaignAfterRestart().catch((e) => console.error("campaign resume:", e))
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // ==================== INBOX HANDLERS ====================
+  if (message.action === "INBOX_CAMPAIGN_START") {
+    startCampaign(message.payload)
+      .then(sendResponse)
+      .catch((e) => sendResponse({ success: false, error: e.message }))
+    return true
+  }
+
+  if (message.action === "INBOX_CAMPAIGN_COMMAND") {
+    const commands: Record<string, () => Promise<void>> = {
+      pause: pauseCampaign,
+      resume: resumeCampaign,
+      stop: stopCampaign,
+      sendNow: sendCampaignNow,
+      clear: clearCampaign
+    }
+    const run = commands[message.payload?.command]
+    if (!run) {
+      sendResponse({ success: false, error: "Unknown command" })
+      return true
+    }
+    run()
+      .then(() => sendResponse({ success: true }))
+      .catch((e) => sendResponse({ success: false, error: e.message }))
+    return true
+  }
+
+  if (message.action === "INBOX_CAMPAIGN_GET") {
+    getCampaign()
+      .then((job) => sendResponse({ success: true, job }))
+      .catch((e) => sendResponse({ success: false, error: e.message }))
+    return true
+  }
+
   if (message.action === "INBOX_GET_CONFIG") {
     const userId = message.payload?.c_user
     fetchBusinessInboxConfig(userId).then(sendResponse)

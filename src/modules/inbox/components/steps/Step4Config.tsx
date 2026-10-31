@@ -154,7 +154,7 @@ const Step4Config: React.FC = () => {
                     }}
                   />
                 </Field>
-                <Field label="Kết thúc lúc">
+                <Field label="Kết thúc lúc" hint="Để trống nếu muốn gửi cho đến hết danh sách">
                   <Input
                     type="datetime-local"
                     value={toLocalInput(sendConfig.scheduleEndDay, sendConfig.scheduleEndHour, sendConfig.scheduleEndMinute)}
@@ -164,6 +164,9 @@ const Step4Config: React.FC = () => {
                     }}
                   />
                 </Field>
+                <div className="bm-text-[11.5px] bm-text-fg-subtle">
+                  Đến giờ, Chrome tự gửi ngay cả khi bảng này đã đóng. Chỉ cần giữ Chrome mở và còn đăng nhập Facebook.
+                </div>
               </div>
             ) : (
               <div className="bm-text-[11.5px] bm-text-fg-subtle">Bật hẹn giờ để cài đặt thời gian gửi tự động</div>

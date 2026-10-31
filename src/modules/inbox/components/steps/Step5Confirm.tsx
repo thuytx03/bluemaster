@@ -6,6 +6,10 @@ import { Badge, Callout, DescList, Surface } from "src/modules/shared/ui"
 import useInboxStore from "src/modules/inbox/stores/inbox.store"
 import { formatNumber } from "src/modules/inbox/utils/inbox-filter.util"
 import { previewTemplate } from "src/modules/inbox/utils/message-template.util"
+import { resolveSchedule } from "src/modules/inbox/utils/campaign.util"
+
+const formatAt = (ts: number) =>
+  new Date(ts).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
 import StepFooter from "src/modules/inbox/components/StepFooter"
 
 const ATTACHMENT_LABELS: Record<string, string> = {
@@ -36,6 +40,7 @@ const Step5Confirm: React.FC = () => {
   const selectedCount = filteredCount - excludedCustomerIds.length
 
   const messagePreview = previewTemplate(messageTemplate.content, category)
+  const schedule = resolveSchedule(sendConfig)
 
   const handleStartSending = () => {
     nextStep()
@@ -56,6 +61,11 @@ const Step5Confirm: React.FC = () => {
       {selectedCount === 0 && (
         <Callout tone="warning" compact>
           Không có khách hàng nào được chọn. Vui lòng quay lại và kiểm tra bộ lọc / danh sách.
+        </Callout>
+      )}
+      {schedule.error && (
+        <Callout tone="danger" compact>
+          {schedule.error}. Quay lại bước Cấu hình để sửa hẹn giờ.
         </Callout>
       )}
 
@@ -166,11 +176,11 @@ const Step5Confirm: React.FC = () => {
                           <Badge tone="warning" size="xs">
                             Đã bật
                           </Badge>
-                          {sendConfig.scheduleStartDay && (
-                            <span className="bm-text-[11px] bm-text-fg-muted">
-                              Bắt đầu: {sendConfig.scheduleStartDay} {sendConfig.scheduleStartHour}:
-                              {sendConfig.scheduleStartMinute}
-                            </span>
+                          {schedule.startAt && (
+                            <span className="bm-text-[11px] bm-text-fg-muted">Bắt đầu: {formatAt(schedule.startAt)}</span>
+                          )}
+                          {schedule.endAt && (
+                            <span className="bm-text-[11px] bm-text-fg-muted">· Kết thúc: {formatAt(schedule.endAt)}</span>
                           )}
                         </span>
                       )
@@ -196,11 +206,15 @@ const Step5Confirm: React.FC = () => {
       <StepFooter
         onBack={prevStep}
         onNext={handleStartSending}
-        nextDisabled={selectedCount === 0}
+        nextDisabled={selectedCount === 0 || !!schedule.error}
         nextVariant="success"
         nextSize="lg"
         nextIcon={<Send size={15} />}
-        nextLabel={`Bắt đầu gửi ${formatNumber(selectedCount)} tin nhắn`}
+        nextLabel={
+          schedule.startAt && schedule.startAt > Date.now()
+            ? `Hẹn gửi ${formatNumber(selectedCount)} tin lúc ${formatAt(schedule.startAt)}`
+            : `Bắt đầu gửi ${formatNumber(selectedCount)} tin nhắn`
+        }
       />
     </div>
   )

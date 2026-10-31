@@ -184,7 +184,16 @@ export interface ISendConfig {
 }
 
 // ==================== SEND PROGRESS ====================
-export type TSendStatus = 'idle' | 'running' | 'paused' | 'resting' | 'finished' | 'stopped'
+export type TSendStatus =
+  | 'idle'
+  | 'scheduled'
+  | 'running'
+  | 'paused'
+  | 'resting'
+  | 'finished'
+  | 'stopped'
+  /** Reached the scheduled end time before the list was done */
+  | 'expired'
 
 export interface ISendProgress {
   status: TSendStatus
@@ -197,6 +206,50 @@ export interface ISendProgress {
   currentCustomer: ICustomer | null
   restUntil: number
   logs: ISendLogEntry[]
+  scheduledStartAt: number | null
+  scheduledEndAt: number | null
+  error?: string
+}
+
+/** Attachment serialised so the campaign can live in extension storage */
+export interface IStoredAttachment {
+  name: string
+  type: string
+  dataUrl: string
+}
+
+/**
+ * A bulk-messaging campaign as persisted for the service worker. The worker owns
+ * it: the UI only sends commands and mirrors this record into the store.
+ */
+export interface IInboxCampaignJob {
+  id: string
+  pageId: string
+  pageName: string
+  pageAvatar: string
+  category: 'fanpage' | 'profile'
+  /** Already ordered and limited */
+  customers: ICustomer[]
+  messageTemplate: string
+  imageUrl?: string
+  attachment: IStoredAttachment | null
+  attachmentType: TAttachmentType
+  attachmentPosition: TAttachmentPosition
+  sendConfig: ISendConfig
+  scheduledStartAt: number | null
+  scheduledEndAt: number | null
+  status: TSendStatus
+  currentIndex: number
+  successCount: number
+  failureCount: number
+  skippedCount: number
+  currentCustomer: ICustomer | null
+  restUntil: number
+  logs: ISendLogEntry[]
+  error?: string
+  createdAt: number
+  startedAt?: number
+  finishedAt?: number
 }
 
 export interface ISendLogEntry {
