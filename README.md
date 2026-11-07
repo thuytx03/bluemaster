@@ -5,8 +5,13 @@
 <h1 align="center">Bluemaster for Facebook</h1>
 
 <p align="center">
+  <strong>English</strong> · <a href="README.vi.md">Tiếng Việt</a>
+</p>
+
+<p align="center">
   An open-source browser extension that adds a power-user toolkit on top of Facebook:<br/>
-  bulk media downloads, multi-URL downloads, UID scraping, bulk inbox messaging, token and cookie utilities.
+  bulk media downloads, UID scraping, friend / group / page clean-up, post and message tools,<br/>
+  bulk inbox, multi-group posting, bulk sharing, scheduled comments, token and cookie utilities.
 </p>
 
 <p align="center">
@@ -31,17 +36,51 @@
 
 ## Features
 
-All tools run inside a sidebar injected on `facebook.com`, so you work on the page you already have open.
+All tools run inside a sidebar injected on `facebook.com`, so you work on the page you already have open. The navigation rail lists tool groups; click a group to open its tools, or pin any tool (up to 12) to the rail.
+
+### Facebook
 
 | Tool | What it does |
 |---|---|
 | **Bulk download** | Download every photo, video, reel, highlighted story or active story of a profile or group. Configurable file-name format (order, id, title, timestamp), date-range filter, concurrency, delay, per-highlight folders, and an optional single-ZIP mode so the browser asks where to save only once. |
 | **Multi-URL download** | Paste many links (posts, videos/reels/watch, stories, albums, comment videos), one per line. The content type is detected automatically; each URL becomes a trackable job with retry. |
 | **UID scraper** | Collect user IDs from groups, posts, reactions or friend lists and export them as TXT, JSON or Excel. |
-| **Auto inbox** | Scan a page's inbox, filter customers, compose templated messages and send in bulk with pacing, rest periods and scheduling. |
 | **Access token** | Retrieve EAAB / EAAGNO tokens from the logged-in session. |
+
+### Account
+
+| Tool | What it does |
+|---|---|
+| **Friends** | Friend list with gender and mutual-friend filters: unfriend, block, restrict, block messages or poke, one by one or in bulk, plus CSV export. Tabs for blocked, restricted and message-blocked people, received friend requests (bulk accept / delete) and sent requests (bulk cancel). |
+| **Groups** | Joined groups filtered by last activity so inactive ones can be left in bulk, pending join requests to cancel, and suggested groups to join. |
+| **Following** | People and pages you follow (bulk unfollow / re-follow) and pages you liked (bulk unlike). |
+
+### Content
+
+| Tool | What it does |
+|---|---|
+| **My posts** | Browse your posts with type, privacy and date filters; delete, hide, untag, move to trash or archive in bulk. |
+| **Download messages** | Export Messenger conversations as HTML, CSV, TXT or Excel. |
+
+### Automation
+
+| Tool | What it does |
+|---|---|
+| **Auto inbox** | Scan a page's inbox, filter customers, compose templated messages and send in bulk with pacing, rest periods and scheduling. |
+| **Multi-group posting** | Publish one post (text, background, photos, video, check-in, link) to many groups, optionally as a Page or anonymously, with spin text, random order, delays and an optional follow-up comment. |
+| **Bulk share** | Share a post, reel or link into many groups and onto the timelines of your profile and Pages, each with the identity it belongs to. |
+| **Post Radar** | Watch groups, profiles or Pages for new posts, then repost, share or clone them to your target groups. |
+| **Search & comment** | Find posts by keyword and comment on them with text and images. |
+| **Auto bot comment** | Bots that comment on new posts in a library of groups you organise by topic, using comment templates with spin text, on a schedule. |
+
+### Utilities
+
+| Tool | What it does |
+|---|---|
 | **Cookies** | Export the current cookies or import a cookie set for any URL. |
 | **Auto-run helpers** | Block "seen" for stories and chats, show hidden reaction totals, add download and native-controls buttons to videos. |
+
+Every bulk action shares one safety configuration: random delay between actions, rest periods after N actions, a cap per run and an automatic stop after repeated failures. Groups synced from your account, bots, comment templates and the group library are stored locally and shared between tools.
 
 Download history, file-name presets and UI preferences persist across sessions. Light and dark themes, Vietnamese and English.
 
@@ -88,7 +127,11 @@ src/
   constants/               enums, routes, regex patterns, download settings
   modules/
     download/              bulk + multi-URL downloader (components, hooks, services, utils)
-    facebook/              Facebook GraphQL service, UID scraper, token page
+    facebook/              shared Facebook layer: GraphQL / post / group services, service-worker relay,
+                           session hook, bulk-action + delay utils, tool page shell; UID scraper, token page
+    account/               friends, groups, following (pages · components · hooks · services · types)
+    content/               my posts, message downloader
+    automation/            multi-group posting, bulk share, Post Radar, search & comment, auto bot comment
     inbox/                 bulk messaging wizard
     auto-run/              page-level helpers (block seen, reaction totals, video buttons)
     cookies/ settings/ shared/
@@ -98,13 +141,15 @@ src/
 
 Naming rules: React components and pages are `PascalCase.tsx`, hooks are `useThing.ts`, everything else is `kebab-name.<kind>.ts` (`service`, `util`, `store`, `types`, `constants`, `config`, `feature`). Internal imports use the `src/` alias.
 
+Inside a module, Facebook requests live in `services/` (plain async functions, no React), React state in `hooks/`, and UI in `components/` and `pages/`. Translations are flat `snake_case` keys in `src/assets/languages/{vi,en}.json`.
+
 ### How downloads work
 
 Media URLs come from Facebook's own GraphQL endpoints using your logged-in session (no third-party servers). Files are saved through `chrome.downloads` with retry and resume handling; in ZIP mode the files are fetched into memory and written as one archive with a dependency-free ZIP writer. Everything lands under `Downloads/bluemaster/`.
 
 ## Privacy
 
-Bluemaster talks only to `facebook.com` and to GitHub (to check for a newer release). Cookies, tokens and downloaded media never leave your browser. There is no analytics or telemetry.
+Bluemaster talks only to Facebook (`facebook.com` and its upload hosts) and to GitHub (to check for a newer release). Cookies, tokens, downloaded media, synced group lists, bots and templates never leave your browser. There is no analytics or telemetry.
 
 ## Responsible use
 
@@ -125,18 +170,3 @@ Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) fo
 ## License
 
 [MIT](LICENSE) © 2026 Trịnh Xuân Thuỷ
-
----
-
-<details>
-<summary><strong>Tiếng Việt</strong></summary>
-
-**Bluemaster for Facebook** là tiện ích mở rộng mã nguồn mở, thêm một thanh công cụ bên cạnh Facebook: tải hàng loạt ảnh/video/reels/story của trang cá nhân hoặc nhóm, tải nhiều URL cùng lúc, quét UID, gửi tin nhắn hàng loạt qua inbox, lấy access token và quản lý cookies.
-
-**Cài đặt**: tải file zip ở trang [Releases](https://github.com/thuytx03/bluemaster/releases/latest), giải nén, vào `chrome://extensions`, bật *Chế độ nhà phát triển*, chọn *Tải tiện ích đã giải nén* và trỏ tới thư mục vừa giải nén. Mở facebook.com, bấm nút nổi ở mép phải để mở thanh công cụ.
-
-**Phát triển**: `pnpm install` rồi `pnpm dev` (bản dev) hoặc `pnpm build` (bản phát hành). `pnpm check` chạy kiểm tra kiểu và lint.
-
-Dự án không liên quan tới Meta. Bạn tự chịu trách nhiệm tuân thủ điều khoản Facebook và pháp luật khi dùng các tính năng tự động.
-
-</details>

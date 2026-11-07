@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Account tools: **Friends** (filter, unfriend, block, restrict, block messages, poke, bulk actions, CSV; tabs for blocked / restricted / message-blocked, received and sent requests), **Groups** (leave inactive groups, cancel pending requests, join suggested groups) and **Following** (unfollow / re-follow, unlike pages).
+- Content tools: **My posts** (filter, delete, hide, untag, trash, archive in bulk) and **Download messages** (HTML, CSV, TXT, Excel).
+- Automation tools: **Multi-group posting**, **Bulk share** (groups and profile / Page timelines, each as its own identity), **Post Radar**, **Search & comment** and **Auto bot comment** (topic-based group library, templates, schedules).
+- Shared safety settings for every bulk action (random delay, rest periods, per-run cap, stop after repeated failures).
+- Groups synced from your account, bots, templates and the group library are stored in extension storage and shared across tools.
+- Sidebar: the navigation rail lists tool groups with fly-out menus; up to 12 tools can be pinned, with fade hints when the rail scrolls.
+- UI kit: shared `Modal`, `ConfirmDialog`, `Dropdown` dividers, and themed tooltips on every icon button.
+
+### Changed
+- Service worker: the Facebook relay (credentialed fetch, photo upload, video chunk upload, acting as a Page) is one module shared by the web bridge and the sidebar; Page-identity requests are serialised so the `i_user` cookie is always restored. Content scripts can no longer call arbitrary `chrome.*` APIs through it.
+- GraphQL requests back off exponentially on HTTP 429 instead of retrying immediately.
+- Nothing is pinned to the rail by default for new installs.
+
+### Fixed
+- Inputs with an icon no longer render it as a grey addon box, and inputs keep their height inside scrolling panels.
+
 ## [1.0.2] - 2026-10-31
 
 ### Added

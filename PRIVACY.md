@@ -10,11 +10,12 @@
 
 ## What is stored
 
-Settings (theme, language, file-name presets, save mode), download history, cached UIDs and scraper progress are stored in `chrome.storage.local` on your device. Nothing is synced to any server operated by this project.
+Settings (theme, language, file-name presets, save mode), download history, cached UIDs and scraper progress, the groups synced from your account, auto-comment bots, comment templates and your group library are stored in `chrome.storage.local` on your device. Short-lived caches of friend, group, page and post lists are kept in the page's local storage for up to a day. Nothing is synced to any server operated by this project.
 
 ## What is sent where
 
-- Requests to **facebook.com** to fetch the media, UIDs and conversations you ask for.
+- Requests to **facebook.com** (and its upload hosts for photos and videos) to fetch the media, UIDs, conversations, friends, groups and posts you ask for, and to perform the actions you start (posting, sharing, commenting, unfriending, leaving groups, …).
+- To post as one of your Pages, the extension briefly sets Facebook's `i_user` cookie for that single request and restores it right after.
 - One request to **api.github.com** when the sidebar opens, to check whether a newer release exists. No identifiers are sent.
 
 There is no analytics, telemetry, advertising or third-party SDK. The source code is public so you can verify this.
