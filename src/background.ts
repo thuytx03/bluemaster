@@ -1,14 +1,10 @@
 import { ERemoteMessageType } from "src/constants/enum"
-
 import { rules } from "src/constants/rules.constants"
-import {
-  ensureInboxConfig,
-  fetchBusinessInboxConfig,
-  fetchPageListInbox,
-  fetchUsersInboxBg,
-  getInboxRequestConfig
-} from "src/modules/inbox/services/inbox-background.service"
 import facebookService from "src/modules/facebook/services/facebook.service"
+import {
+  bgFetch,
+  handleFbRelayMessage
+} from "src/modules/facebook/services/fb-relay-background.service"
 import {
   clearCampaign,
   getCampaign,
@@ -21,6 +17,13 @@ import {
   stopCampaign
 } from "src/modules/inbox/services/campaign-runner.service"
 import {
+  ensureInboxConfig,
+  fetchBusinessInboxConfig,
+  fetchPageListInbox,
+  fetchUsersInboxBg,
+  getInboxRequestConfig
+} from "src/modules/inbox/services/inbox-background.service"
+import {
   isUpdateNotification,
   openDownloadPage,
   runVersionCheck,
@@ -31,51 +34,6 @@ import {
   downloadFileWithChromeApi,
   downloadForbiddenMediaWithChromeApi
 } from "src/utils/download-core.util"
-import { RUN_FUNC } from "src/constants"
-
-async function bgFetch(
-  url: string,
-  options?: RequestInit
-): Promise<{
-  ok: boolean
-  status: number
-  statusText: string
-  body: string
-  url: string
-  headers: Record<string, string>
-}> {
-  const res = await fetch(url, options)
-  let body = ""
-  const contentType = res.headers.get("Content-Type") ?? ""
-  const isTextual =
-    contentType.startsWith("text/") ||
-    contentType.includes("json") ||
-    contentType.includes("javascript") ||
-    contentType.includes("xml")
-  if (isTextual) {
-    body = await res.text()
-  } else {
-    // Binary content (image/video/audio/etc.) — return as base64 data URL
-    const buffer = await res.arrayBuffer()
-    const bytes = new Uint8Array(buffer)
-    let binary = ""
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-    const mime = contentType || "application/octet-stream"
-    body = `data:${mime};base64,${btoa(binary)}`
-  }
-  const headers: Record<string, string> = {}
-  res.headers.forEach((v, k) => {
-    headers[k] = v
-  })
-  return {
-    ok: res.ok,
-    status: res.status,
-    statusText: res.statusText,
-    body,
-    url: res.url,
-    headers
-  }
-}
 
 chrome.runtime.onMessageExternal.addListener(
   (request, _sender, sendResponse) => {
@@ -84,49 +42,8 @@ chrome.runtime.onMessageExternal.addListener(
       return
     }
 
-    if (request.action === RUN_FUNC) {
-      const { fnPath, params = [] } = request as {
-        fnPath: string
-        params: unknown[]
-      }
-
-      if (fnPath === "customFetch") {
-        const [url, opts] = params as [string, RequestInit?]
-        bgFetch(url, opts)
-          .then(sendResponse)
-          .catch(() => sendResponse(null))
-        return true
-      }
-
-      // Generic chrome.* function dispatcher
-      if (fnPath.startsWith("chrome.")) {
-        const parts = fnPath.split(".")
-        let fn: unknown = chrome
-        for (const part of parts.slice(1))
-          fn = (fn as Record<string, unknown>)?.[part]
-        if (typeof fn === "function") {
-          try {
-            const result = (fn as Function)(...(params as unknown[]))
-            if (
-              result &&
-              typeof (result as Promise<unknown>).then === "function"
-            ) {
-              ;(result as Promise<unknown>)
-                .then(sendResponse)
-                .catch(() => sendResponse(null))
-            } else {
-              sendResponse(result)
-            }
-          } catch {
-            sendResponse(null)
-          }
-          return true
-        }
-      }
-
-      sendResponse(null)
-      return true
-    }
+    const relayed = handleFbRelayMessage(request, sendResponse, true)
+    if (relayed) return relayed
 
     if (request.action === "GET_FB_USER_INFO") {
       facebookService
@@ -146,29 +63,6 @@ chrome.runtime.onMessageExternal.addListener(
         )
       return true
     }
-
-    if (request.action === "INBOX_UPLOAD_MEDIA") {
-      const { url, filesBase64 } = (request.payload ?? {}) as {
-        url: string
-        filesBase64: { fieldName: string; name: string; type: string; data: string }[]
-      }
-      const doUpload = async () => {
-        const formData = new FormData()
-        for (const f of filesBase64) {
-          const base64Data = f.data.includes(",") ? f.data.split(",")[1] : f.data
-          const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))
-          const blob = new Blob([bytes], { type: f.type || "application/octet-stream" })
-          formData.append(f.fieldName, blob, f.name)
-        }
-        const res = await fetch(url, { method: "POST", credentials: "include", body: formData })
-        const body = await res.text()
-        return { ok: res.ok, status: res.status, body }
-      }
-      doUpload()
-        .then(sendResponse)
-        .catch((e) => sendResponse({ ok: false, status: 0, body: "", error: e.message }))
-      return true
-    }
   }
 )
 
@@ -180,7 +74,7 @@ chrome.action.onClicked.addListener(() => {
 
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [1, 10, 11, 12, 13],
+    removeRuleIds: [1, 10, 11, 12, 13, 14, 15, 16],
     addRules: rules as any
   })
   // Allow content scripts to access session storage
@@ -224,12 +118,17 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   handleCampaignAlarm(alarm).catch((e) => console.error("campaign alarm:", e))
 })
 chrome.runtime.onStartup.addListener(() => {
-  resumeCampaignAfterRestart().catch((e) => console.error("campaign resume:", e))
+  resumeCampaignAfterRestart().catch((e) =>
+    console.error("campaign resume:", e)
+  )
 })
 // The worker may also be restarted without a browser start
 resumeCampaignAfterRestart().catch((e) => console.error("campaign resume:", e))
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const relayed = handleFbRelayMessage(message, sendResponse)
+  if (relayed) return relayed
+
   // ==================== INBOX HANDLERS ====================
   if (message.action === "INBOX_CAMPAIGN_START") {
     startCampaign(message.payload)
@@ -321,7 +220,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "INBOX_GET_REQUEST_CONFIG") {
     // Reload the config if the service worker was restarted since the page list was fetched
     ensureInboxConfig()
-      .then((ok) => sendResponse(ok ? { success: true, config: getInboxRequestConfig() } : { success: false }))
+      .then((ok) =>
+        sendResponse(
+          ok
+            ? { success: true, config: getInboxRequestConfig() }
+            : { success: false }
+        )
+      )
       .catch(() => sendResponse({ success: false }))
     return true
   }
@@ -519,7 +424,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Binary-safe fetch for the ZIP downloader: body comes back as a data URL
     bgFetch(message.url, { credentials: "include" })
       .then((result) => sendResponse(result))
-      .catch((error: Error) => sendResponse({ ok: false, error: error.message }))
+      .catch((error: Error) =>
+        sendResponse({ ok: false, error: error.message })
+      )
     return true
   }
 

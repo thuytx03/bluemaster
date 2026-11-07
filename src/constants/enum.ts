@@ -18,6 +18,8 @@ export enum EStorageKey {
   INBOX_SCAN_CONCURRENCY = "INBOX_SCAN_CONCURRENCY",
   /** The one bulk-messaging campaign the service worker is running or has scheduled */
   INBOX_CAMPAIGN = "INBOX_CAMPAIGN",
+  /** Facebook groups synced per identity (profile / page), replaces the xthuy-social groups API */
+  FB_SYNCED_GROUPS = "FB_SYNCED_GROUPS",
 
   // Auto-run features
   PINNED_TOOLS = "PINNED_TOOLS",

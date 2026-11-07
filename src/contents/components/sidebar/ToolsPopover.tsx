@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 
 import {
+  MAX_PINNED,
   normalizeForSearch,
   Tool,
   useToolCategories,
@@ -207,8 +208,19 @@ const ToolsPopover = ({
         <div className="bm-flex bm-min-h-0 bm-flex-col bm-gap-4 bm-overflow-y-auto bm-pr-1">
           {!q && (
             <section>
-              <div className="bm-text-[14px] bm-font-semibold bm-text-fg">
-                {t("pinned_tools")}
+              <div className="bm-flex bm-items-center bm-justify-between bm-gap-2">
+                <span className="bm-text-[14px] bm-font-semibold bm-text-fg">
+                  {t("pinned_tools")}
+                </span>
+                <span
+                  className={cn(
+                    "bm-text-[11.5px] bm-tabular-nums",
+                    pinnedTools.length >= MAX_PINNED
+                      ? "bm-font-semibold bm-text-warning"
+                      : "bm-text-fg-subtle"
+                  )}>
+                  {pinnedTools.length}/{MAX_PINNED}
+                </span>
               </div>
               <div className="bm-text-[12px] bm-text-fg-muted">
                 {t("pinned_tools_desc")}

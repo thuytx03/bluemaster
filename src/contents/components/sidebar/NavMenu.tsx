@@ -1,4 +1,5 @@
 import {
+  ChevronDown,
   Columns2,
   ExternalLink,
   Home,
@@ -16,17 +17,20 @@ import { ReactNode, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router-dom"
 
+import {
+  Tool,
+  TToolCategory,
+  useActiveTool,
+  useToolCategories,
+  useTools
+} from "src/configs/tools.config"
 import { ESocialProvider } from "src/constants/enum"
 import { APP_ROUTES } from "src/constants/route.constants"
+import CategoryMenu from "src/contents/components/sidebar/CategoryMenu"
 import {
   changeLanguage,
   LANGUAGES
 } from "src/modules/shared/components/SwitchLanguage"
-import {
-  Tool,
-  useActiveTool,
-  useTools
-} from "src/configs/tools.config"
 import {
   Avatar,
   Button,
@@ -185,12 +189,39 @@ export const NavMenu = ({
   const { pinned, load } = usePinnedTools()
   const moreRef = useRef<HTMLButtonElement>(null)
   const [moreOpen, setMoreOpen] = useState(false)
+  const categories = useToolCategories()
+  // One fly-out at a time; its anchor is the rail item that opened it
+  const [openCategory, setOpenCategory] = useState<TToolCategory | null>(null)
+  const categoryRefs = useRef<
+    Partial<Record<TToolCategory, HTMLButtonElement | null>>
+  >({})
+  const categoryAnchor = useRef<HTMLButtonElement | null>(null)
   const avatarRef = useRef<HTMLButtonElement>(null)
   const [accountOpen, setAccountOpen] = useState(false)
 
   useEffect(() => {
     load()
   }, [load])
+
+  // The rail scrolls with a hidden scrollbar; fade the edge that has more items.
+  const navRef = useRef<HTMLElement>(null)
+  const [overflow, setOverflow] = useState({ top: false, bottom: false })
+  const updateOverflow = () => {
+    const el = navRef.current
+    if (!el) return
+    setOverflow({
+      top: el.scrollTop > 2,
+      bottom: el.scrollTop + el.clientHeight < el.scrollHeight - 2
+    })
+  }
+  useEffect(() => {
+    updateOverflow()
+    const el = navRef.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const ro = new ResizeObserver(updateOverflow)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [pinned.length])
 
   const pinnedTools = pinned
     .map((k) => tools.find((tl) => tl.key === k))
@@ -221,34 +252,99 @@ export const NavMenu = ({
       </div>
 
       {/* Main navigation */}
-      <nav className="x-no-scrollbar bm-flex bm-w-full bm-flex-1 bm-flex-col bm-items-center bm-gap-0 bm-overflow-y-auto bm-px-1 bm-pt-1">
-        <RailItem
-          icon={<Home />}
-          label={t("nav_home")}
-          active={isHome}
-          onClick={() => navigate(APP_ROUTES.HOME)}
+      <div className="bm-relative bm-flex bm-min-h-0 bm-w-full bm-flex-1 bm-flex-col">
+        <div
+          aria-hidden
+          className={cn(
+            "bm-pointer-events-none bm-absolute bm-inset-x-0 bm-top-0 bm-z-10 bm-h-6 bm-bg-gradient-to-b bm-from-surface bm-to-transparent bm-transition-opacity",
+            overflow.top ? "bm-opacity-100" : "bm-opacity-0"
+          )}
         />
-        {pinnedTools.map((tl) => (
+        <nav
+          ref={navRef}
+          onScroll={updateOverflow}
+          className="x-no-scrollbar bm-flex bm-w-full bm-flex-1 bm-flex-col bm-items-center bm-gap-0 bm-overflow-y-auto bm-px-1 bm-pt-1">
           <RailItem
-            key={tl.key}
-            icon={tl.icon}
-            label={tl.label}
-            description={tl.description}
-            isNew={tl.isNew}
-            color={tl.color}
-            active={active?.key === tl.key}
-            onClick={() => navigate(tl.path)}
+            icon={<Home />}
+            label={t("nav_home")}
+            active={isHome}
+            onClick={() => navigate(APP_ROUTES.HOME)}
           />
-        ))}
-        <div className="bm-my-1 bm-h-px bm-w-8 bm-bg-line" />
-        <RailItem
-          innerRef={moreRef}
-          icon={<Plus />}
-          label={t("more")}
-          active={moreOpen}
-          onClick={() => setMoreOpen((o) => !o)}
-        />
-      </nav>
+          {pinnedTools.map((tl) => (
+            <RailItem
+              key={tl.key}
+              icon={tl.icon}
+              label={tl.label}
+              description={tl.description}
+              isNew={tl.isNew}
+              color={tl.color}
+              active={active?.key === tl.key}
+              onClick={() => navigate(tl.path)}
+            />
+          ))}
+          {pinnedTools.length > 0 && (
+            <div className="bm-my-1 bm-h-px bm-w-8 bm-bg-line" />
+          )}
+          {categories.map((c) => {
+            const count = tools.filter(
+              (tl) => tl.category === c.key && !tl.utility
+            ).length
+            if (!count) return null
+            return (
+              <RailItem
+                key={c.key}
+                innerRef={(el) => {
+                  categoryRefs.current[c.key] = el
+                }}
+                icon={c.icon}
+                label={c.railLabel}
+                description={c.description}
+                // highlight the group of the current tool when that tool is not pinned
+                active={
+                  openCategory === c.key ||
+                  (!!active &&
+                    active.category === c.key &&
+                    !pinned.includes(active.key))
+                }
+                onClick={() => {
+                  categoryAnchor.current = categoryRefs.current[c.key] ?? null
+                  setMoreOpen(false)
+                  setOpenCategory((cur) => (cur === c.key ? null : c.key))
+                }}
+              />
+            )
+          })}
+          <div className="bm-my-1 bm-h-px bm-w-8 bm-bg-line" />
+          <RailItem
+            innerRef={moreRef}
+            icon={<Plus />}
+            label={t("more")}
+            active={moreOpen}
+            onClick={() => {
+              setOpenCategory(null)
+              setMoreOpen((o) => !o)
+            }}
+          />
+        </nav>
+        <div
+          aria-hidden
+          className={cn(
+            "bm-pointer-events-none bm-absolute bm-inset-x-0 bm-bottom-0 bm-z-10 bm-flex bm-h-8 bm-items-end bm-justify-center bm-bg-gradient-to-t bm-from-surface bm-to-transparent bm-pb-0.5 bm-text-fg-subtle bm-transition-opacity",
+            overflow.bottom ? "bm-opacity-100" : "bm-opacity-0"
+          )}>
+          <ChevronDown size={14} />
+        </div>
+      </div>
+
+      <CategoryMenu
+        category={categories.find((c) => c.key === openCategory) ?? null}
+        tools={tools.filter(
+          (tl) => tl.category === openCategory && !tl.utility
+        )}
+        activeKey={active?.key}
+        anchorRef={categoryAnchor}
+        onClose={() => setOpenCategory(null)}
+      />
 
       <ToolsPopover
         open={moreOpen}

@@ -11,7 +11,7 @@ import { cn } from "./cn"
 type TSize = "sm" | "md"
 
 const base =
-  "bm-w-full bm-bg-surface bm-text-fg bm-border bm-border-line-strong/80 bm-transition-[border-color,box-shadow] bm-duration-150 placeholder:bm-text-fg-subtle hover:bm-border-line-strong focus:bm-border-brand focus:bm-shadow-glow focus:bm-outline-none disabled:bm-cursor-not-allowed disabled:bm-bg-surface-2 disabled:bm-text-fg-muted read-only:bm-bg-surface-2/60"
+  "bm-w-full bm-shrink-0 bm-bg-surface bm-text-fg bm-border bm-border-line-strong/80 bm-transition-[border-color,box-shadow] bm-duration-150 placeholder:bm-text-fg-subtle hover:bm-border-line-strong focus:bm-border-brand focus:bm-shadow-glow focus:bm-outline-none disabled:bm-cursor-not-allowed disabled:bm-bg-surface-2 disabled:bm-text-fg-muted read-only:bm-bg-surface-2/60"
 
 const SIZE: Record<TSize, string> = {
   sm: "bm-h-8 bm-px-2.5 bm-text-[12.5px] bm-rounded-lg",
@@ -26,6 +26,9 @@ export interface InputProps
   invalid?: boolean
   mono?: boolean
 }
+
+/** Text affixes ("https://", "giây") render as a boxed addon; icons sit inline inside the field. */
+const isAddon = (node: ReactNode) => typeof node === "string" || typeof node === "number"
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
@@ -50,28 +53,38 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div
         className={cn(
-          "bm-flex bm-items-center bm-overflow-hidden bm-bg-surface bm-border bm-border-line-strong/80 bm-transition-[border-color,box-shadow] bm-duration-150 hover:bm-border-line-strong focus-within:bm-border-brand focus-within:bm-shadow-glow",
+          "bm-flex bm-w-full bm-shrink-0 bm-items-center bm-overflow-hidden bm-bg-surface bm-border bm-border-line-strong/80 bm-transition-[border-color,box-shadow] bm-duration-150 hover:bm-border-line-strong focus-within:bm-border-brand focus-within:bm-shadow-glow",
           size === "sm" ? "bm-h-8 bm-rounded-lg" : "bm-h-9 bm-rounded-lg",
           invalid && "bm-border-danger focus-within:bm-border-danger focus-within:bm-shadow-[0_0_0_4px_hsl(var(--x-danger)/0.18)]",
           rest.disabled && "bm-bg-surface-2 bm-cursor-not-allowed",
           className
         )}>
         {prefix && (
-          <span className="bm-flex bm-h-full bm-shrink-0 bm-items-center bm-whitespace-nowrap bm-bg-surface-2 bm-px-2.5 bm-text-[12px] bm-text-fg-muted bm-border-r bm-border-line">
+          <span
+            className={cn(
+              "bm-flex bm-h-full bm-shrink-0 bm-items-center bm-whitespace-nowrap bm-text-[12px] bm-text-fg-muted",
+              isAddon(prefix) ? "bm-border-r bm-border-line bm-bg-surface-2 bm-px-2.5" : "bm-pl-2.5 bm-text-fg-subtle"
+            )}>
             {prefix}
           </span>
         )}
         <input
           ref={ref}
           className={cn(
-            "bm-h-full bm-min-w-0 bm-flex-1 bm-bg-transparent bm-px-3 bm-text-fg placeholder:bm-text-fg-subtle focus:bm-outline-none disabled:bm-cursor-not-allowed disabled:bm-text-fg-muted",
+            "bm-h-full bm-min-w-0 bm-flex-1 bm-bg-transparent bm-text-fg placeholder:bm-text-fg-subtle focus:bm-outline-none disabled:bm-cursor-not-allowed disabled:bm-text-fg-muted",
             size === "sm" ? "bm-text-[12.5px]" : "bm-text-[13px]",
+            prefix && !isAddon(prefix) ? "bm-pl-2 bm-pr-3" : "bm-px-3",
+            suffix && !isAddon(suffix) && "bm-pr-2",
             mono && "bm-font-mono"
           )}
           {...rest}
         />
         {suffix && (
-          <span className="bm-flex bm-h-full bm-shrink-0 bm-items-center bm-whitespace-nowrap bm-bg-surface-2 bm-px-2.5 bm-text-[12px] bm-text-fg-muted bm-border-l bm-border-line">
+          <span
+            className={cn(
+              "bm-flex bm-h-full bm-shrink-0 bm-items-center bm-whitespace-nowrap bm-text-[12px] bm-text-fg-muted",
+              isAddon(suffix) ? "bm-border-l bm-border-line bm-bg-surface-2 bm-px-2.5" : "bm-pr-2.5 bm-text-fg-subtle"
+            )}>
             {suffix}
           </span>
         )}

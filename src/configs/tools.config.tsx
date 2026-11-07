@@ -1,16 +1,28 @@
 import {
+  Bot,
   Braces,
   Download,
   FileDown,
+  FileText,
   FileUp,
   Inbox,
   Link2,
+  MessageSquareCode,
+  MessageSquareText,
   Pickaxe,
-  Settings
+  Radar,
+  Rss,
+  Send,
+  Settings,
+  Share2,
+  Users,
+  UsersRound,
+  Wrench
 } from "lucide-react"
 import { ReactNode, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 
+import { FacebookIcon } from "src/assets/icons"
 import { APP_ROUTES } from "src/constants/route.constants"
 
 export type TToolKey =
@@ -22,12 +34,30 @@ export type TToolKey =
   | "export-cookies"
   | "import-cookies"
   | "settings"
+  | "fb-friends"
+  | "fb-following"
+  | "fb-groups"
+  | "fb-posts"
+  | "fb-download-messages"
+  | "fb-post-radar"
+  | "fb-comment-hunter"
+  | "fb-post-campaign"
+  | "fb-max-power-share"
+  | "fb-auto-bot-comment"
 
-export type TToolCategory = "facebook" | "automation" | "utility"
+export type TToolCategory =
+  | "facebook"
+  | "account"
+  | "content"
+  | "automation"
+  | "utility"
 
 export interface ToolCategory {
   key: TToolCategory
   label: string
+  /** Short label under the category icon on the navigation rail */
+  railLabel: string
+  icon: ReactNode
   description?: string
 }
 
@@ -45,23 +75,51 @@ export interface Tool {
   utility?: boolean
 }
 
-/** Tools pinned to the navigation rail by default */
-export const DEFAULT_PINNED: TToolKey[] = [
-  "batch-download",
-  "scan-uid",
-  "auto-inbox",
-  "access-token"
-]
+/** Nothing pinned by default: the rail already lists every tool through its category fly-outs */
+export const DEFAULT_PINNED: TToolKey[] = []
 
-export const MAX_PINNED = 6
+/** Tools that fit on the navigation rail (it scrolls past what the screen shows) */
+export const MAX_PINNED = 12
 
 export const useToolCategories = (): ToolCategory[] => {
   const { t } = useTranslation()
   return useMemo(
     () => [
-      { key: "facebook", label: "Facebook", description: t("cat_facebook_desc") },
-      { key: "automation", label: t("automation"), description: t("cat_automation_desc") },
-      { key: "utility", label: t("cat_utility"), description: t("cat_utility_desc") }
+      {
+        key: "facebook",
+        label: "Facebook",
+        railLabel: "Facebook",
+        icon: <FacebookIcon />,
+        description: t("cat_facebook_desc")
+      },
+      {
+        key: "account",
+        label: t("cat_account"),
+        railLabel: t("cat_account_short"),
+        icon: <Users />,
+        description: t("cat_account_desc")
+      },
+      {
+        key: "content",
+        label: t("cat_content"),
+        railLabel: t("cat_content"),
+        icon: <FileText />,
+        description: t("cat_content_desc")
+      },
+      {
+        key: "automation",
+        label: t("automation"),
+        railLabel: t("cat_automation_short"),
+        icon: <Bot />,
+        description: t("cat_automation_desc")
+      },
+      {
+        key: "utility",
+        label: t("cat_utility"),
+        railLabel: t("cat_utility"),
+        icon: <Wrench />,
+        description: t("cat_utility_desc")
+      }
     ],
     [t]
   )
@@ -127,6 +185,106 @@ export const useTools = (): Tool[] => {
         color: "bm-text-cyan-500"
       },
       {
+        key: "fb-friends",
+        category: "account",
+        path: APP_ROUTES.FACEBOOK.FRIENDS,
+        label: t("fb_friends_hub"),
+        description: t("nav_fb_friends_desc"),
+        icon: <Users />,
+        color: "bm-text-[#1877F2]",
+        isNew: true
+      },
+      {
+        key: "fb-following",
+        category: "account",
+        path: APP_ROUTES.FACEBOOK.FOLLOWING,
+        label: t("fb_following_hub"),
+        description: t("nav_fb_following_desc"),
+        icon: <Rss />,
+        color: "bm-text-sky-500",
+        isNew: true
+      },
+      {
+        key: "fb-groups",
+        category: "account",
+        path: APP_ROUTES.FACEBOOK.GROUPS,
+        label: t("fb_groups"),
+        description: t("nav_fb_groups_desc"),
+        icon: <UsersRound />,
+        color: "bm-text-violet-500",
+        isNew: true
+      },
+      {
+        key: "fb-posts",
+        category: "content",
+        path: APP_ROUTES.FACEBOOK.POSTS,
+        label: t("fb_posts"),
+        description: t("nav_fb_posts_desc"),
+        icon: <FileText />,
+        color: "bm-text-sky-600",
+        isNew: true
+      },
+      {
+        key: "fb-download-messages",
+        category: "content",
+        path: APP_ROUTES.FACEBOOK.DOWNLOAD_MESSAGES,
+        label: t("fb_download_messages"),
+        description: t("nav_fb_download_messages_desc"),
+        icon: <MessageSquareCode />,
+        color: "bm-text-blue-500",
+        isNew: true
+      },
+      {
+        key: "fb-post-radar",
+        category: "automation",
+        path: APP_ROUTES.FACEBOOK.POST_RADAR,
+        label: t("fb_post_radar"),
+        description: t("nav_fb_post_radar_desc"),
+        icon: <Radar />,
+        color: "bm-text-emerald-500",
+        isNew: true
+      },
+      {
+        key: "fb-comment-hunter",
+        category: "automation",
+        path: APP_ROUTES.FACEBOOK.COMMENT_HUNTER,
+        label: t("fb_comment_hunter"),
+        description: t("nav_fb_comment_hunter_desc"),
+        icon: <MessageSquareText />,
+        color: "bm-text-amber-500",
+        isNew: true
+      },
+      {
+        key: "fb-post-campaign",
+        category: "automation",
+        path: APP_ROUTES.FACEBOOK.POST_CAMPAIGN,
+        label: t("fb_post_campaign"),
+        description: t("nav_fb_post_campaign_desc"),
+        icon: <Send />,
+        color: "bm-text-indigo-500",
+        isNew: true
+      },
+      {
+        key: "fb-max-power-share",
+        category: "automation",
+        path: APP_ROUTES.FACEBOOK.MAX_POWER_SHARE,
+        label: t("fb_max_power_share"),
+        description: t("nav_fb_max_power_share_desc"),
+        icon: <Share2 />,
+        color: "bm-text-pink-500",
+        isNew: true
+      },
+      {
+        key: "fb-auto-bot-comment",
+        category: "automation",
+        path: APP_ROUTES.FACEBOOK.AUTO_BOT_COMMENT,
+        label: t("fb_auto_bot_comment"),
+        description: t("nav_fb_auto_bot_comment_desc"),
+        icon: <Bot />,
+        color: "bm-text-violet-500",
+        isNew: true
+      },
+      {
         key: "export-cookies",
         category: "utility",
         path: APP_ROUTES.COOKIES.EXPORT,
@@ -160,8 +318,12 @@ export const useTools = (): Tool[] => {
 }
 
 /** Which tool owns a pathname (the UID export screen belongs to "scan-uid"). */
-export const useActiveTool = (pathname: string, tools: Tool[]): Tool | undefined =>
+export const useActiveTool = (
+  pathname: string,
+  tools: Tool[]
+): Tool | undefined =>
   useMemo(() => {
-    if (pathname === APP_ROUTES.FACEBOOK.EXPORT_UID) return tools.find((t) => t.key === "scan-uid")
+    if (pathname === APP_ROUTES.FACEBOOK.EXPORT_UID)
+      return tools.find((t) => t.key === "scan-uid")
     return tools.find((t) => t.path === pathname)
   }, [pathname, tools])

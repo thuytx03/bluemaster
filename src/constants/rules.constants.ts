@@ -98,5 +98,56 @@ export const rules = [
         urlFilter: "https://upload.facebook.com/*",
         resourceTypes: ["xmlhttprequest"]
       }
+    },
+    // vupload-edge.facebook.com — video upload session init & receive
+    {
+      id: 14,
+      priority: 3,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          { header: "origin", operation: "set", value: "https://www.facebook.com" },
+          { header: "referer", operation: "set", value: "https://www.facebook.com/" },
+          { header: "sec-fetch-site", operation: "set", value: "same-origin" }
+        ]
+      },
+      condition: {
+        urlFilter: "https://vupload-edge.facebook.com/*",
+        resourceTypes: ["xmlhttprequest", "other"]
+      }
+    },
+    // rupload.facebook.com — video binary chunk upload
+    {
+      id: 15,
+      priority: 3,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          { header: "origin", operation: "set", value: "https://www.facebook.com" },
+          { header: "referer", operation: "set", value: "https://www.facebook.com/" },
+          { header: "sec-fetch-site", operation: "set", value: "same-origin" }
+        ]
+      },
+      condition: {
+        urlFilter: "https://*.up.facebook.com/*",
+        resourceTypes: ["xmlhttprequest", "other"]
+      }
+    },
+    // rupload.facebook.com (no subdomain variant)
+    {
+      id: 16,
+      priority: 3,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          { header: "origin", operation: "set", value: "https://www.facebook.com" },
+          { header: "referer", operation: "set", value: "https://www.facebook.com/" },
+          { header: "sec-fetch-site", operation: "set", value: "same-origin" }
+        ]
+      },
+      condition: {
+        urlFilter: "https://rupload.facebook.com/*",
+        resourceTypes: ["xmlhttprequest", "other"]
+      }
     }
-  ]
+]

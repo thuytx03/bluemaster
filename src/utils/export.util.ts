@@ -38,4 +38,10 @@ export const exportToJson = (data: any, fileName: string) => {
     const jsonString = typeof data === "string" ? data : JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
     FileSaver.saveAs(blob, fileName.endsWith('.json') ? fileName : `${fileName}.json`);
+};/** CSV with a UTF-8 BOM so Excel opens Vietnamese text correctly; every cell is quoted. */
+export const exportToCSV = (headers: string[], rows: unknown[][], fileName: string) => {
+    const escape = (val: unknown) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+    const content = "﻿" + [headers, ...rows].map((row) => row.map(escape).join(",")).join("\n");
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+    FileSaver.saveAs(blob, fileName.endsWith(".csv") ? fileName : `${fileName}.csv`);
 };

@@ -1,7 +1,9 @@
 import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react"
 
 import { cn } from "./cn"
+import { TPlacement } from "./Popover"
 import Spinner from "./Spinner"
+import Tooltip from "./Tooltip"
 
 export type TButtonVariant =
   | "primary"
@@ -29,7 +31,8 @@ const VARIANT: Record<TButtonVariant, string> = {
     "bm-bg-surface-2 bm-text-fg hover:bm-bg-surface-3 active:bm-bg-surface-3 disabled:bm-text-fg-subtle",
   outline:
     "bm-bg-surface bm-text-fg bm-border bm-border-line-strong hover:bm-bg-surface-2 active:bm-bg-surface-3 disabled:bm-text-fg-subtle",
-  ghost: "bm-bg-transparent bm-text-fg-muted hover:bm-bg-surface-2 hover:bm-text-fg",
+  ghost:
+    "bm-bg-transparent bm-text-fg-muted hover:bm-bg-surface-2 hover:bm-text-fg",
   danger:
     "bm-bg-danger bm-text-white hover:bm-brightness-110 active:bm-translate-y-px disabled:bm-opacity-50",
   success:
@@ -76,11 +79,17 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       {loading ? (
         <Spinner size={size === "xs" ? 12 : 14} />
       ) : (
-        icon && <span className="bm-inline-flex bm-shrink-0 bm-items-center">{icon}</span>
+        icon && (
+          <span className="bm-inline-flex bm-shrink-0 bm-items-center">
+            {icon}
+          </span>
+        )
       )}
       {children && <span className="bm-truncate">{children}</span>}
       {iconRight && (
-        <span className="bm-inline-flex bm-shrink-0 bm-items-center">{iconRight}</span>
+        <span className="bm-inline-flex bm-shrink-0 bm-items-center">
+          {iconRight}
+        </span>
       )}
     </button>
   )
@@ -89,7 +98,11 @@ Button.displayName = "Button"
 
 export interface IconButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Accessible name; also shown as the hover tooltip unless `tooltip` overrides it */
   label: string
+  /** Tooltip content (defaults to `label`); `false` disables it */
+  tooltip?: ReactNode | false
+  tooltipPlacement?: TPlacement
   size?: TButtonSize
   variant?: "ghost" | "outline" | "secondary" | "primary" | "danger"
   active?: boolean
@@ -104,25 +117,44 @@ const ICON_SIZE: Record<TButtonSize, string> = {
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   (
-    { label, size = "sm", variant = "ghost", active, className, children, ...rest },
+    {
+      label,
+      tooltip,
+      tooltipPlacement = "top-start",
+      size = "sm",
+      variant = "ghost",
+      active,
+      className,
+      children,
+      ...rest
+    },
     ref
-  ) => (
-    <button
-      ref={ref}
-      type="button"
-      aria-label={label}
-      title={label}
-      className={cn(
-        "bm-inline-flex bm-shrink-0 bm-items-center bm-justify-center bm-transition-colors bm-duration-150 disabled:bm-cursor-not-allowed disabled:bm-opacity-50",
-        VARIANT[variant],
-        ICON_SIZE[size],
-        active && "bm-bg-brand-soft bm-text-brand-ink hover:bm-bg-brand-soft",
-        className
-      )}
-      {...rest}>
-      {children}
-    </button>
-  )
+  ) => {
+    const button = (
+      <button
+        ref={ref}
+        type="button"
+        aria-label={label}
+        className={cn(
+          "bm-inline-flex bm-shrink-0 bm-items-center bm-justify-center bm-transition-colors bm-duration-150 disabled:bm-cursor-not-allowed disabled:bm-opacity-50",
+          VARIANT[variant],
+          ICON_SIZE[size],
+          active && "bm-bg-brand-soft bm-text-brand-ink hover:bm-bg-brand-soft",
+          className
+        )}
+        {...rest}>
+        {children}
+      </button>
+    )
+    // Native `title` tooltips are slow, unthemed and never show on disabled
+    // buttons; the wrapper span of <Tooltip> still receives hover when disabled.
+    if (tooltip === false) return button
+    return (
+      <Tooltip content={tooltip ?? label} placement={tooltipPlacement}>
+        {button}
+      </Tooltip>
+    )
+  }
 )
 IconButton.displayName = "IconButton"
 
