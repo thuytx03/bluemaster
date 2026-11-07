@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-07
+
 ### Added
 - Account tools: **Friends** (filter, unfriend, block, restrict, block messages, poke, bulk actions, CSV; tabs for blocked / restricted / message-blocked, received and sent requests), **Groups** (leave inactive groups, cancel pending requests, join suggested groups) and **Following** (unfollow / re-follow, unlike pages).
 - Content tools: **My posts** (filter, delete, hide, untag, trash, archive in bulk) and **Download messages** (HTML, CSV, TXT, Excel).
@@ -64,3 +66,4 @@ First public release under the Bluemaster name.
 [1.0.0]: https://github.com/thuytx03/bluemaster/releases/tag/v1.0.0
 [1.0.1]: https://github.com/thuytx03/bluemaster/compare/v1.0.0...v1.0.1
 [1.0.2]: https://github.com/thuytx03/bluemaster/compare/v1.0.1...v1.0.2
+[1.1.0]: https://github.com/thuytx03/bluemaster/compare/v1.0.2...v1.1.0
